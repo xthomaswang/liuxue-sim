@@ -1,0 +1,38 @@
+{
+  "name": "liuxue-simulator",
+  "private": true,
+  "version": "0.1.0",
+  "description": "留学人生模拟器：纯文字、可复现 seed 的留学人生游戏（网页 / iOS / macOS 共用一套代码）",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "content:extract": "node scripts/extract-content.ts",
+    "schools:build": "node scripts/schools/build-catalog.ts",
+    "build:mac": "npm run build && scripts/build-mac.sh",
+    "ios:sim": "npm run build && scripts/run-ios-sim.sh"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}
