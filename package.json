@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "content:extract": "node scripts/extract-content.ts",
     "schools:build": "node scripts/schools/build-catalog.ts",
+    "schools:build:offline": "node scripts/schools/build-catalog.ts --offline",
     "build:mac": "npm run build && scripts/build-mac.sh",
     "ios:sim": "npm run build && scripts/run-ios-sim.sh"
   },

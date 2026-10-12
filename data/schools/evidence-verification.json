@@ -1,0 +1,1602 @@
+{
+  "schemaVersion": "1.0",
+  "standard": "quote-match-v2",
+  "records": {
+    "override:ec103d594019142a17f4ad01930e20ab": {
+      "sourceUrl": "https://www.citadel.edu/about-the-citadel/",
+      "finalUrl": "https://www.citadel.edu/about-the-citadel/",
+      "httpStatus": 200,
+      "pageSha256": "7711e3386e43bcf22995bc784fc3660216aa47f48829dfcbc96316fdd5d06780",
+      "fetchedAt": "2026-10-12T02:28:28.494Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": null,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": null,
+        "rankNumberInQuote": null
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:02ec3b89ff1d66105af501eaad0f491f": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:031f64c34851c4c073cc6ea0bd2fcbca": {
+      "sourceUrl": "https://www.depauw.edu/stories/details/depauw-ranked-12th-most-innovative-college-in-us-news-world-report-ranking/",
+      "finalUrl": "https://www.depauw.edu/stories/details/depauw-ranked-12th-most-innovative-college-in-us-news-world-report-ranking/",
+      "httpStatus": 200,
+      "pageSha256": "16705fedf9372b99f8bba2289a02c8c5e103f9e186c8fc13c2628e303275fcbc",
+      "fetchedAt": "2026-10-12T02:28:31.580Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:04528f76e2d553d77d9daf17c3c051e7": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:0508c13d363b985a954a7076c551c4f1": {
+      "sourceUrl": "https://news.richmond.edu/releases/article/-/28647/university-of-richmond-named-a-top-25-national-liberal-arts-college-for-10th-consecutive-year-by-u.s.-news--world-report.html",
+      "finalUrl": "https://news.richmond.edu/releases/article/-/28647/university-of-richmond-named-a-top-25-national-liberal-arts-college-for-10th-consecutive-year-by-u.s.-news--world-report.html",
+      "httpStatus": 200,
+      "pageSha256": "7b84d82ebaf23caa4444e7eb862c3bb7479a29e962da97cfcaa838b79423315f",
+      "fetchedAt": "2026-10-12T02:28:29.631Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:06268e7f7e648bf7b4e5635913bcec73": {
+      "sourceUrl": "https://www.hawaii.edu/news/2026/09/22/us-news-best-colleges-2027/",
+      "finalUrl": "https://www.hawaii.edu/news/2026/09/22/us-news-best-colleges-2027/",
+      "httpStatus": 200,
+      "pageSha256": "66cb3a6a4f112afffcdd9e89a30ebdc05988650fff1416b4064b19bb40fff6a8",
+      "fetchedAt": "2026-10-12T02:28:45.290Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:0a0d85f3829d20f54dfe01f849337f86": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:12915b8d7bf83c8ab52e228ee4443e6c": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:130942dd98ebbf740bdbb675234b6d97": {
+      "sourceUrl": "https://hope.edu/about/rankings.html",
+      "finalUrl": "https://hope.edu/about/rankings.html",
+      "httpStatus": 200,
+      "pageSha256": "d057756d4074c87de3cd8760b1d99874bcb3d02cf25e701fedb3e04aa12bb723",
+      "fetchedAt": "2026-10-12T02:28:32.124Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:1821f2bb4080ce6f9770ebbd605738da": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:1aa5ff99d465abe25f20eff407de4632": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:1aed5d06fb0879cd1d9bd776ab0320dd": {
+      "sourceUrl": "https://news.morehouse.edu/morehouse-college-climbs-the-national-liberal-arts-rankings-remains-among-top-four-hbcus-in-u.s.-news-world-reports-2027-best-colleges",
+      "finalUrl": "https://news.morehouse.edu/morehouse-college-climbs-the-national-liberal-arts-rankings-remains-among-top-four-hbcus-in-u.s.-news-world-reports-2027-best-colleges",
+      "httpStatus": 200,
+      "pageSha256": "142c5a98b662881d0e6131150e8a28bdf7b4b3ca5dfbe0fd8c029d0100800c6a",
+      "fetchedAt": "2026-10-12T02:28:32.209Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:1fa2bc0821396fbb6190f2f9ff025e0b": {
+      "sourceUrl": "https://www.k-state.edu/news/articles/2026/10/kstate-rises-2027-us-news-best-colleges-rankings.html",
+      "finalUrl": "https://www.k-state.edu/news/articles/2026/10/kstate-rises-2027-us-news-best-colleges-rankings.html",
+      "httpStatus": 200,
+      "pageSha256": "5c256b61e06eab1d7925299f7f300b9d23c57196b12b73826a26cac6f8897f2a",
+      "fetchedAt": "2026-10-12T02:28:36.109Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:209e088042098b6be3c50a34fe4302d6": {
+      "sourceUrl": "https://www.ttu.edu/now/posts/2026/09/texas-tech-breaks-into-top-100-in-us-news-best-colleges-rankings.php",
+      "finalUrl": "https://www.ttu.edu/now/posts/2026/09/texas-tech-breaks-into-top-100-in-us-news-best-colleges-rankings.php",
+      "httpStatus": 200,
+      "pageSha256": "c9ff77b6041907e30f74072d17a129ac18cf39412a9230a4ef5b90527aae1958",
+      "fetchedAt": "2026-10-12T02:28:40.551Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:2dd1bca2b391f4714c32f0358b123bb6": {
+      "sourceUrl": "https://www.newhaven.edu/news/releases/2026/first-ever-us-news-national-ranking.php",
+      "finalUrl": "https://www.newhaven.edu/news/releases/2026/first-ever-us-news-national-ranking.php",
+      "httpStatus": 200,
+      "pageSha256": "1a8ffdf65eaa93c344526d00e493ef75f6dae921b3591cf7ebe7ec6ca2d53054",
+      "fetchedAt": "2026-10-12T02:28:47.813Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:3482b0f2366a06d75e128ca551ddb6a1": {
+      "sourceUrl": "https://www.ucf.edu/academics/us-news-rankings/",
+      "finalUrl": "https://www.ucf.edu/academics/us-news-rankings/",
+      "httpStatus": 200,
+      "pageSha256": "5ea7359dde35ca635096f8326fbea0177c762ae15e9835cd96ed069ba1362d66",
+      "fetchedAt": "2026-10-12T02:28:34.082Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:34f6545604be5099803bfaa1e1b058d5": {
+      "sourceUrl": "https://www.cmu.edu/news/stories/archives/2026/september/carnegie-mellon-university-reaches-historic-high-at-no-14-in-us-news-rankings-takes-no-1-spot-for",
+      "finalUrl": "https://www.cmu.edu/news/stories/archives/2026/september/carnegie-mellon-university-reaches-historic-high-at-no-14-in-us-news-rankings-takes-no-1-spot-for",
+      "httpStatus": 200,
+      "pageSha256": "ca35dbad75426275bd7e53d514c51f52aa8e0d042d4a5410d5afc5e5a45a26f5",
+      "fetchedAt": "2026-10-12T02:28:54.113Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:3c391c39924c32776fd1f275e589b10c": {
+      "sourceUrl": "https://louisiana.edu/news/us-news-world-report-places-university-among-best-colleges-2027",
+      "finalUrl": "https://louisiana.edu/news/us-news-world-report-places-university-among-best-colleges-2027",
+      "httpStatus": 200,
+      "pageSha256": "e668de671a5ba3c06d7a47e974ff39a8e4db592688737145abb11479c8e78cc0",
+      "fetchedAt": "2026-10-12T02:28:52.223Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:3ce7928d51a750aef05c507c3c2e2319": {
+      "sourceUrl": "https://www.luc.edu/about/rankingsandreputation/",
+      "finalUrl": "https://www.luc.edu/about/rankingsandreputation/",
+      "httpStatus": 200,
+      "pageSha256": "c77d24f0533b2523b765f7f9872725b69c74e22950d30dd7246582d3396d4908",
+      "fetchedAt": "2026-10-12T02:28:33.971Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:48f0569a1e1524cb2cfc7e3c64347927": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:4989c7444e8fe41a4796b227ff2afdf6": {
+      "sourceUrl": "https://www.uta.edu/news/news-releases/2026/09/22/uta-earns-national-recognition-in-us-news-rankings",
+      "finalUrl": "https://www.uta.edu/news/news-releases/2026/09/22/uta-earns-national-recognition-in-us-news-rankings",
+      "httpStatus": 200,
+      "pageSha256": "11df3f947b879a1de36cbad94bd70e1cad439629662653e6d7515bcb87f3296e",
+      "fetchedAt": "2026-10-12T02:28:47.265Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:4d442afd417381e181d7f601df393317": {
+      "sourceUrl": "https://now.temple.edu/news/2026-09-22/us-news-again-ranks-temple-among-top-50-public-universities-2027",
+      "finalUrl": "https://now.temple.edu/news/2026-09-22/us-news-again-ranks-temple-among-top-50-public-universities-2027",
+      "httpStatus": 200,
+      "pageSha256": "5fc27e8aed613d1adbc94504b906452a9e7efbb97f426f8650d09037cb03aefe",
+      "fetchedAt": "2026-10-12T02:28:33.404Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:509a64f8402e1b90e5141037d8049877": {
+      "sourceUrl": "https://udayton.edu/news/articles/2026/09/us-news.php",
+      "finalUrl": "https://udayton.edu/news/articles/2026/09/us-news.php",
+      "httpStatus": 200,
+      "pageSha256": "4042cf73c134c2fb4192bd1fc2589eab8c8b26d2347cec3742c8f867a2ddb2ca",
+      "fetchedAt": "2026-10-12T02:28:34.414Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:528a715e320a117bed8a6e9a95c73ed9": {
+      "sourceUrl": "https://www.hmc.edu/about/2026/09/22/harvey-mudd-ranks-no-8-in-u-s-news-best-colleges-2027/",
+      "finalUrl": "https://www.hmc.edu/about/2026/09/22/harvey-mudd-ranks-no-8-in-u-s-news-best-colleges-2027/",
+      "httpStatus": 200,
+      "pageSha256": "e24a6cb6a95c635b12ad1e26928cfd7410fc51786388ee7c8ce2bff21f7a7fc0",
+      "fetchedAt": "2026-10-12T02:28:29.359Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:54b26dad8d5ea0a8339fe79a92c30dfb": {
+      "sourceUrl": "https://today.qu.edu/quinnipiac-surges-ahead-in-u.s.-news--world-report-best-colleges-rankings-including-best-value-schools-and-best-national-universities-2026-09-22",
+      "finalUrl": "https://today.qu.edu/quinnipiac-surges-ahead-in-u.s.-news--world-report-best-colleges-rankings-including-best-value-schools-and-best-national-universities-2026-09-22",
+      "httpStatus": 200,
+      "pageSha256": "dcbfc61336f1a1836230591338438daccedbe8f0eff96981c8bf6a1171525da8",
+      "fetchedAt": "2026-10-12T02:28:39.007Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:566ca4b877d5f36aca5f726079daf538": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:57842ce9669b1ca970aa10f9c85dd998": {
+      "sourceUrl": "https://www.spelman.edu/news/2026/09/20-years-at-the-top-spelman-college-continues-historic-reign-as-nations-no-1-hbcu.html",
+      "finalUrl": "https://www.spelman.edu/news/2026/09/20-years-at-the-top-spelman-college-continues-historic-reign-as-nations-no-1-hbcu.html",
+      "httpStatus": 200,
+      "pageSha256": "c8017ca73e1d05f14f6b7f990fb0efebe1200ccf8c1ae4932f6bba83f4368e0c",
+      "fetchedAt": "2026-10-12T02:28:30.904Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:58ab1791bdf3aa122746daedfa90f9b6": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:5aff4d21d20934c9dfcc5f65a1c5bc72": {
+      "sourceUrl": "https://www.colorado.edu/today/2026/09/22/cu-boulder-top-10-nationally-multiple-undergrad-programs-says-us-news-world-report",
+      "finalUrl": "https://www.colorado.edu/today/2026/09/22/cu-boulder-top-10-nationally-multiple-undergrad-programs-says-us-news-world-report",
+      "httpStatus": 200,
+      "pageSha256": "5d9d5850d825248f4a54b5c7e6a35a18ba6443404d9085458b46c3c37b14c8b2",
+      "fetchedAt": "2026-10-12T02:28:33.619Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:5bca8e13a83df2befc31ef9976b4015e": {
+      "sourceUrl": "https://www.stjohns.edu/news-media/news/2026-09-22/st-johns-achieves-significant-rise-2027-us-news-world-report-rankings",
+      "finalUrl": "https://www.stjohns.edu/news-media/news/2026-09-22/st-johns-achieves-significant-rise-2027-us-news-world-report-rankings",
+      "httpStatus": 200,
+      "pageSha256": "a5f4db6388c70a3b1180589fbaa27252f93dcd6c8bc7e84dbeb25e0a18f00e97",
+      "fetchedAt": "2026-10-12T02:28:35.183Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:6b50f1045e9663faada2228c80d10f85": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:6cb90f911d181bff673818ae021ae0a3": {
+      "sourceUrl": "https://blogs.sjsu.edu/newsroom/2026/usnwr-2027-rankings/",
+      "finalUrl": "https://blogs.sjsu.edu/newsroom/2026/usnwr-2027-rankings/",
+      "httpStatus": 200,
+      "pageSha256": "163e0ded50f793440f35dcac689f196a8832d379b9b7f319aa01f94b97aed0a1",
+      "fetchedAt": "2026-10-12T02:28:35.045Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:70b59f2f9bcfa58774999b05d370a11e": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:722027150aeb12fe2aae3942cc118943": {
+      "sourceUrl": "https://news.lafayette.edu/2026/09/22/lafayette-college-again-named-a-top-national-liberal-arts-college-by-u-s-news-world-report/",
+      "finalUrl": "https://news.lafayette.edu/2026/09/22/lafayette-college-again-named-a-top-national-liberal-arts-college-by-u-s-news-world-report/",
+      "httpStatus": 200,
+      "pageSha256": "40b233da0a7adf9f0fdb6839b77fec6b0c6e5bf592e57e7d06b6a1c1d7b03cff",
+      "fetchedAt": "2026-10-12T02:28:30.186Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:72adf33428baddb92ed3797da3256907": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:73706699c7f59c9aa2c60511892ebce4": {
+      "sourceUrl": "https://www.fairfield.edu/news/2026/september/us-news-report-highlights-rise-in-national-rankings.html",
+      "finalUrl": "https://www.fairfield.edu/news/2026/september/us-news-report-highlights-rise-in-national-rankings.html",
+      "httpStatus": 200,
+      "pageSha256": "b0fe32c07ad6e82b1bf33585c24f6cc2b60e0ad346d44c689f7f1f25ea0b7c77",
+      "fetchedAt": "2026-10-12T02:28:32.777Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:740d66fd5737025c6d5ccc352417363e": {
+      "sourceUrl": "https://www.monmouth.edu/news/monmouth-university-debuts-in-u-s-news-national-universities-rankings",
+      "finalUrl": "https://www.monmouth.edu/news/monmouth-university-debuts-in-u-s-news-national-universities-rankings",
+      "httpStatus": 200,
+      "pageSha256": "67f0f54b8adc978dfc07665c9bf0fb4ee664cec2f528379936fcf6964026ab31",
+      "fetchedAt": "2026-10-12T02:28:40.111Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:7421dc176743beac47cafa45646ab00c": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:7682edc5c38ec2e456cc9326600bc3e1": {
+      "sourceUrl": "https://www.anselm.edu/about/anselmian-hub/news/saint-anselm-ranked-top-75-national-liberal-arts-colleges",
+      "finalUrl": "https://www.anselm.edu/about/anselmian-hub/news/saint-anselm-ranked-top-75-national-liberal-arts-colleges",
+      "httpStatus": 200,
+      "pageSha256": "54772e7e40b17c441a7f094cb10467aa931ae77ed53aab6a8f637fb4e94274f9",
+      "fetchedAt": "2026-10-12T02:28:31.981Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:79495068e08012c4137f9516d440b162": {
+      "sourceUrl": "https://www.montclair.edu/news-media/news-stories/2027-college-rankings-montclair-among-nations-best-us-news-world-report-best-colleges",
+      "finalUrl": "https://www.montclair.edu/news-media/news-stories/2027-college-rankings-montclair-among-nations-best-us-news-world-report-best-colleges",
+      "httpStatus": 200,
+      "pageSha256": "9bdacb34a64ff736472bc92024a48346086c4deb6d79172cfcd78378bf51931b",
+      "fetchedAt": "2026-10-12T02:28:36.252Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:7e48645288f9c6e01116f838af21d8b6": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:7faa9d3d2f5af6c8b1a37c095a75d189": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:82159db7a4b402fa7bea31b0b036da2e": {
+      "sourceUrl": "https://news.rhodes.edu/stories/rhodes-college-rises-top-50-national-liberal-arts-colleges-us-news-world-report-rankings",
+      "finalUrl": "https://news.rhodes.edu/stories/rhodes-college-rises-top-50-national-liberal-arts-colleges-us-news-world-report-rankings",
+      "httpStatus": 200,
+      "pageSha256": "6952e8d4613b7b7f27268d09007016eec4d1d62f2ea07afdbb586603ffc89ce9",
+      "fetchedAt": "2026-10-12T02:28:31.679Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:87c74025307973986623838f83f5fd85": {
+      "sourceUrl": "https://www.lynchburg.edu/university-of-lynchburg-ranked-by-u-s-news-world-report-the-princeton-review/",
+      "finalUrl": "https://www.lynchburg.edu/university-of-lynchburg-ranked-by-u-s-news-world-report-the-princeton-review/",
+      "httpStatus": 200,
+      "pageSha256": "337755b1db1ce735de3eb278e8a7ce839c0060c96014bfdcf93d923fbb57dd45",
+      "fetchedAt": "2026-10-12T02:28:51.877Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:8ef1106279d2cad5f33fa50f4ac953e9": {
+      "sourceUrl": "https://news.wsu.edu/news/2026/09/23/wsu-earns-top-100-in-u-s-news-ranking-of-best-public-schools/",
+      "finalUrl": "https://news.wsu.edu/news/2026/09/23/wsu-earns-top-100-in-u-s-news-ranking-of-best-public-schools/",
+      "httpStatus": 200,
+      "pageSha256": "5a8fbb3cf7046d46b9fa8b78589417372d48abce668bd49b50f8104cbd5e597a",
+      "fetchedAt": "2026-10-12T02:28:46.227Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:91b054660ca14d53b251974f7606c6b3": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:9230612da9baa42bd61f9a8ccc4c4e91": {
+      "sourceUrl": "https://www.shu.edu/news/seton-hall-rises-again-in-us-news-2027-rankings.html",
+      "finalUrl": "https://www.shu.edu/news/seton-hall-rises-again-in-us-news-2027-rankings.html",
+      "httpStatus": 200,
+      "pageSha256": "512cacc29a5d84746219a7a20e9cab458d77ed949c67f7c3d1f3fdba70217ceb",
+      "fetchedAt": "2026-10-12T02:28:39.640Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:93d747cd80eaee1e0ba120f8dc8f1f40": {
+      "sourceUrl": "https://www.adelphi.edu/news/adelphi-university-ranked-among-top-100-private-universities-on-u-s-news-world-report-2027-list/",
+      "finalUrl": "https://www.adelphi.edu/news/adelphi-university-ranked-among-top-100-private-universities-on-u-s-news-world-report-2027-list/",
+      "httpStatus": 200,
+      "pageSha256": "ba494eeb49994900032da8684764fdad89298b76de7138880ed5e44123ef5d10",
+      "fetchedAt": "2026-10-12T02:28:45.736Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:9543cf3f565449c2d45974254acafd8e": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:998622ce0a62ee829fb6fd26de550c57": {
+      "sourceUrl": "https://news.vcu.edu/article/vcu-ranked-among-top-100-public-universities-recognized-as-a-best-value-by-us-news-and-world-report",
+      "finalUrl": "https://news.vcu.edu/article/vcu-ranked-among-top-100-public-universities-recognized-as-a-best-value-by-us-news-and-world-report",
+      "httpStatus": 200,
+      "pageSha256": "e0070aaf80c44d75395508e864e091f9f51214aa88b2e10d7fd86e4978179ab2",
+      "fetchedAt": "2026-10-12T02:28:39.949Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:9a2cc28ffd9f27ed38216282753cdc1a": {
+      "sourceUrl": "https://www.fandm.edu/stories/us-news-ranking-2027.html",
+      "finalUrl": "https://www.fandm.edu/stories/us-news-ranking-2027.html",
+      "httpStatus": 200,
+      "pageSha256": "cd6d4dce9462905f7e832d425432c652a2a68f9ed54499bf71e68a0ab95b0897",
+      "fetchedAt": "2026-10-12T02:28:30.718Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:9ca06ae81e94319bc01cca00f9802e49": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:9e3d25da1bd6e8b3a7bd34dbf6aa3bb5": {
+      "sourceUrl": "https://denison.edu/news-events/featured/163470",
+      "finalUrl": "https://denison.edu/news-events/featured/163470",
+      "httpStatus": 200,
+      "pageSha256": "d9cd13b888943985da9b3a829fec517ebcf12add51fff07c67fae27e5fd15b57",
+      "fetchedAt": "2026-10-12T02:28:30.268Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:9e44a7fab951fe5f440b203c21cbe0a2": {
+      "sourceUrl": "https://www.kent.edu/today/news/kent-state-us-news-2027-best-colleges-rankings",
+      "finalUrl": "https://www.kent.edu/today/news/kent-state-us-news-2027-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "34ea2a9248592682a62900532653b7d9c747eb7bc6cabd26ee70580a8a03d3f0",
+      "fetchedAt": "2026-10-12T02:28:46.431Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:a349c038157ad9186b79441509778573": {
+      "sourceUrl": "https://news.sru.edu/news/sru-joins-u-s-news-rankings-of-best-national-universities-for-2027/",
+      "finalUrl": "https://news.sru.edu/news/sru-joins-u-s-news-rankings-of-best-national-universities-for-2027/",
+      "httpStatus": 200,
+      "pageSha256": "815da18ffee32e5817266cf432c1cba86f6e6af1355a760d9d657f361f7ac005",
+      "fetchedAt": "2026-10-12T02:28:46.539Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:a54dcb5e62e5a361713532cde68c4dae": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:a7ac022174342c90de13c450ee2241a1": {
+      "sourceUrl": "https://magazine.holycross.edu/stories/usn26",
+      "finalUrl": "https://magazine.holycross.edu/stories/usn26",
+      "httpStatus": 200,
+      "pageSha256": "4c511f4ed3a56f54ac3687fa5fdc17224a1c9573bea7acaa5914246429204115",
+      "fetchedAt": "2026-10-12T02:28:29.717Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:a9ab314753a6530f73da72cc4ab473fb": {
+      "sourceUrl": "https://www.wabash.edu/news/story/13621",
+      "finalUrl": "https://www.wabash.edu/news/story/13621",
+      "httpStatus": 200,
+      "pageSha256": "15c5a0903cd6cc041266755737e44606f533219abb1b4be9f34eea188c309929",
+      "fetchedAt": "2026-10-12T02:28:31.208Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:b713f475d58e76df07a360b97284efe9": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:bdcab5ca54cf28911e5b24846e2ee488": {
+      "sourceUrl": "https://miamioh.edu/news/2026/09/miami-in-top-10-nationally-for-undergraduate-teaching-programs-in-latest-u.s-news-and-world-report-rankings.html",
+      "finalUrl": "https://miamioh.edu/news/2026/09/miami-in-top-10-nationally-for-undergraduate-teaching-programs-in-latest-u.s-news-and-world-report-rankings.html",
+      "httpStatus": 200,
+      "pageSha256": "82d095ee7a1af778b6b6dc618bd039e8337e16468d76d73b8c38f8d4e1c29099",
+      "fetchedAt": "2026-10-12T02:28:34.500Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:c2071a5d2df075ac8a2edafd365c401b": {
+      "sourceUrl": "https://www.pvamu.edu/blog/pvamu-rises-to-no-13-among-hbcus-in-2027-u-s-news-rankings/",
+      "finalUrl": "https://www.pvamu.edu/blog/pvamu-rises-to-no-13-among-hbcus-in-2027-u-s-news-rankings/",
+      "httpStatus": 200,
+      "pageSha256": "8226f4773c60a99d9393cf4d659027c7a4827c976bda78334346e2236a651b41",
+      "fetchedAt": "2026-10-12T02:28:50.535Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:c26bac469ba9a950f11a3d6ea3109e5a": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:c51b03899c19de52146f274bd8693d6d": {
+      "sourceUrl": "https://www.duq.edu/news-and-stories/releases/2026usnews-other-rankings.php",
+      "finalUrl": "https://www.duq.edu/news-and-stories/releases/2026usnews-other-rankings.php",
+      "httpStatus": 200,
+      "pageSha256": "38911db294a8cec1e1e20ab1d4774284a339d8e8650791fc7705c3e52b99918b",
+      "fetchedAt": "2026-10-12T02:28:35.443Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:c6395d4928b9b54747160c0e7e71f348": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:c6966993a02672edcc1095851e0174ec": {
+      "sourceUrl": "https://www.centenary.edu/news-media/story/centenary-named-top-national-liberal-arts-college-by-u-s-news-world-report/",
+      "finalUrl": "https://www.centenary.edu/news-media/story/centenary-named-top-national-liberal-arts-college-by-u-s-news-world-report/",
+      "httpStatus": 200,
+      "pageSha256": "903d6a1d9d9d553a15ceff0591bb1b521be63d1bb1a175dfece2f493afa499c5",
+      "fetchedAt": "2026-10-12T02:28:32.309Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:c768fe865195aab97a9b5f5d0b7b2adf": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:c7fa5e9cc667900143b52592132a0009": {
+      "sourceUrl": "https://www.emoryhenry.edu/live/news/recognition-in-2027-us-news-rankings",
+      "finalUrl": "https://www.emoryhenry.edu/live/news/recognition-in-2027-us-news-rankings",
+      "httpStatus": 200,
+      "pageSha256": "70a0c5c9aafc5b104b5b8c816e89d3d874ec4201fbfb34bcee099157effc5ebd",
+      "fetchedAt": "2026-10-12T02:28:49.239Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:c93988f57d07502ccf8323dd195c2dae": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:d09c579143948d2d64a1c796bea986aa": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:d8070befdb1ad1264e92b440854397c8": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:dbfeb2919a443ce8a930dd24cc20d432": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:dc3255d7c960ad6afb2f1968dfcb8ba7": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:de4c8aea339a080e7984c412976c03b6": {
+      "sourceUrl": "https://trinity.edu/news/us-news-ranks-trinity-no-38-among-national-liberal-arts-colleges",
+      "finalUrl": "https://trinity.edu/news/us-news-ranks-trinity-no-38-among-national-liberal-arts-colleges",
+      "httpStatus": 200,
+      "pageSha256": "f7f5802472096bccb70246bb069869f25cde4de0c4e97d82486af76ee5f0c56f",
+      "fetchedAt": "2026-10-12T02:28:30.999Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:de98b13cca90e6e88dc09d8b9d672902": {
+      "sourceUrl": "https://www.bucknell.edu/news/bucknell-earns-highest-us-news-ranking-2011",
+      "finalUrl": "https://www.bucknell.edu/news/bucknell-earns-highest-us-news-ranking-2011",
+      "httpStatus": 200,
+      "pageSha256": "4102d80cb55d2273fd1cb19b4c852d49b025fa181767235748f34e5a183e2f0f",
+      "fetchedAt": "2026-10-12T02:28:29.815Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:df4e0aaca9ce2d925644d39ed0df7fce": {
+      "sourceUrl": "https://newsroom.lmu.edu/campusnews/lmu-named-among-the-nations-top-colleges-by-u-s-news-world-report-earning-stellar-scores-for-business-and-engineering-programs/",
+      "finalUrl": "https://newsroom.lmu.edu/campusnews/lmu-named-among-the-nations-top-colleges-by-u-s-news-world-report-earning-stellar-scores-for-business-and-engineering-programs/",
+      "httpStatus": 200,
+      "pageSha256": "4dc32024abf8eabe2ee72a23509ff330ee28f2c499116fbdbe8ddbf7665c7a1c",
+      "fetchedAt": "2026-10-12T02:28:33.000Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:e3005a68f9decf5b15e0453de0017b78": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:e45f241d34ece371b445a491e2b56f86": {
+      "sourceUrl": "https://www.jmu.edu/news/2026/09/21-us-news-and-world-report-rankings.shtml",
+      "finalUrl": "https://www.jmu.edu/news/2026/09/21-us-news-and-world-report-rankings.shtml",
+      "httpStatus": 200,
+      "pageSha256": "3c9eb33202bd611cfc1a441d07d5fbe50942bab950cad3cc20277f60d819aee1",
+      "fetchedAt": "2026-10-12T02:28:34.622Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:e6fa9fcbddfcba434c4de5d86b4c849b": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:ea669340594f548e3f556957ed2a0ed3": {
+      "sourceUrl": "https://news.wilkes.edu/2026/09/24/wilkes-university-continues-to-rank-among-the-best-national-universities-for-2027/",
+      "finalUrl": "https://news.wilkes.edu/2026/09/24/wilkes-university-continues-to-rank-among-the-best-national-universities-for-2027/",
+      "httpStatus": 200,
+      "pageSha256": "a1c50f84d108cc7bdbc6973030a8ef045e048a0f5d98a7021c952d378a78ff9c",
+      "fetchedAt": "2026-10-12T02:28:48.851Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:ebe094d3a5697d986ad3cd18c4699b91": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:f6ef5afadf111f425fdfacbe5dd1feca": {
+      "sourceUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "finalUrl": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "httpStatus": 200,
+      "pageSha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "fetchedAt": "2026-10-12T02:28:28.992Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:f81f1383e72c8a4b3951f94b0fc5afed": {
+      "sourceUrl": "https://www.georgiasouthern.edu/2026/09/30/georgia-southern-rises-in-engineering-national-rankings-for-u-s-news-world-report-best-colleges-2027",
+      "finalUrl": "https://www.georgiasouthern.edu/2026/09/30/georgia-southern-rises-in-engineering-national-rankings-for-u-s-news-world-report-best-colleges-2027",
+      "httpStatus": 200,
+      "pageSha256": "7cb688bdd3ff50ea1772c904529e9d87cc5a3c34d5f7c39ea8aae209e60f8f2e",
+      "fetchedAt": "2026-10-12T02:28:50.947Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "OFFICIAL_DOMAIN",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "rank:fbfcea3ea1974112391c64b693ff9875": {
+      "sourceUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "finalUrl": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "httpStatus": 200,
+      "pageSha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "fetchedAt": "2026-10-12T02:28:33.483Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": true,
+        "quoteMatch": true,
+        "categoryQuoteMatch": true,
+        "schoolIdentified": "NAME_ON_PAGE",
+        "rankNumberInQuote": true
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    },
+    "support:b14905335f1e1a7d3bc07f5d34564f64": {
+      "sourceUrl": "https://nces.ed.gov/ipeds/use-the-data/download-access-database",
+      "finalUrl": "https://nces.ed.gov/ipeds/use-the-data/download-access-database",
+      "httpStatus": 200,
+      "pageSha256": "d89482185f434631325df5e73287bcb39164f287380846af594d54270daf3241",
+      "fetchedAt": "2026-10-12T02:28:28.861Z",
+      "checks": {
+        "fetched": true,
+        "http2xx": true,
+        "mentions2027": null,
+        "quoteMatch": true,
+        "categoryQuoteMatch": null,
+        "schoolIdentified": null,
+        "rankNumberInQuote": null
+      },
+      "verification": "VERIFIED",
+      "failure": null,
+      "transient": false
+    }
+  }
+}

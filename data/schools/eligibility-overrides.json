@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "ruleVersion": "eligibility-v1",
+  "note": "人工覆盖：IPEDS 字段表达不了、但有学校官方依据的资格修正。每条必须带 reason、原值 originalValue、修正值 correctedValue、官方 URL、页面原文 quote 与核查日期；构建时用与排名证据相同的方式重新抓取并匹配 quote，匹配不上的覆盖不生效并写进 coverage-report.json。没有核实过的条目不要写进来。",
+  "overrides": [
+    {
+      "unitid": "217864",
+      "ipedsName": "Citadel Military College of South Carolina",
+      "fact": "specialEligibilitySupported",
+      "originalValue": true,
+      "correctedValue": false,
+      "reasonCode": "SPECIAL_ELIGIBILITY_UNSUPPORTED",
+      "reason": "学校官方自述为军事学院，本科学员团（Corps of Cadets）在军事化制度下生活和学习；本游戏的通用校园剧情没有表达这种入学与生活方式，按“军校排除”的范围要求剔除。它不是联邦军校（IPEDS OBEREG≠0），所以规则本身识别不出来。",
+      "officialUrl": "https://www.citadel.edu/about-the-citadel/",
+      "quote": "The men and women in the Corps live and study under a classical military system",
+      "verifiedAt": "2026-10-11"
+    }
+  ]
+}

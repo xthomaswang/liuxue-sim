@@ -1,0 +1,430 @@
+{
+  "schemaVersion": "1.0",
+  "catalogVersion": "us-curated-2024dir-usnews2027-v2",
+  "mode": "CURATED",
+  "releaseStatus": "VALIDATED",
+  "scope": "精选目录，不是全国目录：U.S. News 综合大学 1–200 名、约前 50 名的文理学院、少量专门院校，以及有 2027 版已核实名次的地区类学校。",
+  "honesty": "VERIFIED_2027 的档位来自可机械复核的 2027 版名次；APPROXIMATE 的档位是模型依据近几版榜单整理的大致区间，未逐校核实、不含名次；UNRANKED_SPECIAL 是按专门院校处理的未排名池，同样未逐校核实。",
+  "counts": {
+    "curatedListed": 275,
+    "curatedJoined": 275,
+    "evidenceOnlyAdded": 31,
+    "candidates": 306,
+    "inCatalog": 291,
+    "removed": 1,
+    "outOfScopeRank": 14,
+    "verified": 67,
+    "approximate": 207,
+    "special": 17,
+    "byTier": {
+      "S": 30,
+      "A": 44,
+      "B": 94,
+      "C": 54,
+      "D": 52,
+      "U": 17
+    },
+    "byGroup": {
+      "NU": 208,
+      "LAC": 52,
+      "REGIONAL": 14,
+      "SPECIAL": 17
+    },
+    "withNameZh": 291
+  },
+  "pools": {
+    "S": {
+      "count": 30,
+      "verified": 13,
+      "approximate": 17,
+      "special": 0,
+      "atLeast3": true
+    },
+    "A": {
+      "count": 44,
+      "verified": 6,
+      "approximate": 38,
+      "special": 0,
+      "atLeast3": true
+    },
+    "B": {
+      "count": 94,
+      "verified": 25,
+      "approximate": 69,
+      "special": 0,
+      "atLeast3": true
+    },
+    "C": {
+      "count": 54,
+      "verified": 12,
+      "approximate": 42,
+      "special": 0,
+      "atLeast3": true
+    },
+    "D": {
+      "count": 52,
+      "verified": 11,
+      "approximate": 41,
+      "special": 0,
+      "atLeast3": true
+    },
+    "U": {
+      "count": 17,
+      "verified": 0,
+      "approximate": 0,
+      "special": 17,
+      "atLeast3": true
+    }
+  },
+  "checks": [
+    {
+      "id": "POOLS_AT_LEAST_3",
+      "description": "S/A/B/C/D/U 每池至少 3 所学校，不跨档补位、不复制。",
+      "status": "PASS",
+      "detail": "S=30 A=44 B=94 C=54 D=52 U=17"
+    },
+    {
+      "id": "CURATED_JOIN_EXACT",
+      "description": "精选名单每条都用 UNITID 精确连接到 HD2024，且 ipedsName 与 INSTNM 完全一致。",
+      "status": "PASS",
+      "detail": "名单 275 条，连接成功 275 条，连接失败 0 条，格式问题 0 条。"
+    },
+    {
+      "id": "ALIASES_JOIN_EXACT",
+      "description": "中文名映射每条都能用 UNITID + INSTNM 精确对上。",
+      "status": "PASS",
+      "detail": "305 条全部对上。"
+    },
+    {
+      "id": "IPEDS_PARSE_CLEAN",
+      "description": "HD2024/IC2024 解析无坏行，字典绑定通过（绑定失败会直接中止构建）。",
+      "status": "PASS",
+      "detail": "HD 6072 行，IC 5963 行，坏行 0。"
+    },
+    {
+      "id": "RECORD_INVARIANTS",
+      "description": "目录内每所学校：UNITID 合法且唯一有序、校名/城市/州非空、六项资格事实全为 true、档位与依据自洽。",
+      "status": "PASS",
+      "detail": "291 条全部满足。"
+    },
+    {
+      "id": "SCOPE_RANK_LIMITS",
+      "description": "范围上限（curated-scope-v2）：目录里没有已核实名次超过 NU 200 / LAC 50 的学校。",
+      "status": "PASS",
+      "detail": "因名次超出范围未收入 14 所（见 outOfScopeRank）。"
+    },
+    {
+      "id": "TIER_BOUNDARIES_V2",
+      "description": "v2 分档边界（NU 20/21、50/51、100/101、150/151；LAC 10/11、25/26、50/51、100/101；RU 10/11、40/41；RC 5/6、20/21；跨档区间进 U）。",
+      "status": "PASS",
+      "detail": "全部边界符合。"
+    },
+    {
+      "id": "ORDER_INDEPENDENT",
+      "description": "把 IPEDS 行、精选名单、中文名映射与证据的输入顺序全部颠倒，catalog.json 字节不变。",
+      "status": "PASS",
+      "detail": "sha256 1b19e2dd42a09a741e493f6b04d40bcb3ff7f6d0f74e1258790c46807a730c98"
+    },
+    {
+      "id": "VERIFIED_RANKS_TRACEABLE",
+      "description": "每个 VERIFIED_2027 档位都有 2027 版、带类别与来源 URL、可机械复核的证据；没有证据的不带名次。",
+      "status": "PASS",
+      "detail": "VERIFIED_2027 67 所，APPROXIMATE 207 所，UNRANKED_SPECIAL 17 所。"
+    }
+  ],
+  "scopeRule": {
+    "version": "curated-scope-v2",
+    "limits": {
+      "NU": 200,
+      "LAC": 50
+    },
+    "description": "有 2027 版已核实名次的学校：综合大学（NU）名次大于 200、文理学院（LAC）名次大于 50 的不进目录，无论是否在精选名单里；区间名次按下限 rankMin 判断。地区类（RU_*/RC_*）与专门院校不设上限，只有大致档位（APPROXIMATE）的学校不受影响。"
+  },
+  "outOfScopeRank": [
+    {
+      "unitid": "129941",
+      "name": "University of New Haven",
+      "listedInCurated": false,
+      "category": "NU",
+      "rankMin": 276,
+      "rankMax": 276,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://www.newhaven.edu/news/releases/2026/first-ever-us-news-national-ranking.php"
+      ]
+    },
+    {
+      "unitid": "139931",
+      "name": "Georgia Southern University",
+      "listedInCurated": false,
+      "category": "NU",
+      "rankMin": 328,
+      "rankMax": 328,
+      "tied": true,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://www.georgiasouthern.edu/2026/09/30/georgia-southern-rises-in-engineering-national-rankings-for-u-s-news-world-report-best-colleges-2027"
+      ]
+    },
+    {
+      "unitid": "140553",
+      "name": "Morehouse College",
+      "listedInCurated": false,
+      "category": "LAC",
+      "rankMin": 83,
+      "rankMax": 83,
+      "tied": false,
+      "limit": 50,
+      "evidenceUrls": [
+        "https://news.morehouse.edu/morehouse-college-climbs-the-national-liberal-arts-rankings-remains-among-top-four-hbcus-in-u.s.-news-world-reports-2027-best-colleges"
+      ]
+    },
+    {
+      "unitid": "158477",
+      "name": "Centenary College of Louisiana",
+      "listedInCurated": false,
+      "category": "LAC",
+      "rankMin": 132,
+      "rankMax": 132,
+      "tied": false,
+      "limit": 50,
+      "evidenceUrls": [
+        "https://www.centenary.edu/news-media/story/centenary-named-top-national-liberal-arts-college-by-u-s-news-world-report/"
+      ]
+    },
+    {
+      "unitid": "160658",
+      "name": "University of Louisiana at Lafayette",
+      "listedInCurated": false,
+      "category": "NU",
+      "rankMin": 353,
+      "rankMax": 353,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://louisiana.edu/news/us-news-world-report-places-university-among-best-colleges-2027"
+      ]
+    },
+    {
+      "unitid": "170301",
+      "name": "Hope College",
+      "listedInCurated": false,
+      "category": "LAC",
+      "rankMin": 78,
+      "rankMax": 78,
+      "tied": false,
+      "limit": 50,
+      "evidenceUrls": [
+        "https://hope.edu/about/rankings.html"
+      ]
+    },
+    {
+      "unitid": "183239",
+      "name": "Saint Anselm College",
+      "listedInCurated": false,
+      "category": "LAC",
+      "rankMin": 72,
+      "rankMax": 72,
+      "tied": false,
+      "limit": 50,
+      "evidenceUrls": [
+        "https://www.anselm.edu/about/anselmian-hub/news/saint-anselm-ranked-top-75-national-liberal-arts-colleges"
+      ]
+    },
+    {
+      "unitid": "203517",
+      "name": "Kent State University at Kent",
+      "listedInCurated": true,
+      "category": "NU",
+      "rankMin": 236,
+      "rankMax": 236,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://www.kent.edu/today/news/kent-state-us-news-2027-best-colleges-rankings"
+      ]
+    },
+    {
+      "unitid": "216038",
+      "name": "Slippery Rock University of Pennsylvania",
+      "listedInCurated": false,
+      "category": "NU",
+      "rankMin": 236,
+      "rankMax": 236,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://news.sru.edu/news/sru-joins-u-s-news-rankings-of-best-national-universities-for-2027/"
+      ]
+    },
+    {
+      "unitid": "216931",
+      "name": "Wilkes University",
+      "listedInCurated": false,
+      "category": "NU",
+      "rankMin": 308,
+      "rankMax": 308,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://news.wilkes.edu/2026/09/24/wilkes-university-continues-to-rank-among-the-best-national-universities-for-2027/"
+      ]
+    },
+    {
+      "unitid": "227526",
+      "name": "Prairie View A & M University",
+      "listedInCurated": false,
+      "category": "NU",
+      "rankMin": 317,
+      "rankMax": 317,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://www.pvamu.edu/blog/pvamu-rises-to-no-13-among-hbcus-in-2027-u-s-news-rankings/"
+      ]
+    },
+    {
+      "unitid": "228769",
+      "name": "The University of Texas at Arlington",
+      "listedInCurated": true,
+      "category": "NU",
+      "rankMin": 236,
+      "rankMax": 236,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://www.uta.edu/news/news-releases/2026/09/22/uta-earns-national-recognition-in-us-news-rankings"
+      ]
+    },
+    {
+      "unitid": "232025",
+      "name": "Emory & Henry University",
+      "listedInCurated": false,
+      "category": "NU",
+      "rankMin": 317,
+      "rankMax": 317,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://www.emoryhenry.edu/live/news/recognition-in-2027-us-news-rankings"
+      ]
+    },
+    {
+      "unitid": "232609",
+      "name": "University of Lynchburg",
+      "listedInCurated": false,
+      "category": "NU",
+      "rankMin": 332,
+      "rankMax": 332,
+      "tied": false,
+      "limit": 200,
+      "evidenceUrls": [
+        "https://www.lynchburg.edu/university-of-lynchburg-ranked-by-u-s-news-world-report-the-princeton-review/"
+      ]
+    }
+  ],
+  "removedSchools": [
+    {
+      "unitid": "217864",
+      "name": "Citadel Military College of South Carolina",
+      "source": "EVIDENCE_ONLY",
+      "stage": "ELIGIBILITY",
+      "status": "EXCLUDED",
+      "reasonCodes": [
+        "SPECIAL_ELIGIBILITY_UNSUPPORTED",
+        "OVERRIDE"
+      ],
+      "explanation": "人工覆盖（2026-10-11，https://www.citadel.edu/about-the-citadel/）：学校官方自述为军事学院，本科学员团（Corps of Cadets）在军事化制度下生活和学习；本游戏的通用校园剧情没有表达这种入学与生活方式，按“军校排除”的范围要求剔除。它不是联邦军校（IPEDS OBEREG≠0），所以规则本身识别不出来。"
+    }
+  ],
+  "joinFailures": [],
+  "curatedListProblems": [],
+  "tierDiscrepancies": [],
+  "categoryChanges": [],
+  "rankConflicts": [],
+  "evidence": {
+    "standard": "quote-match-v2",
+    "files": [
+      {
+        "file": "data/schools/evidence/lac.json",
+        "collector": "lac",
+        "entries": 22,
+        "verified": 22,
+        "unverified": 0,
+        "rejected": 0,
+        "collectorRejected": 12
+      },
+      {
+        "file": "data/schools/evidence/nu-101-plus.json",
+        "collector": "nu-101-plus",
+        "entries": 33,
+        "verified": 33,
+        "unverified": 0,
+        "rejected": 0,
+        "collectorRejected": 31
+      },
+      {
+        "file": "data/schools/evidence/regional.json",
+        "collector": "regional",
+        "entries": 15,
+        "verified": 15,
+        "unverified": 0,
+        "rejected": 0,
+        "collectorRejected": 0
+      },
+      {
+        "file": "data/schools/evidence/seed-doc11.json",
+        "collector": "seed-doc11",
+        "entries": 12,
+        "verified": 12,
+        "unverified": 0,
+        "rejected": 0,
+        "collectorRejected": 1
+      }
+    ],
+    "totals": {
+      "verified": 82,
+      "unverified": 0,
+      "rejected": 0
+    },
+    "notVerified": [],
+    "warnings": [
+      "SHARED_RANK_WITHOUT_TIE_FLAG LAC 34: 141060(tie), 212577",
+      "SHARED_RANK_WITHOUT_TIE_FLAG LAC 49: 150400, 221351(tie)",
+      "SHARED_RANK_WITHOUT_TIE_FLAG NU 109: 110714, 117946, 126614, 129242(tie), 216339",
+      "SHARED_RANK_WITHOUT_TIE_FLAG NU 121: 132903, 146719, 202480(tie)",
+      "SHARED_RANK_WITHOUT_TIE_FLAG NU 137: 122755(tie), 195809, 232423",
+      "SHARED_RANK_WITHOUT_TIE_FLAG NU 156: 130226, 155399(tie), 185590, 186584, 212106, 234030(tie)",
+      "SHARED_RANK_WITHOUT_TIE_FLAG NU 186: 141574(tie), 229115",
+      "SHARED_RANK_WITHOUT_TIE_FLAG NU 236: 203517, 216038, 228769",
+      "SHARED_RANK_WITHOUT_TIE_FLAG NU 317: 227526, 232025"
+    ]
+  },
+  "overrides": [
+    {
+      "unitid": "217864",
+      "ipedsName": "Citadel Military College of South Carolina",
+      "fact": "specialEligibilitySupported",
+      "correctedValue": false,
+      "officialUrl": "https://www.citadel.edu/about-the-citadel/",
+      "verification": "VERIFIED",
+      "applied": true,
+      "problem": null
+    }
+  ],
+  "schoolsWithoutNameZh": [],
+  "ipeds": {
+    "directoryYear": 2024,
+    "directoryRelease": "PROVISIONAL",
+    "hdRows": 6072,
+    "icRows": 5963,
+    "parseProblems": []
+  },
+  "knownGaps": [
+    "APPROXIMATE 与 UNRANKED_SPECIAL 的档位未逐校核实；2027 版约两成学校调整了类别，个别学校的真实类别/名次可能与大致区间不同。",
+    "资格规则只用 IPEDS 字段，识别不了单一性别、特定信仰或军事化管理等入学限制；这类情况要在 eligibility-overrides.json 里附官方依据逐校处理。",
+    "中文校名是模型整理的通行译名，尚未经人工审核（见 school-aliases.json 的 reviewStatus）。",
+    "目录年份是 IPEDS 2024（2024-25 采集）；HD2025/IC2025 在导入时官网返回 404。"
+  ]
+}

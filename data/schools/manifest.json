@@ -1,0 +1,582 @@
+{
+  "schemaVersion": "1.0",
+  "catalogVersion": "us-curated-2024dir-usnews2027-v2",
+  "releaseStatus": "VALIDATED",
+  "mode": "CURATED",
+  "scopeNote": "精选目录，不是全国目录：U.S. News 综合大学 1–200 名、约前 50 名的文理学院、少量专门院校，以及有 2027 版已核实名次的地区类学校。",
+  "directoryYear": 2024,
+  "directoryRelease": "PROVISIONAL",
+  "directoryReleaseBasis": {
+    "hdDictionaryTitle": "File Documentation for the IPEDS Directory, 2024-25",
+    "hdDictionaryReleaseLabel": "(Release 1)",
+    "icDictionaryTitle": "File Documentation for the Institutional Characteristics Data File, 2024-25",
+    "icDictionaryReleaseLabel": "(Provisional release 1)",
+    "rule": "HD 字典只写了 Release 编号、没有 provisional/final 字样；按同一批次（2024-25 采集、同日发布）IC 字典的发布标注判定"
+  },
+  "rankEdition": 2027,
+  "tierMappingVersion": "usnews-2027-game-v2",
+  "eligibilityRuleVersion": "eligibility-v1",
+  "scopeRuleVersion": "curated-scope-v2",
+  "curatedListVersion": "curated-2026-10-11-v1",
+  "importerVersion": "schools-importer-2.1.0",
+  "catalogSha256": "1b19e2dd42a09a741e493f6b04d40bcb3ff7f6d0f74e1258790c46807a730c98",
+  "generatedAt": "2026-10-12T02:40:55Z",
+  "sources": [
+    {
+      "id": "ipeds-hd2024",
+      "publisher": "NCES IPEDS",
+      "url": "https://nces.ed.gov/ipeds/datacenter/data/HD2024.zip",
+      "filename": "HD2024.zip",
+      "sha256": "d98425c123d7c0e872aec6e83960dfb501884818bf17385c340790f3d1f28345",
+      "dictionarySha256": "a68c38003a9e56b1b5f444377540d5120d86cecc35855f84f1393480b862487d",
+      "sourceYear": 2024,
+      "fetchedAt": "2026-10-12T01:49:57Z"
+    },
+    {
+      "id": "ipeds-ic2024",
+      "publisher": "NCES IPEDS",
+      "url": "https://nces.ed.gov/ipeds/datacenter/data/IC2024.zip",
+      "filename": "IC2024.zip",
+      "sha256": "924f04f0afd953633a34bbc2ad1beaa65fdbf2a7ba25ebe364bac7469a976288",
+      "dictionarySha256": "d18e1c06153039963d005d86a45de23776603c6b3d31b79269a8388d511f9c54",
+      "sourceYear": 2024,
+      "fetchedAt": "2026-10-12T01:49:57Z"
+    },
+    {
+      "id": "rank-page-baf232f2f523",
+      "publisher": "blogs.sjsu.edu",
+      "url": "https://blogs.sjsu.edu/newsroom/2026/usnwr-2027-rankings/",
+      "filename": "",
+      "sha256": "163e0ded50f793440f35dcac689f196a8832d379b9b7f319aa01f94b97aed0a1",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:35.045Z"
+    },
+    {
+      "id": "rank-page-81194c9ee414",
+      "publisher": "denison.edu",
+      "url": "https://denison.edu/news-events/featured/163470",
+      "filename": "",
+      "sha256": "d9cd13b888943985da9b3a829fec517ebcf12add51fff07c67fae27e5fd15b57",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:30.268Z"
+    },
+    {
+      "id": "rank-page-372dafa118d9",
+      "publisher": "hope.edu",
+      "url": "https://hope.edu/about/rankings.html",
+      "filename": "",
+      "sha256": "d057756d4074c87de3cd8760b1d99874bcb3d02cf25e701fedb3e04aa12bb723",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:32.124Z"
+    },
+    {
+      "id": "rank-page-0c868a618017",
+      "publisher": "louisiana.edu",
+      "url": "https://louisiana.edu/news/us-news-world-report-places-university-among-best-colleges-2027",
+      "filename": "",
+      "sha256": "e668de671a5ba3c06d7a47e974ff39a8e4db592688737145abb11479c8e78cc0",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:52.223Z"
+    },
+    {
+      "id": "rank-page-5d42b4d23ed6",
+      "publisher": "magazine.holycross.edu",
+      "url": "https://magazine.holycross.edu/stories/usn26",
+      "filename": "",
+      "sha256": "4c511f4ed3a56f54ac3687fa5fdc17224a1c9573bea7acaa5914246429204115",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:29.717Z"
+    },
+    {
+      "id": "rank-page-0c22035a91e3",
+      "publisher": "miamioh.edu",
+      "url": "https://miamioh.edu/news/2026/09/miami-in-top-10-nationally-for-undergraduate-teaching-programs-in-latest-u.s-news-and-world-report-rankings.html",
+      "filename": "",
+      "sha256": "82d095ee7a1af778b6b6dc618bd039e8337e16468d76d73b8c38f8d4e1c29099",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:34.500Z"
+    },
+    {
+      "id": "rank-page-13570fe10f02",
+      "publisher": "news.lafayette.edu",
+      "url": "https://news.lafayette.edu/2026/09/22/lafayette-college-again-named-a-top-national-liberal-arts-college-by-u-s-news-world-report/",
+      "filename": "",
+      "sha256": "40b233da0a7adf9f0fdb6839b77fec6b0c6e5bf592e57e7d06b6a1c1d7b03cff",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:30.186Z"
+    },
+    {
+      "id": "rank-page-9f17ee3157db",
+      "publisher": "news.morehouse.edu",
+      "url": "https://news.morehouse.edu/morehouse-college-climbs-the-national-liberal-arts-rankings-remains-among-top-four-hbcus-in-u.s.-news-world-reports-2027-best-colleges",
+      "filename": "",
+      "sha256": "142c5a98b662881d0e6131150e8a28bdf7b4b3ca5dfbe0fd8c029d0100800c6a",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:32.209Z"
+    },
+    {
+      "id": "rank-page-c064f5b47ac9",
+      "publisher": "news.rhodes.edu",
+      "url": "https://news.rhodes.edu/stories/rhodes-college-rises-top-50-national-liberal-arts-colleges-us-news-world-report-rankings",
+      "filename": "",
+      "sha256": "6952e8d4613b7b7f27268d09007016eec4d1d62f2ea07afdbb586603ffc89ce9",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:31.679Z"
+    },
+    {
+      "id": "rank-page-0319b1d8b0fe",
+      "publisher": "news.richmond.edu",
+      "url": "https://news.richmond.edu/releases/article/-/28647/university-of-richmond-named-a-top-25-national-liberal-arts-college-for-10th-consecutive-year-by-u.s.-news--world-report.html",
+      "filename": "",
+      "sha256": "7b84d82ebaf23caa4444e7eb862c3bb7479a29e962da97cfcaa838b79423315f",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:29.631Z"
+    },
+    {
+      "id": "rank-page-0222e8f9dfb1",
+      "publisher": "news.sru.edu",
+      "url": "https://news.sru.edu/news/sru-joins-u-s-news-rankings-of-best-national-universities-for-2027/",
+      "filename": "",
+      "sha256": "815da18ffee32e5817266cf432c1cba86f6e6af1355a760d9d657f361f7ac005",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:46.539Z"
+    },
+    {
+      "id": "rank-page-8d67ea2417c4",
+      "publisher": "news.vcu.edu",
+      "url": "https://news.vcu.edu/article/vcu-ranked-among-top-100-public-universities-recognized-as-a-best-value-by-us-news-and-world-report",
+      "filename": "",
+      "sha256": "e0070aaf80c44d75395508e864e091f9f51214aa88b2e10d7fd86e4978179ab2",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:39.949Z"
+    },
+    {
+      "id": "rank-page-077971557957",
+      "publisher": "news.wilkes.edu",
+      "url": "https://news.wilkes.edu/2026/09/24/wilkes-university-continues-to-rank-among-the-best-national-universities-for-2027/",
+      "filename": "",
+      "sha256": "a1c50f84d108cc7bdbc6973030a8ef045e048a0f5d98a7021c952d378a78ff9c",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:48.851Z"
+    },
+    {
+      "id": "rank-page-55ebe7f16a59",
+      "publisher": "news.wsu.edu",
+      "url": "https://news.wsu.edu/news/2026/09/23/wsu-earns-top-100-in-u-s-news-ranking-of-best-public-schools/",
+      "filename": "",
+      "sha256": "5a8fbb3cf7046d46b9fa8b78589417372d48abce668bd49b50f8104cbd5e597a",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:46.227Z"
+    },
+    {
+      "id": "rank-page-9e9fe23fe8d1",
+      "publisher": "newsroom.lmu.edu",
+      "url": "https://newsroom.lmu.edu/campusnews/lmu-named-among-the-nations-top-colleges-by-u-s-news-world-report-earning-stellar-scores-for-business-and-engineering-programs/",
+      "filename": "",
+      "sha256": "4dc32024abf8eabe2ee72a23509ff330ee28f2c499116fbdbe8ddbf7665c7a1c",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:33.000Z"
+    },
+    {
+      "id": "rank-page-63a1df935a0f",
+      "publisher": "now.temple.edu",
+      "url": "https://now.temple.edu/news/2026-09-22/us-news-again-ranks-temple-among-top-50-public-universities-2027",
+      "filename": "",
+      "sha256": "5fc27e8aed613d1adbc94504b906452a9e7efbb97f426f8650d09037cb03aefe",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:33.404Z"
+    },
+    {
+      "id": "rank-page-fe05e361462e",
+      "publisher": "today.qu.edu",
+      "url": "https://today.qu.edu/quinnipiac-surges-ahead-in-u.s.-news--world-report-best-colleges-rankings-including-best-value-schools-and-best-national-universities-2026-09-22",
+      "filename": "",
+      "sha256": "dcbfc61336f1a1836230591338438daccedbe8f0eff96981c8bf6a1171525da8",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:39.007Z"
+    },
+    {
+      "id": "rank-page-4cf12b22db3c",
+      "publisher": "trinity.edu",
+      "url": "https://trinity.edu/news/us-news-ranks-trinity-no-38-among-national-liberal-arts-colleges",
+      "filename": "",
+      "sha256": "f7f5802472096bccb70246bb069869f25cde4de0c4e97d82486af76ee5f0c56f",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:30.999Z"
+    },
+    {
+      "id": "rank-page-dd65a03e3cf0",
+      "publisher": "udayton.edu",
+      "url": "https://udayton.edu/news/articles/2026/09/us-news.php",
+      "filename": "",
+      "sha256": "4042cf73c134c2fb4192bd1fc2589eab8c8b26d2347cec3742c8f867a2ddb2ca",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:34.414Z"
+    },
+    {
+      "id": "rank-page-1f706734602c",
+      "publisher": "www.adelphi.edu",
+      "url": "https://www.adelphi.edu/news/adelphi-university-ranked-among-top-100-private-universities-on-u-s-news-world-report-2027-list/",
+      "filename": "",
+      "sha256": "ba494eeb49994900032da8684764fdad89298b76de7138880ed5e44123ef5d10",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:45.736Z"
+    },
+    {
+      "id": "rank-page-36306a7dc703",
+      "publisher": "www.anselm.edu",
+      "url": "https://www.anselm.edu/about/anselmian-hub/news/saint-anselm-ranked-top-75-national-liberal-arts-colleges",
+      "filename": "",
+      "sha256": "54772e7e40b17c441a7f094cb10467aa931ae77ed53aab6a8f637fb4e94274f9",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:31.981Z"
+    },
+    {
+      "id": "rank-page-f46be1552b1b",
+      "publisher": "www.bucknell.edu",
+      "url": "https://www.bucknell.edu/news/bucknell-earns-highest-us-news-ranking-2011",
+      "filename": "",
+      "sha256": "4102d80cb55d2273fd1cb19b4c852d49b025fa181767235748f34e5a183e2f0f",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:29.815Z"
+    },
+    {
+      "id": "rank-page-a282e46faed2",
+      "publisher": "www.centenary.edu",
+      "url": "https://www.centenary.edu/news-media/story/centenary-named-top-national-liberal-arts-college-by-u-s-news-world-report/",
+      "filename": "",
+      "sha256": "903d6a1d9d9d553a15ceff0591bb1b521be63d1bb1a175dfece2f493afa499c5",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:32.309Z"
+    },
+    {
+      "id": "rank-page-188a3e8d6bf4",
+      "publisher": "www.cmu.edu",
+      "url": "https://www.cmu.edu/news/stories/archives/2026/september/carnegie-mellon-university-reaches-historic-high-at-no-14-in-us-news-rankings-takes-no-1-spot-for",
+      "filename": "",
+      "sha256": "ca35dbad75426275bd7e53d514c51f52aa8e0d042d4a5410d5afc5e5a45a26f5",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:54.113Z"
+    },
+    {
+      "id": "rank-page-d71cba94ca21",
+      "publisher": "www.colorado.edu",
+      "url": "https://www.colorado.edu/today/2026/09/22/cu-boulder-top-10-nationally-multiple-undergrad-programs-says-us-news-world-report",
+      "filename": "",
+      "sha256": "5d9d5850d825248f4a54b5c7e6a35a18ba6443404d9085458b46c3c37b14c8b2",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:33.619Z"
+    },
+    {
+      "id": "rank-page-6be3aa8b1ea7",
+      "publisher": "www.depauw.edu",
+      "url": "https://www.depauw.edu/stories/details/depauw-ranked-12th-most-innovative-college-in-us-news-world-report-ranking/",
+      "filename": "",
+      "sha256": "16705fedf9372b99f8bba2289a02c8c5e103f9e186c8fc13c2628e303275fcbc",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:31.580Z"
+    },
+    {
+      "id": "rank-page-1236ac7fa835",
+      "publisher": "www.duq.edu",
+      "url": "https://www.duq.edu/news-and-stories/releases/2026usnews-other-rankings.php",
+      "filename": "",
+      "sha256": "38911db294a8cec1e1e20ab1d4774284a339d8e8650791fc7705c3e52b99918b",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:35.443Z"
+    },
+    {
+      "id": "rank-page-41e57f772ed5",
+      "publisher": "www.emoryhenry.edu",
+      "url": "https://www.emoryhenry.edu/live/news/recognition-in-2027-us-news-rankings",
+      "filename": "",
+      "sha256": "70a0c5c9aafc5b104b5b8c816e89d3d874ec4201fbfb34bcee099157effc5ebd",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:49.239Z"
+    },
+    {
+      "id": "rank-page-7153ad737596",
+      "publisher": "www.fairfield.edu",
+      "url": "https://www.fairfield.edu/news/2026/september/us-news-report-highlights-rise-in-national-rankings.html",
+      "filename": "",
+      "sha256": "b0fe32c07ad6e82b1bf33585c24f6cc2b60e0ad346d44c689f7f1f25ea0b7c77",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:32.777Z"
+    },
+    {
+      "id": "rank-page-ac6a9f84a962",
+      "publisher": "www.fandm.edu",
+      "url": "https://www.fandm.edu/stories/us-news-ranking-2027.html",
+      "filename": "",
+      "sha256": "cd6d4dce9462905f7e832d425432c652a2a68f9ed54499bf71e68a0ab95b0897",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:30.718Z"
+    },
+    {
+      "id": "rank-page-869cbcab9900",
+      "publisher": "www.georgiasouthern.edu",
+      "url": "https://www.georgiasouthern.edu/2026/09/30/georgia-southern-rises-in-engineering-national-rankings-for-u-s-news-world-report-best-colleges-2027",
+      "filename": "",
+      "sha256": "7cb688bdd3ff50ea1772c904529e9d87cc5a3c34d5f7c39ea8aae209e60f8f2e",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:50.947Z"
+    },
+    {
+      "id": "rank-page-67dfc9cd5b3b",
+      "publisher": "www.hawaii.edu",
+      "url": "https://www.hawaii.edu/news/2026/09/22/us-news-best-colleges-2027/",
+      "filename": "",
+      "sha256": "66cb3a6a4f112afffcdd9e89a30ebdc05988650fff1416b4064b19bb40fff6a8",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:45.290Z"
+    },
+    {
+      "id": "rank-page-a7baa408a9e0",
+      "publisher": "www.hmc.edu",
+      "url": "https://www.hmc.edu/about/2026/09/22/harvey-mudd-ranks-no-8-in-u-s-news-best-colleges-2027/",
+      "filename": "",
+      "sha256": "e24a6cb6a95c635b12ad1e26928cfd7410fc51786388ee7c8ce2bff21f7a7fc0",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:29.359Z"
+    },
+    {
+      "id": "rank-page-23abbb23b622",
+      "publisher": "www.jmu.edu",
+      "url": "https://www.jmu.edu/news/2026/09/21-us-news-and-world-report-rankings.shtml",
+      "filename": "",
+      "sha256": "3c9eb33202bd611cfc1a441d07d5fbe50942bab950cad3cc20277f60d819aee1",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:34.622Z"
+    },
+    {
+      "id": "rank-page-42543c9c8d5e",
+      "publisher": "www.k-state.edu",
+      "url": "https://www.k-state.edu/news/articles/2026/10/kstate-rises-2027-us-news-best-colleges-rankings.html",
+      "filename": "",
+      "sha256": "5c256b61e06eab1d7925299f7f300b9d23c57196b12b73826a26cac6f8897f2a",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:36.109Z"
+    },
+    {
+      "id": "rank-page-eff5527fde35",
+      "publisher": "www.kent.edu",
+      "url": "https://www.kent.edu/today/news/kent-state-us-news-2027-best-colleges-rankings",
+      "filename": "",
+      "sha256": "34ea2a9248592682a62900532653b7d9c747eb7bc6cabd26ee70580a8a03d3f0",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:46.431Z"
+    },
+    {
+      "id": "rank-page-3ed7cd944bfa",
+      "publisher": "www.luc.edu",
+      "url": "https://www.luc.edu/about/rankingsandreputation/",
+      "filename": "",
+      "sha256": "c77d24f0533b2523b765f7f9872725b69c74e22950d30dd7246582d3396d4908",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:33.971Z"
+    },
+    {
+      "id": "rank-page-60cbdd26efc2",
+      "publisher": "www.lynchburg.edu",
+      "url": "https://www.lynchburg.edu/university-of-lynchburg-ranked-by-u-s-news-world-report-the-princeton-review/",
+      "filename": "",
+      "sha256": "337755b1db1ce735de3eb278e8a7ce839c0060c96014bfdcf93d923fbb57dd45",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:51.877Z"
+    },
+    {
+      "id": "rank-page-e8c43b611e73",
+      "publisher": "www.monmouth.edu",
+      "url": "https://www.monmouth.edu/news/monmouth-university-debuts-in-u-s-news-national-universities-rankings",
+      "filename": "",
+      "sha256": "67f0f54b8adc978dfc07665c9bf0fb4ee664cec2f528379936fcf6964026ab31",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:40.111Z"
+    },
+    {
+      "id": "rank-page-adc06c7f9dba",
+      "publisher": "www.montclair.edu",
+      "url": "https://www.montclair.edu/news-media/news-stories/2027-college-rankings-montclair-among-nations-best-us-news-world-report-best-colleges",
+      "filename": "",
+      "sha256": "9bdacb34a64ff736472bc92024a48346086c4deb6d79172cfcd78378bf51931b",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:36.252Z"
+    },
+    {
+      "id": "rank-page-cf199add7b05",
+      "publisher": "www.newhaven.edu",
+      "url": "https://www.newhaven.edu/news/releases/2026/first-ever-us-news-national-ranking.php",
+      "filename": "",
+      "sha256": "1a8ffdf65eaa93c344526d00e493ef75f6dae921b3591cf7ebe7ec6ca2d53054",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:47.813Z"
+    },
+    {
+      "id": "rank-page-f55cd4bba5f7",
+      "publisher": "U.S. News & World Report（PR Newswire 新闻稿）",
+      "url": "https://www.prnewswire.com/news-releases/mit-claims-no-1-spot-in-us-news-2027-best-colleges-rankings-302885278.html",
+      "filename": "",
+      "sha256": "65b7046346b5d7f802dc69c2ced1277b631cb8ab18b96f9ba52368ee01199b93",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:28.992Z"
+    },
+    {
+      "id": "rank-page-14678722d148",
+      "publisher": "www.pvamu.edu",
+      "url": "https://www.pvamu.edu/blog/pvamu-rises-to-no-13-among-hbcus-in-2027-u-s-news-rankings/",
+      "filename": "",
+      "sha256": "8226f4773c60a99d9393cf4d659027c7a4827c976bda78334346e2236a651b41",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:50.535Z"
+    },
+    {
+      "id": "rank-page-36b9b83a9b2f",
+      "publisher": "www.shu.edu",
+      "url": "https://www.shu.edu/news/seton-hall-rises-again-in-us-news-2027-rankings.html",
+      "filename": "",
+      "sha256": "512cacc29a5d84746219a7a20e9cab458d77ed949c67f7c3d1f3fdba70217ceb",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:39.640Z"
+    },
+    {
+      "id": "rank-page-a146349e99db",
+      "publisher": "www.spelman.edu",
+      "url": "https://www.spelman.edu/news/2026/09/20-years-at-the-top-spelman-college-continues-historic-reign-as-nations-no-1-hbcu.html",
+      "filename": "",
+      "sha256": "c8017ca73e1d05f14f6b7f990fb0efebe1200ccf8c1ae4932f6bba83f4368e0c",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:30.904Z"
+    },
+    {
+      "id": "rank-page-38ec0f3e212b",
+      "publisher": "www.stjohns.edu",
+      "url": "https://www.stjohns.edu/news-media/news/2026-09-22/st-johns-achieves-significant-rise-2027-us-news-world-report-rankings",
+      "filename": "",
+      "sha256": "a5f4db6388c70a3b1180589fbaa27252f93dcd6c8bc7e84dbeb25e0a18f00e97",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:35.183Z"
+    },
+    {
+      "id": "rank-page-31a301954067",
+      "publisher": "www.ttu.edu",
+      "url": "https://www.ttu.edu/now/posts/2026/09/texas-tech-breaks-into-top-100-in-us-news-best-colleges-rankings.php",
+      "filename": "",
+      "sha256": "c9ff77b6041907e30f74072d17a129ac18cf39412a9230a4ef5b90527aae1958",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:40.551Z"
+    },
+    {
+      "id": "rank-page-7c8e861fd2ce",
+      "publisher": "www.ucf.edu",
+      "url": "https://www.ucf.edu/academics/us-news-rankings/",
+      "filename": "",
+      "sha256": "5ea7359dde35ca635096f8326fbea0177c762ae15e9835cd96ed069ba1362d66",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:34.082Z"
+    },
+    {
+      "id": "rank-page-745857eaff89",
+      "publisher": "www.universityofcalifornia.edu",
+      "url": "https://www.universityofcalifornia.edu/news/university-of-california-best-public-university-2027-us-news-best-colleges-rankings",
+      "filename": "",
+      "sha256": "1e379d710a5c2deae2593a93e48772d4fb139a28b4aa416d6876650a78b32556",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:33.483Z"
+    },
+    {
+      "id": "rank-page-ce5060ad7d26",
+      "publisher": "www.uta.edu",
+      "url": "https://www.uta.edu/news/news-releases/2026/09/22/uta-earns-national-recognition-in-us-news-rankings",
+      "filename": "",
+      "sha256": "11df3f947b879a1de36cbad94bd70e1cad439629662653e6d7515bcb87f3296e",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:47.265Z"
+    },
+    {
+      "id": "rank-page-554a41c13c39",
+      "publisher": "www.wabash.edu",
+      "url": "https://www.wabash.edu/news/story/13621",
+      "filename": "",
+      "sha256": "15c5a0903cd6cc041266755737e44606f533219abb1b4be9f34eea188c309929",
+      "dictionarySha256": null,
+      "sourceYear": 2027,
+      "fetchedAt": "2026-10-12T02:28:31.208Z"
+    }
+  ],
+  "counts": {
+    "sourceRows": 6072,
+    "candidates": 306,
+    "eligible": 291,
+    "excluded": 1,
+    "reviewRequired": 0,
+    "outOfScopeRank": 14,
+    "verified": 67,
+    "approximate": 207,
+    "special": 17,
+    "rankedVerified": 67,
+    "byTier": {
+      "S": 30,
+      "A": 44,
+      "B": 94,
+      "C": 54,
+      "D": 52,
+      "U": 17
+    },
+    "byGroup": {
+      "NU": 208,
+      "LAC": 52,
+      "REGIONAL": 14,
+      "SPECIAL": 17
+    }
+  }
+}
