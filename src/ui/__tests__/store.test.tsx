@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// 状态仓库：防重复结算、存档损坏、写入失败。
+// 状态仓库：防重复结算、每步存档、存档损坏、写入失败。
 
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -7,8 +7,24 @@ import { GameProvider, useGame } from "../../app/store";
 import type { GameStore } from "../../app/store";
 import { SAVE_KEY, createMemoryStorage } from "../../app/storage";
 import type { SaveStorage } from "../../app/storage";
-import { loadSave } from "../../engine";
-import { catalog, click, flush, mount, phase, revision, seededStorage, stats } from "./harness";
+import { loadSave, setupView } from "../../engine";
+import type { Action } from "../../engine";
+import {
+  advanceUntil,
+  app,
+  catalog,
+  click,
+  flush,
+  mount,
+  newRun,
+  newTrail,
+  phase,
+  revision,
+  savedState,
+  seededStorage,
+  stats,
+  steadyPolicy,
+} from "./harness";
 
 afterEach(() => cleanup());
 
@@ -29,15 +45,27 @@ async function mountProbe(storage: SaveStorage) {
   return sink;
 }
 
+function confirmSetup(seed: number): Action {
+  const view = setupView(newRun(seed));
+  return { type: "CONFIRM_SETUP", talents: view.draw.slice(0, view.pickCount).map((talent) => talent.id) };
+}
+
+/** 在开局页点前三张天赋并开始。 */
+async function startByClicks() {
+  const cards = Array.from(app().querySelectorAll<HTMLButtonElement>("button[data-testid^='talent-']")).slice(0, 3);
+  for (const card of cards) await click(card.getAttribute("data-testid") ?? "");
+  await click("start");
+}
+
 describe("防重复结算", () => {
   it("同一次渲染里连发两次相同操作，只结算一次，第二次被引擎按过期 revision 拒绝", async () => {
     const sink = await mountProbe(seededStorage(42));
     const store = sink.store as GameStore;
     const before = store.state?.revision ?? -1;
-    let first = { ok: false };
+    const action = confirmSetup(42);
+    let first: ReturnType<GameStore["dispatch"]> = { ok: false, error: null };
     let second: ReturnType<GameStore["dispatch"]> = { ok: true, error: null };
     await act(async () => {
-      const action = { type: "CONFIRM_SETUP", economy: "MID", aspiration: "DISCOVERY", name: "" } as const;
       first = store.dispatch(action);
       second = store.dispatch(action);
     });
@@ -54,7 +82,7 @@ describe("防重复结算", () => {
     const savedBefore = storage.dump()[SAVE_KEY];
     let result: ReturnType<GameStore["dispatch"]> = { ok: true, error: null };
     await act(async () => {
-      result = (sink.store as GameStore).dispatch({ type: "NEXT_TERM" });
+      result = (sink.store as GameStore).dispatch({ type: "REVEAL_GRADUATION" });
     });
     expect(result.ok).toBe(false);
     expect(sink.store?.state?.phase).toBe("SETUP");
@@ -63,36 +91,36 @@ describe("防重复结算", () => {
     expect(storage.dump()[SAVE_KEY]).toBe(savedBefore);
   });
 
-  it("界面上对同一个投入按钮连点两次，只结算一次", async () => {
-    await mount(seededStorage(42));
-    await click("family-MID");
-    await click("aspiration-DISCOVERY");
-    await click("start");
-    await click("choice-A");
-    await click("choice-A");
-    await click("offer-0");
-    expect(phase()).toBe("FOCUS");
-    const before = { revision: revision(), stats: stats() };
-    const button = screen.getByTestId("focus-REST");
+  it("界面上对同一个安排按钮连点两次，只结算一次", async () => {
+    const storage = seededStorage(42);
+    await mount(storage);
+    await advanceUntil(storage, steadyPolicy, newTrail(), () => phase() === "FOCUS");
+    const before = { revision: revision(), history: historyLength(savedState(storage)) };
+    const button = app().querySelector<HTMLButtonElement>("button[data-testid^='plan-']:not(:disabled)");
+    expect(button).toBeTruthy();
     await act(async () => {
-      button.click();
-      button.click();
+      button?.click();
+      button?.click();
     });
     await flush();
     expect(phase()).toBe("CORE_EVENT");
     expect(revision()).toBe(before.revision + 1);
-    // 休息整理只加一次身心（+15，受上限 100 截断）。
-    expect(stats().wellbeing).toBe(Math.min(100, before.stats.wellbeing + 15));
+    const after = savedState(storage);
+    // 只多出一条“安排”的结算记录。
+    expect(historyLength(after)).toBe(before.history + 1);
+    expect(after.phase !== "SETUP" && after.history.filter((entry) => entry.kind === "FOCUS").length).toBe(1);
   });
 });
+
+function historyLength(state: ReturnType<typeof savedState>): number {
+  return state.phase === "SETUP" ? 0 : state.history.length;
+}
 
 describe("每次有效操作后保存", () => {
   it("存档里的状态始终等于界面上的状态，且能被引擎重放校验通过", async () => {
     const storage = seededStorage(42);
     await mount(storage);
-    await click("family-HIGH");
-    await click("aspiration-INDEPENDENCE");
-    await click("start");
+    await startByClicks();
     await click("choice-B");
     const loaded = loadSave(storage.dump()[SAVE_KEY], { catalog });
     expect(loaded.ok).toBe(true);
@@ -100,6 +128,7 @@ describe("每次有效操作后保存", () => {
       expect(loaded.state.revision).toBe(revision());
       expect(loaded.state.phase).toBe(phase());
       expect(loaded.log.length).toBe(2);
+      expect(loaded.state.phase !== "SETUP" && loaded.state.stats).toEqual(stats());
     }
     expect(screen.getByTestId("save-status").textContent).toBe("已保存");
   });
@@ -121,9 +150,7 @@ describe("存档问题", () => {
   it("被改过数值的存档（结构合法但对不上历史）同样被拒绝", async () => {
     const storage = seededStorage(42);
     const first = await mount(storage);
-    await click("family-MID");
-    await click("aspiration-DISCOVERY");
-    await click("start");
+    await startByClicks();
     first.unmount();
     const envelope = JSON.parse(storage.dump()[SAVE_KEY]);
     envelope.state.stats.money = 99;
@@ -144,10 +171,10 @@ describe("存档问题", () => {
     expect(phase()).toBe("SETUP");
     expect(screen.getByTestId("save-status").textContent).toBe("当前未保存");
     expect(screen.getByTestId("unsaved-hint")).toBeTruthy();
-    await click("family-MID");
-    await click("aspiration-DISCOVERY");
-    await click("start");
+    await startByClicks();
     expect(phase()).toBe("HIGH_SCHOOL_EVENT");
+    await click("choice-A");
+    expect(screen.getByTestId("screen-event").getAttribute("data-event-id")).toBe("HS_02");
     expect(screen.getByTestId("save-status").textContent).toBe("当前未保存");
   });
 
@@ -165,9 +192,7 @@ describe("存档问题", () => {
     await mount(storage);
     expect(screen.getByTestId("save-status").textContent).toBe("当前未保存");
     failing = false;
-    await click("family-MID");
-    await click("aspiration-DISCOVERY");
-    await click("start");
+    await startByClicks();
     expect(screen.getByTestId("save-status").textContent).toBe("已保存");
     expect(screen.queryByTestId("unsaved-hint")).toBeNull();
   });

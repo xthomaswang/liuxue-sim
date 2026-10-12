@@ -3,8 +3,8 @@
 import { EVENT_BY_ID, TEXTS } from "../content";
 import { baseReadinessFor, finalReadiness, tierOdds, tierWeights } from "./admission";
 import {
-  FOCUS_ORDER, MASTERS_ACADEMICS_MIN, MASTERS_PLANS, MASTERS_PROGRAM_ORDER, OPPORTUNITY_ORDER, PROBABILITY_MIN,
-  READINESS_BONUS, STRATEGY_BY_FLAG,
+  MASTERS_ACADEMICS_MIN, MASTERS_PLANS, MASTERS_PROGRAM_ORDER, OPPORTUNITY_ORDER, PROBABILITY_MIN, READINESS_BONUS,
+  STRATEGY_BY_FLAG,
 } from "./constants";
 import {
   eligibility, formulaTerms, gradVariables, mastersBlockers, mastersBudget, offeredList, probabilityCap,
@@ -15,8 +15,10 @@ import {
   DEGREE_NAMES, FOCUS_OUTCOME_SENTENCES, OPPORTUNITY_NAMES, ROUTE_NAMES, eventKindLabel, renderTemplate, termTitle,
   tidyCjkSpacing,
 } from "./labels";
-import { expectedEventId, termCountOf } from "./reducer";
-import { applyDelta, clamp, focusVector, upkeepCost } from "./rules";
+import { findHappening, findPlan } from "./pools";
+import { expectedEventId, planVectorFor, slateOf, talentTotalsOf, termCountOf } from "./reducer";
+import { applyDelta, clamp, efficiencyFactor } from "./rules";
+import { effectiveStipend, effectiveUpkeep } from "./talents";
 import type {
   ActiveRun, AdmissionPreview, AdmissionResult, ChoiceView, Degree, Delta, EventView, FocusView, Graduation,
   GraduationView, HistoryEntry, LastOutcome, LedgerLine, MastersOption, Opportunity, OpportunityView, RouteOption,
@@ -53,7 +55,7 @@ export function stageInfo(state: RunState): StageInfo {
   };
 }
 
-/** 高中第一张事件前的开场白、本科第 1 学期选择投入前的入学旁白；其它时候为 null。 */
+/** 高中第一张事件前的开场白、本科第 1 学期选择安排前的入学旁白；其它时候为 null。 */
 export function sceneIntro(state: RunState): SceneIntro | null {
   const run = active(state);
   if (!run) return null;
@@ -62,8 +64,8 @@ export function sceneIntro(state: RunState): SceneIntro | null {
   }
   if (run.phase === "FOCUS" && run.stage === "UG" && run.termIndex === 1 && run.school) {
     return {
-      short: tidyCjkSpacing(renderTemplate(TEXTS.narration.enrollmentShort, run.school, run.profile.name)),
-      long: tidyCjkSpacing(renderTemplate(TEXTS.narration.enrollmentLong, run.school, run.profile.name)),
+      short: tidyCjkSpacing(renderTemplate(TEXTS.narration.enrollmentShort, run.school, "")),
+      long: tidyCjkSpacing(renderTemplate(TEXTS.narration.enrollmentLong, run.school, "")),
     };
   }
   return null;
@@ -81,7 +83,7 @@ export function currentEvent(state: RunState): EventView | null {
   if (!event) throw new Error(`EVENT_DATA_MISSING: ${eventId}`);
   const matchedCallbacks = event.callbacks.filter((callback) => run.flags.includes(callback.ifFlag));
   const inTerm = run.stage !== "HS";
-  const cost = upkeepCost(run.profile.trait);
+  const cost = inTerm ? effectiveUpkeep(talentTotalsOf(run)) : 0;
 
   const choices: ChoiceView[] = event.choices.map((choice) => {
     const spend = choice.effects.money < 0 ? -choice.effects.money : 0;
@@ -94,7 +96,7 @@ export function currentEvent(state: RunState): EventView | null {
         const bonus = READINESS_BONUS[flag] ?? null;
         admission = {
           readinessBonus: bonus,
-          readinessAfter: bonus === null ? null : finalReadiness(run.admission.baseReadiness, bonus),
+          readinessAfter: bonus === null ? null : finalReadiness(run.admission.baseReadiness, bonus, run.admission.talentBonus),
           strategy: null,
           odds: null,
         };
@@ -135,33 +137,47 @@ export function currentEvent(state: RunState): EventView | null {
   };
 }
 
-// ---------- 投入 ----------
+// ---------- 学期安排 ----------
 
-function termEntries(run: ActiveRun): HistoryEntry[] {
-  return run.history.filter((entry) => entry.stage === run.stage && entry.termIndex === run.termIndex);
+function entriesOf(run: ActiveRun, termIndex: number): HistoryEntry[] {
+  return run.history.filter((entry) => entry.stage === run.stage && entry.termIndex === termIndex);
 }
 
-/** FOCUS 阶段的五个投入选项与本学期账目；其它阶段为 null。 */
+/** FOCUS 阶段：本学期的资助、突发小事与可选的安排；其它阶段为 null。 */
 export function focusView(state: RunState): FocusView | null {
   const run = active(state);
   if (!run || run.phase !== "FOCUS") return null;
-  const stipendEntry = termEntries(run).find((entry) => entry.kind === "STIPEND");
+  const entries = entriesOf(run, run.termIndex);
+  const stipendEntry = entries.find((entry) => entry.kind === "STIPEND");
   if (!stipendEntry) throw new Error("STIPEND_ENTRY_MISSING");
-  const sample = focusVector("STUDY", run.profile.trait, run.stats.wellbeing);
+  const happeningEntry = entries.find((entry) => entry.kind === "HAPPENING");
+  const happening = happeningEntry?.happeningId ? findHappening(happeningEntry.happeningId) : undefined;
+  if (happeningEntry && !happening) throw new Error(`HAPPENING_DATA_MISSING: ${String(happeningEntry.happeningId)}`);
+
+  const totals = talentTotalsOf(run);
+  const cost = effectiveUpkeep(totals);
+  const factor = efficiencyFactor(run.stats.wellbeing, totals.efficiencyFloor);
   return {
     stipend: deltaOf(stipendEntry),
-    upkeep: upkeepCost(run.profile.trait),
-    efficiency: { factor: sample.factor, note: TEXTS.efficiency[String(sample.factor) as "10" | "8" | "6"] },
-    options: FOCUS_ORDER.map((focus) => {
-      const vector = focusVector(focus, run.profile.trait, run.stats.wellbeing);
+    upkeep: cost,
+    efficiency: { factor, note: TEXTS.efficiency[String(factor) as "10" | "8" | "6"] },
+    happening: happeningEntry && happening ? { id: happening.id, text: happening.text, delta: deltaOf(happeningEntry) } : null,
+    options: slateOf(run).plans.map((plan) => {
+      const vector = planVectorFor(run, plan, totals);
+      const spend = vector.requested.money < 0 ? -vector.requested.money : 0;
+      const available = spend === 0 || run.stats.money >= spend;
+      const { after, applied } = applyDelta(run.stats, vector.requested);
       return {
-        focus,
-        name: TEXTS.focus[focus].name,
-        base: vector.base,
+        plan,
+        focus: plan.focus,
+        name: plan.name,
         requested: vector.requested,
-        applied: applyDelta(run.stats, vector.requested).applied,
-        traitApplied: vector.traitApplied,
+        applied,
+        available,
+        shortBy: available ? null : { need: spend, have: run.stats.money },
+        talentApplied: vector.talentApplied,
         efficiencyApplied: vector.efficiencyApplied,
+        projectedShortfall: Math.max(0, cost - after.money),
       };
     }),
   };
@@ -169,7 +185,7 @@ export function focusView(state: RunState): FocusView | null {
 
 // ---------- 上一步结果与学期账目 ----------
 
-/** 上一步操作（revision-1）留下的结果：投入、事件或硕士入学费；没有则 null。 */
+/** 上一步操作（revision-1）留下的结果：安排、事件或硕士入学费；没有则 null。 */
 export function lastOutcome(state: RunState): LastOutcome | null {
   const run = active(state);
   if (!run) return null;
@@ -193,9 +209,10 @@ export function lastOutcome(state: RunState): LastOutcome | null {
   }
   if (entry.kind === "FOCUS") {
     if (!entry.focus) throw new Error("HISTORY_FOCUS_UNKNOWN");
+    const plan = entry.planId ? findPlan(entry.planId) : undefined;
     return {
       kind: "FOCUS",
-      heading: TEXTS.focus[entry.focus].name,
+      heading: plan?.name ?? TEXTS.focus[entry.focus].name,
       choiceLabel: null,
       shortText: FOCUS_OUTCOME_SENTENCES[entry.focus],
       longText: null,
@@ -217,8 +234,12 @@ function ledgerLine(entry: HistoryEntry): LedgerLine {
   switch (entry.kind) {
     case "STIPEND":
       return { kind: entry.kind, label: "家庭资助", detail: null, delta };
-    case "FOCUS":
-      return { kind: entry.kind, label: "投入", detail: entry.focus ? TEXTS.focus[entry.focus].name : null, delta };
+    case "HAPPENING":
+      return { kind: entry.kind, label: "突发小事", detail: entry.happeningId ? (findHappening(entry.happeningId)?.text ?? null) : null, delta };
+    case "FOCUS": {
+      const plan = entry.planId ? findPlan(entry.planId) : undefined;
+      return { kind: entry.kind, label: "安排", detail: plan?.name ?? (entry.focus ? TEXTS.focus[entry.focus].name : null), delta };
+    }
     case "EVENT": {
       const event = entry.eventId ? EVENT_BY_ID[entry.eventId] : undefined;
       const choice = event?.choices.find((item) => item.id === entry.choiceId);
@@ -240,25 +261,32 @@ function ledgerLine(entry: HistoryEntry): LedgerLine {
   }
 }
 
-/** TERM_REVIEW 阶段刚结束学期的账目；其它阶段为 null。 */
+/**
+ * 最近结束的那个学期的账目（第二版没有“学期小结”这一屏，账目显示在下一屏上方）：
+ * FOCUS 阶段且本学段已经过了第 1 学期 → 上一学期；GRAD_PREVIEW / GRAD_RESULTS → 最后一学期；其它情况 null。
+ */
 export function termLedger(state: RunState): TermLedger | null {
   const run = active(state);
-  if (!run || run.phase !== "TERM_REVIEW" || (run.stage !== "UG" && run.stage !== "MS")) return null;
-  const entries = termEntries(run);
+  if (!run || (run.stage !== "UG" && run.stage !== "MS")) return null;
+  const termCount = termCountOf(run);
+  let termIndex: number;
+  if (run.phase === "FOCUS" && run.termIndex > 1) termIndex = run.termIndex - 1;
+  else if (run.phase === "GRAD_PREVIEW" || run.phase === "GRAD_RESULTS") termIndex = termCount;
+  else return null;
+  const entries = entriesOf(run, termIndex);
   if (entries.length === 0) throw new Error("TERM_ENTRIES_MISSING");
   const upkeepEntry = entries.find((entry) => entry.kind === "UPKEEP");
-  const termCount = termCountOf(run);
   return {
     stage: run.stage,
-    termIndex: run.termIndex,
+    termIndex,
     termCount,
-    title: termTitle(run.stage, run.termIndex),
+    title: termTitle(run.stage, termIndex),
     startStats: { ...entries[0].beforeStats },
-    endStats: { ...run.stats },
+    endStats: { ...entries[entries.length - 1].afterStats },
     lines: entries.map(ledgerLine),
     shortfall: upkeepEntry?.upkeep?.shortfall ?? 0,
     stress: upkeepEntry?.upkeep?.stress ?? 0,
-    isFinalTerm: run.termIndex >= termCount,
+    isFinalTerm: termIndex >= termCount,
   };
 }
 
@@ -270,17 +298,19 @@ function hs01Bonus(flags: readonly string[]): number | null {
 }
 
 function readinessSoFar(run: ActiveRun): number {
-  return finalReadiness(run.admission.baseReadiness, hs01Bonus(run.flags) ?? 0);
+  return finalReadiness(run.admission.baseReadiness, hs01Bonus(run.flags) ?? 0, run.admission.talentBonus);
 }
 
-/** 高中阶段可见的申请准备度与两种策略的档次概率预览。SETUP 也可调用。 */
+/** 高中阶段可见的申请准备度与两种策略的档次概率预览。SETUP 也可调用（此时天赋加成记为 0）。 */
 export function admissionPreview(state: RunState): AdmissionPreview {
   const run = active(state);
   const baseReadiness = run ? run.admission.baseReadiness : baseReadinessFor(state.seed);
+  const talentBonus = run ? run.admission.talentBonus : 0;
   const readinessBonus = run ? hs01Bonus(run.flags) : null;
-  const soFar = finalReadiness(baseReadiness, readinessBonus ?? 0);
+  const soFar = finalReadiness(baseReadiness, readinessBonus ?? 0, talentBonus);
   return {
     baseReadiness,
+    talentBonus,
     readinessBonus,
     readinessSoFar: soFar,
     odds: {
@@ -300,6 +330,7 @@ export function admissionResult(state: RunState): AdmissionResult | null {
   }
   return {
     baseReadiness: a.baseReadiness,
+    talentBonus: a.talentBonus,
     readinessBonus: a.readinessBonus,
     readiness: a.readiness,
     strategy: a.strategy,
@@ -338,12 +369,14 @@ function requirementsFor(input: GradInput, opportunity: Opportunity): Array<{ te
   ];
 }
 
-export function opportunityViews(graduation: Graduation): OpportunityView[] {
+/** chance 是本局天赋给各路机会的概率加成（百分点），在公式分解里单列一项。 */
+export function opportunityViews(graduation: Graduation, chance: Partial<Record<Opportunity, number>> = {}): OpportunityView[] {
   const input: GradInput = {
     degree: graduation.degree,
     stats: graduation.frozenStats,
     focusCounts: graduation.frozenFocusCounts,
     flags: graduation.frozenFlags,
+    chance,
   };
   const eligible = eligibility(input);
   return OPPORTUNITY_ORDER.map((id) => {
@@ -377,7 +410,7 @@ export function graduationView(state: RunState, degree?: Degree): GraduationView
     revealed: graduation.outcomes !== null,
     frozenStats: { ...graduation.frozenStats },
     frozenFocusCounts: { ...graduation.frozenFocusCounts },
-    opportunities: opportunityViews(graduation),
+    opportunities: opportunityViews(graduation, talentTotalsOf(run).chance),
     resolution: graduation.resolution,
   };
 }
@@ -419,15 +452,18 @@ export function routeOptions(state: RunState): RouteOption[] {
   return options;
 }
 
-/** 本科 GRAD_RESULTS 阶段的两个硕士方案（含不可选原因）；其它情况为空数组。 */
+/** 本科 GRAD_RESULTS 阶段的两个硕士方案（含不可选原因）；其它情况为空数组。预算用天赋生效后的资助与开销。 */
 export function mastersOptions(state: RunState): MastersOption[] {
   const run = active(state);
   const graduation = run ? resultsCheckpoint(run) : null;
   if (!run || !graduation || run.stage !== "UG" || run.mastersYears !== null) return [];
   const money = run.stats.money;
+  const totals = talentTotalsOf(run);
+  const stipend = effectiveStipend(run.profile.economy, totals);
+  const cost = effectiveUpkeep(totals);
   return MASTERS_PROGRAM_ORDER.map((program) => {
-    const budget = mastersBudget(program, money, run.profile.economy, run.profile.trait);
-    const codes = mastersBlockers(program, graduation, money, run.profile.economy, run.profile.trait);
+    const budget = mastersBudget(program, money, stipend, cost);
+    const codes = mastersBlockers(program, graduation, money, stipend, cost);
     const blockers: MastersOption["blockers"] = codes.map((code) => {
       if (code === "HAS_JOB_OFFER") return { code, text: "已取得工作机会，首版不开放硕士（即使不打算接受这份工作）。" };
       if (code === "ACADEMICS_BELOW_55") {

@@ -1,4 +1,5 @@
-// 结局与人生回顾（docs/07）。通过状态机走到毕业结果，再把毕业快照改成需要覆盖的边界值。
+// 结局与人生回顾（docs/07；第二版的调整见 docs/16 §8）。通过状态机走到毕业结果，再把毕业快照改成需要覆盖的边界值。
+// 基线用经典模式走出来（主线槽固定原事件）；第二版主线槽的回顾另见 v2 的测试。
 
 import { describe, expect, it } from "vitest";
 import { ALL_EVENTS, EVENT_BY_ID, TEXTS } from "../../content";
@@ -7,14 +8,13 @@ import type {
   ActiveRun, Aspiration, EndingView, Expectation, FinalRoute, MastersProgram, Outcome, RunState, Stats,
 } from "../index";
 import { truncateCodePoints } from "../labels";
-import { act, asActive, clone, play, start } from "./helpers";
-import type { Policy } from "./helpers";
+import { act, asActive, at, classicPolicy, clone, play, start, startClassic } from "./helpers";
 
-const policy: Policy = { economy: "MID", focus: () => "STUDY", event: () => "B" };
+const policy = classicPolicy({ talent: "T_FOCUSED", focus: "STUDY", event: "B" });
 const stats = (money: number, academics: number, career: number, wellbeing: number): Stats => ({ money, academics, career, wellbeing });
 type Outcomes = Record<"PHD" | "LOCAL_JOB" | "HOME_JOB", Outcome>;
 
-const undergradBase = asActive(play(start(21), policy, (s) => s.phase === "GRAD_RESULTS").state);
+const undergradBase = asActive(play(startClassic(21, "MID"), policy, at("GRAD_RESULTS")).state);
 
 function mastersBase(program: MastersProgram): ActiveRun {
   const ug = clone(undergradBase);
@@ -23,7 +23,7 @@ function mastersBase(program: MastersProgram): ActiveRun {
   if (!grad) throw new Error("缺少本科快照");
   grad.frozenStats = { ...ug.stats };
   grad.outcomes = { PHD: "NOT_OFFERED", LOCAL_JOB: "INELIGIBLE", HOME_JOB: "NOT_OFFERED" };
-  return asActive(play(act(ug, { type: "ENTER_MASTERS", program }), { ...policy, event: () => "A" }, (s) => s.phase === "GRAD_RESULTS").state);
+  return asActive(play(act(ug, { type: "ENTER_MASTERS", program }), { ...policy, event: () => "A" }, at("GRAD_RESULTS")).state);
 }
 const mastersOneYear = mastersBase("MS_1Y");
 const mastersTwoYears = mastersBase("MS_2Y");
@@ -133,6 +133,9 @@ describe("六个去向变体 × 教育路径（07 §2–§4、§9）", () => {
     expect(v.opportunities).toEqual(graduationView(run, v.degree)?.opportunities);
     expect(v.card).toEqual(run.ending?.card);
     expect(v.seed).toBe(run.seed);
+    // 本局的天赋（池内顺序）
+    expect(v.talents.map((talent) => talent.id)).toEqual(run.profile.talents);
+    expect(v.talents.every((talent) => talent.name.length > 0 && talent.text.length > 0)).toBe(true);
     // 博士结局不替玩家写完学位；工作结局不写身份
     expect(`${v.short.text}${v.full.body}${v.full.epilogue}`).not.toMatch(/博士毕业了|已获得博士学位|绿卡|成为教授/);
   });

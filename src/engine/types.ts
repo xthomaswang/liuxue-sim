@@ -16,7 +16,11 @@ export type FinalRoute = Opportunity | "TRANSITION";
 export type Outcome = "INELIGIBLE" | "OFFERED" | "NOT_OFFERED";
 export type Economy = "LOW" | "MID" | "HIGH";
 export type Expectation = "ACADEMIC" | "STABILITY" | "AUTONOMY";
+/** 第一版的六种特质。第二版里它们是六张固定天赋（T_FOCUSED 等），这个类型只用于文案表的键。 */
 export type Trait = "FOCUSED" | "PRACTICAL" | "OUTGOING" | "FRUGAL" | "RESILIENT" | "REFLECTIVE";
+export type TalentRarity = "N" | "R" | "SR" | "SSR";
+/** standard：正式玩法（docs/16）。classic：只给测试用，见 docs/16 第 7 节。 */
+export type RunMode = "standard" | "classic";
 export type Aspiration = "DISCOVERY" | "INDEPENDENCE" | "BELONGING";
 export type Strategy = "REACH" | "STEADY";
 export type OfferTier = "S" | "A" | "B" | "C" | "D" | "U";
@@ -57,9 +61,47 @@ export type StoryEvent = EventBase &
   (
     | { kind: "highschool"; node: 1 | 2 }
     | { kind: "core"; stage: number }
+    | { kind: "random"; scope: "UG" }
     | { kind: "arc"; arc: ArcId; beat: 1 | 2 | 3 }
     | { kind: "masters"; node: 1 | 2 | 3 | 4 }
   );
+
+// ---------- 第二版新增内容（docs/16–21） ----------
+
+export interface TalentEffects {
+  initial?: Partial<Stats>;
+  stipend?: number;
+  upkeep?: number;
+  focus?: Partial<Record<Focus, Partial<Stats>>>;
+  focusWellbeingRelief?: number;
+  readiness?: number;
+  chance?: Partial<Record<Opportunity, number>>;
+  efficiencyFloor?: 8 | 10;
+  arcWeight?: Partial<Record<ArcId, number>>;
+  growth?: Partial<Stats>;
+}
+export interface Talent {
+  id: string;
+  name: string;
+  rarity: TalentRarity;
+  /** 一句话说明效果，带数字。 */
+  text: string;
+  effects: TalentEffects;
+}
+export interface PlanCard {
+  /** 五张基础安排的 id 就是类别名。 */
+  id: string;
+  focus: Focus;
+  name: string;
+  base?: boolean;
+  delta: Stats;
+}
+export interface Happening {
+  id: string;
+  scope: "ANY" | "UG" | "MS";
+  text: string;
+  effects: Stats;
+}
 
 // ---------- 学校目录（运行时精简快照，由 scripts/schools 生成） ----------
 
@@ -113,22 +155,23 @@ export type Phase =
   | "FOCUS"
   | "CORE_EVENT"
   | "ARC_EVENT"
-  | "TERM_REVIEW"
   | "GRAD_PREVIEW"
   | "GRAD_RESULTS"
   | "ENDING";
 
 export interface Profile {
-  /** 可为空字符串；叙事回退“你”。不进入任何随机 key。 */
-  name: string;
   economy: Economy;
   expectation: Expectation;
-  trait: Trait;
   aspiration: Aspiration;
+  /** 选中的天赋 id，按天赋池顺序。standard 恰好 3 张；classic 恰好 1 张特质天赋。 */
+  talents: string[];
 }
 
 export interface AdmissionSnapshot {
   baseReadiness: number;
+  /** 天赋带来的准备度加成（开局即确定）。 */
+  talentBonus: number;
+  /** HS_01 选择带来的加成。 */
   readinessBonus: number | null;
   readiness: number | null;
   strategy: Strategy | null;
@@ -152,7 +195,7 @@ export interface Graduation {
   resolution: FinalRoute | "MASTERS" | null;
 }
 
-export type HistoryKind = "EVENT" | "STIPEND" | "FOCUS" | "UPKEEP" | "GROWTH" | "MASTERS_FEE";
+export type HistoryKind = "EVENT" | "STIPEND" | "HAPPENING" | "FOCUS" | "UPKEEP" | "GROWTH" | "MASTERS_FEE";
 
 /** 每一次对四属性的原子应用记一条。requested 是名义变化，applied 是截断后真正发生的变化。 */
 export interface HistoryEntry {
@@ -169,7 +212,11 @@ export interface HistoryEntry {
   eventId?: string;
   choiceId?: ChoiceId;
   focus?: Focus;
+  /** FOCUS：选中的学期安排。 */
+  planId?: string;
   efficiency?: EfficiencyFactor;
+  /** HAPPENING：突发小事的 id。 */
+  happeningId?: string;
   /** UPKEEP：必要开销、实付、短缺与短缺带来的身心压力。 */
   upkeep?: { cost: number; paid: number; shortfall: number; stress: number };
   program?: MastersProgram;
@@ -238,11 +285,14 @@ interface RunCommon {
   seed: number;
   /** 每接受一次操作加 1。操作必须带上当前 revision，否则被拒绝。 */
   revision: number;
+  mode: RunMode;
 }
 
-/** 开局：只有 seed 与版本。家庭候选和基础准备度都由 seed 推出，不存进状态。 */
+/** 开局：只有 seed 与版本。出身、十张天赋和基础准备度都由 seed 推出，不存进状态。 */
 export interface SetupRun extends RunCommon {
   phase: "SETUP";
+  /** 仅 classic 模式：由调用方指定的经济档（不走出身抽取）。 */
+  classicEconomy?: Economy;
 }
 
 export interface ActiveRun extends RunCommon {
@@ -272,11 +322,10 @@ export type RunState = SetupRun | ActiveRun;
 // ---------- 操作 ----------
 
 export type Action =
-  | { type: "CONFIRM_SETUP"; economy: Economy; aspiration: Aspiration; name: string }
+  | { type: "CONFIRM_SETUP"; talents: string[] }
   | { type: "CHOOSE_EVENT"; eventId: string; choiceId: ChoiceId }
   | { type: "CHOOSE_SCHOOL"; unitid: string }
-  | { type: "CHOOSE_FOCUS"; focus: Focus }
-  | { type: "NEXT_TERM" }
+  | { type: "CHOOSE_PLAN"; planId: string }
   | { type: "REVEAL_GRADUATION" }
   | { type: "CHOOSE_ROUTE"; route: FinalRoute }
   | { type: "ENTER_MASTERS"; program: MastersProgram };
@@ -331,13 +380,21 @@ export interface Delta {
   applied: Stats;
 }
 
-export interface FamilyCandidate {
-  economy: Economy;
-  expectation: Expectation;
-  trait: Trait;
-  initialStats: Stats;
-  stipend: number;
-  upkeep: number;
+/** 开局一屏需要的全部信息：抽出来的出身、十张天赋、基础准备度。 */
+export interface SetupView {
+  origin: {
+    economy: Economy;
+    expectation: Expectation;
+    aspiration: Aspiration;
+    /** 经济档的初始四属性（未计天赋）。 */
+    initialStats: Stats;
+    stipend: number;
+    upkeep: number;
+  };
+  /** 十连抽的结果，按抽出顺序。 */
+  draw: Talent[];
+  pickCount: number;
+  baseReadiness: number;
 }
 
 export interface TierOdds {
@@ -393,25 +450,32 @@ export interface EventView {
   choices: ChoiceView[];
 }
 
-export interface FocusOptionView {
+export interface PlanOptionView {
+  plan: PlanCard;
   focus: Focus;
   name: string;
-  /** 03 表里的基础值。 */
-  base: Stats;
-  /** 合并特质与效率之后、截断之前。 */
+  /** 合并天赋与效率之后、截断之前。 */
   requested: Stats;
   /** 截断之后真正会发生的变化。 */
   applied: Stats;
-  traitApplied: boolean;
+  available: boolean;
+  /** 资金不足时：需要 need，当前 have。 */
+  shortBy: null | { need: number; have: number };
+  talentApplied: boolean;
   efficiencyApplied: boolean;
+  /** 选了它之后，预计本学期末结算会不会出现资金短缺（不含之后事件的影响）。 */
+  projectedShortfall: number;
 }
 
+/** 选安排那一屏：本学期的账目与四个安排。 */
 export interface FocusView {
   /** 本学期已到账的资助。 */
   stipend: Delta;
   upkeep: number;
   efficiency: { factor: EfficiencyFactor; note: string };
-  options: FocusOptionView[];
+  /** 本学期开头的突发小事；没有则 null。 */
+  happening: null | { id: string; text: string; delta: Delta };
+  options: PlanOptionView[];
 }
 
 export interface LastOutcome {
@@ -445,14 +509,16 @@ export interface TermLedger {
 
 export interface AdmissionPreview {
   baseReadiness: number;
+  talentBonus: number;
   readinessBonus: number | null;
-  /** 已知的准备度：选完 HS_01 后为 base+bonus，否则为 base。 */
+  /** 已知的准备度：基础 + 天赋加成（开局后）+ HS_01 加成（选完后）。 */
   readinessSoFar: number;
   odds: Record<Strategy, TierOdds[]>;
 }
 
 export interface AdmissionResult {
   baseReadiness: number;
+  talentBonus: number;
   readinessBonus: number;
   readiness: number;
   strategy: Strategy;
@@ -556,5 +622,7 @@ export interface EndingView {
     /** 读过硕士时：本科毕业时的机会（已在进入硕士时放弃）；否则 null。 */
     undergradOpportunities: OpportunityView[] | null;
   };
+  /** 本局的天赋，按天赋池顺序。 */
+  talents: Talent[];
   card: EndingCard;
 }

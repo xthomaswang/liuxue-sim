@@ -48,6 +48,8 @@ export function eventKindLabel(event: StoryEvent): string {
       return "高中";
     case "core":
       return "主线";
+    case "random":
+      return "随机事件";
     case "arc":
       return `支线 · ${ARC_NAMES[event.arc]} 第 ${event.beat} 幕`;
     case "masters":

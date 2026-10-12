@@ -1,14 +1,12 @@
-// 学期内的数值规则（docs/03 §1–§4、docs/06 §3）：截断、投入向量与效率、必要开销与短缺、支线权重。
-// 全部是不依赖状态机的纯函数，供 reducer、views 和测试共用。
+// 学期内的数值规则（docs/03 §1–§4、docs/06 §3、docs/16 §1.3 与 §2）：截断、安排向量与效率、必要开销与短缺、支线权重。
+// 全部是不依赖状态机的纯函数，供 reducer、views 和测试共用。天赋的影响以“合计后的数值”作为参数传入。
 
 import {
-  ARC_ORDER, EFFICIENCY_FULL_FROM, EFFICIENCY_REDUCED_FROM, FOCUS_BASE, FOCUS_ORDER, SHORTFALL_STRESS_BASE,
-  SHORTFALL_STRESS_DIVISOR, STAT_KEYS, STAT_MAX, STAT_MIN, TRAIT_FOCUSED_STUDY_ACADEMICS, TRAIT_OUTGOING_CAMPUS_CAREER,
-  TRAIT_PRACTICAL_CAREER_CAREER, TRAIT_REFLECTIVE_REST_ACADEMICS, TRAIT_REFLECTIVE_REST_WELLBEING,
-  TRAIT_RESILIENT_WELLBEING_RELIEF, UPKEEP_DEFAULT, UPKEEP_FRUGAL,
+  ARC_ORDER, EFFICIENCY_FULL_FROM, EFFICIENCY_REDUCED_FROM, FOCUS_ORDER, SHORTFALL_STRESS_BASE,
+  SHORTFALL_STRESS_DIVISOR, STAT_KEYS, STAT_MAX, STAT_MIN,
 } from "./constants";
 import { draw01 } from "./rng";
-import type { ArcId, Economy, EfficiencyFactor, Focus, FocusCounts, Stats, Trait } from "./types";
+import type { ArcId, Economy, EfficiencyFactor, FocusCounts, Stats } from "./types";
 
 export function clamp(value: number, lo: number = STAT_MIN, hi: number = STAT_MAX): number {
   return Math.min(hi, Math.max(lo, value));
@@ -47,41 +45,45 @@ export function totalFocus(counts: FocusCounts): number {
   return FOCUS_ORDER.reduce((sum, focus) => sum + counts[focus], 0);
 }
 
-// ---------- 投入 ----------
+// ---------- 学期安排 ----------
 
-export function efficiencyFactor(wellbeingBefore: number): EfficiencyFactor {
-  if (wellbeingBefore >= EFFICIENCY_FULL_FROM) return 10;
-  if (wellbeingBefore >= EFFICIENCY_REDUCED_FROM) return 8;
-  return 6;
+/** 按选择前的身心定效率；天赋可以给一个下限（8 或 10），0 表示没有下限。 */
+export function efficiencyFactor(wellbeingBefore: number, floor: 0 | 8 | 10 = 0): EfficiencyFactor {
+  const natural: EfficiencyFactor = wellbeingBefore >= EFFICIENCY_FULL_FROM ? 10 : wellbeingBefore >= EFFICIENCY_REDUCED_FROM ? 8 : 6;
+  return (floor > natural ? floor : natural) as EfficiencyFactor;
 }
 
-export interface FocusVector {
+export interface PlanVector {
+  /** 安排自己的向量。 */
   base: Stats;
-  /** 合并特质与效率之后、截断之前。 */
+  /** 合并天赋与效率之后、截断之前。 */
   requested: Stats;
   factor: EfficiencyFactor;
-  traitApplied: boolean;
+  talentApplied: boolean;
   efficiencyApplied: boolean;
 }
 
-/** 特质先加到投入向量，再只对正的 academics/career 按效率半入；money 与 wellbeing 不折减。 */
-export function focusVector(focus: Focus, trait: Trait, wellbeingBefore: number): FocusVector {
-  const base = copyStats(FOCUS_BASE[focus]);
-  const withTrait = copyStats(base);
-  if (trait === "FOCUSED" && focus === "STUDY") withTrait.academics += TRAIT_FOCUSED_STUDY_ACADEMICS;
-  if (trait === "PRACTICAL" && focus === "CAREER") withTrait.career += TRAIT_PRACTICAL_CAREER_CAREER;
-  if (trait === "OUTGOING" && focus === "CAMPUS") withTrait.career += TRAIT_OUTGOING_CAMPUS_CAREER;
-  if (trait === "RESILIENT" && withTrait.wellbeing < 0) {
-    withTrait.wellbeing = Math.min(0, withTrait.wellbeing + TRAIT_RESILIENT_WELLBEING_RELIEF);
+/**
+ * 一张安排实际要应用的向量：
+ * 先加上天赋对这个类别的加成，再处理负身心减免 min(0, 身心变化 + N)，
+ * 最后只对正的 academics/career 按效率半入；money 与 wellbeing 不折减。
+ */
+export function planVector(
+  base: Stats,
+  focusBonus: Stats,
+  wellbeingRelief: number,
+  wellbeingBefore: number,
+  efficiencyFloor: 0 | 8 | 10 = 0,
+): PlanVector {
+  const withTalent = zeroStats();
+  for (const key of STAT_KEYS) withTalent[key] = base[key] + focusBonus[key];
+  if (wellbeingRelief > 0 && withTalent.wellbeing < 0) {
+    withTalent.wellbeing = Math.min(0, withTalent.wellbeing + wellbeingRelief);
   }
-  if (trait === "REFLECTIVE" && focus === "REST") {
-    withTrait.academics += TRAIT_REFLECTIVE_REST_ACADEMICS;
-    withTrait.wellbeing += TRAIT_REFLECTIVE_REST_WELLBEING;
-  }
-  const traitApplied = STAT_KEYS.some((key) => withTrait[key] !== base[key]);
+  const talentApplied = STAT_KEYS.some((key) => withTalent[key] !== base[key]);
 
-  const factor = efficiencyFactor(wellbeingBefore);
-  const requested = copyStats(withTrait);
+  const factor = efficiencyFactor(wellbeingBefore, efficiencyFloor);
+  const requested = copyStats(withTalent);
   let efficiencyApplied = false;
   for (const key of ["academics", "career"] as const) {
     if (requested[key] > 0) {
@@ -89,14 +91,10 @@ export function focusVector(focus: Focus, trait: Trait, wellbeingBefore: number)
       if (factor !== 10) efficiencyApplied = true;
     }
   }
-  return { base, requested, factor, traitApplied, efficiencyApplied };
+  return { base: copyStats(base), requested, factor, talentApplied, efficiencyApplied };
 }
 
 // ---------- 期末 ----------
-
-export function upkeepCost(trait: Trait): number {
-  return trait === "FRUGAL" ? UPKEEP_FRUGAL : UPKEEP_DEFAULT;
-}
 
 export interface UpkeepResult {
   cost: number;
@@ -106,9 +104,8 @@ export interface UpkeepResult {
   requested: Stats;
 }
 
-/** 必要开销与短缺压力（03 §4.2）。只算出要应用的变化，不动属性。 */
-export function upkeep(money: number, trait: Trait): UpkeepResult {
-  const cost = upkeepCost(trait);
+/** 必要开销与短缺压力（03 §4.2）。cost 是天赋生效后的必要开销。只算出要应用的变化，不动属性。 */
+export function upkeep(money: number, cost: number): UpkeepResult {
   const shortfall = Math.max(0, cost - money);
   const stress = shortfall === 0 ? 0 : SHORTFALL_STRESS_BASE + Math.ceil(shortfall / SHORTFALL_STRESS_DIVISOR);
   return {
@@ -116,7 +113,7 @@ export function upkeep(money: number, trait: Trait): UpkeepResult {
     paid: Math.min(money, cost),
     shortfall,
     stress,
-    requested: { money: -cost, academics: 0, career: 0, wellbeing: stress === 0 ? 0 : -stress },
+    requested: { money: cost === 0 ? 0 : -cost, academics: 0, career: 0, wellbeing: stress === 0 ? 0 : -stress },
   };
 }
 
@@ -125,19 +122,20 @@ export function upkeep(money: number, trait: Trait): UpkeepResult {
 export interface ArcWeightInput {
   focusCounts: FocusCounts;
   stats: Stats;
-  trait: Trait;
   economy: Economy;
+  /** 天赋给各条支线的权重加成（T_OUTGOING：友情 +2；T_REFLECTIVE：创作 +1）。 */
+  bonus: Record<ArcId, number>;
 }
 
 export function arcWeights(input: ArcWeightInput): Record<ArcId, number> {
-  const { focusCounts: c, stats, trait, economy } = input;
+  const { focusCounts: c, stats, economy, bonus } = input;
   return {
-    RESEARCH: 1 + 2 * c.STUDY + Math.floor(stats.academics / 25),
-    INTERNSHIP: 1 + 2 * c.CAREER + Math.floor(stats.career / 25),
-    FRIENDSHIP: 1 + 2 * c.CAMPUS + (trait === "OUTGOING" ? 2 : 0),
-    FAMILY: 1 + (economy === "LOW" ? 1 : 0),
-    REORIENTATION: 1 + 2 * c.REST + (stats.wellbeing < 40 ? 2 : 0),
-    CREATIVE: 1 + c.CAMPUS + c.CAREER + (trait === "REFLECTIVE" ? 1 : 0),
+    RESEARCH: 1 + 2 * c.STUDY + Math.floor(stats.academics / 25) + bonus.RESEARCH,
+    INTERNSHIP: 1 + 2 * c.CAREER + Math.floor(stats.career / 25) + bonus.INTERNSHIP,
+    FRIENDSHIP: 1 + 2 * c.CAMPUS + bonus.FRIENDSHIP,
+    FAMILY: 1 + (economy === "LOW" ? 1 : 0) + bonus.FAMILY,
+    REORIENTATION: 1 + 2 * c.REST + (stats.wellbeing < 40 ? 2 : 0) + bonus.REORIENTATION,
+    CREATIVE: 1 + c.CAMPUS + c.CAREER + bonus.CREATIVE,
   };
 }
 

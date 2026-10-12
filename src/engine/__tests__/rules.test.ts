@@ -1,19 +1,30 @@
-// 数值规则。期望值全部来自 docs/03（§3、§4、§5.1、§6、§7.2、§7.3、§9）与 docs/06 §3。
+// 数值规则。期望值全部来自 docs/03（§3、§4、§5.1、§6、§7.2、§7.3、§9）、docs/06 §3 与 docs/16 §1.3。
+// 第一版的六种特质现在是六张固定天赋，这里用它们的效果合计来驱动同一批用例。
 
 import { describe, expect, it } from "vitest";
-import { STIPEND, TERM_GROWTH } from "../constants";
+import { FOCUS_BASE, STIPEND, TERM_GROWTH } from "../constants";
 import {
-  eligibility, freezeGraduation, mastersBudget, outcomeFor, probabilities, revealGraduation,
+  eligibility, formulaTerms, freezeGraduation, mastersBudget, outcomeFor, probabilities, revealGraduation,
 } from "../graduation";
 import type { GradInput } from "../graduation";
-import type { Degree, Economy, Focus, FocusCounts, Stats, Trait } from "../index";
+import type { Degree, Economy, Focus, FocusCounts, Stats, TalentEffects } from "../index";
+import { CLASSIC_TALENT_EFFECTS } from "../pools";
 import { draw01 } from "../rng";
 import {
-  applyDelta, arcSlotForTerm, arcWeights, efficiencyFactor, focusVector, pickArc, upkeep, zeroFocusCounts,
+  applyDelta, arcSlotForTerm, arcWeights, efficiencyFactor, pickArc, planVector, upkeep, zeroFocusCounts,
 } from "../rules";
+import { effectiveGrowth, effectiveStipend, effectiveUpkeep, initialStatsFor, sumTalentEffects } from "../talents";
+import type { TalentTotals } from "../talents";
 
 const stats = (money: number, academics: number, career: number, wellbeing: number): Stats => ({ money, academics, career, wellbeing });
 const counts = (partial: Partial<FocusCounts>): FocusCounts => ({ ...zeroFocusCounts(), ...partial });
+const totalsOf = (...effects: TalentEffects[]): TalentTotals => sumTalentEffects(effects.map((item) => ({ effects: item })));
+const NONE = totalsOf();
+/** 第一版的特质 → 对应固定天赋的效果合计。 */
+const trait = (name: string): TalentTotals => totalsOf(CLASSIC_TALENT_EFFECTS[`T_${name}`]);
+/** 基础安排在给定天赋与身心下实际要应用的向量。 */
+const vector = (focus: Focus, totals: TalentTotals, wellbeing: number) =>
+  planVector(FOCUS_BASE[focus], totals.focus[focus], totals.focusWellbeingRelief, wellbeing, totals.efficiencyFloor);
 
 describe("截断（03 §1、§4）", () => {
   it("四项同时更新、各自截断，不结转溢出", () => {
@@ -36,70 +47,151 @@ describe("截断（03 §1、§4）", () => {
   });
 });
 
-describe("投入与低身心效率（03 §3、§2.3）", () => {
-  it("效率分界：19→60%，20/39→80%，40→100%", () => {
+describe("安排向量与低身心效率（03 §3、§2.3；16 §1.3）", () => {
+  it("效率分界：19→60%，20/39→80%，40→100%；天赋可以给下限", () => {
     expect(efficiencyFactor(0)).toBe(6);
     expect(efficiencyFactor(19)).toBe(6);
     expect(efficiencyFactor(20)).toBe(8);
     expect(efficiencyFactor(39)).toBe(8);
     expect(efficiencyFactor(40)).toBe(10);
     expect(efficiencyFactor(100)).toBe(10);
+    expect(efficiencyFactor(0, 8)).toBe(8);
+    expect(efficiencyFactor(25, 8)).toBe(8);
+    expect(efficiencyFactor(60, 8)).toBe(10); // 下限不会把正常效率拉低
+    expect(efficiencyFactor(0, 10)).toBe(10);
+    expect(efficiencyFactor(30, 10)).toBe(10);
   });
 
-  it("基础向量", () => {
-    expect(focusVector("STUDY", "FRUGAL", 70).requested).toEqual(stats(0, 11, 1, -7));
-    expect(focusVector("CAREER", "FRUGAL", 70).requested).toEqual(stats(0, 2, 10, -6));
-    expect(focusVector("CAMPUS", "FRUGAL", 70).requested).toEqual(stats(0, 3, 4, 6));
-    expect(focusVector("WORK", "FRUGAL", 70).requested).toEqual(stats(12, 1, 3, -7));
-    expect(focusVector("REST", "FRUGAL", 70).requested).toEqual(stats(0, 1, 0, 15));
+  it("五张基础安排的向量", () => {
+    expect(vector("STUDY", NONE, 70).requested).toEqual(stats(0, 11, 1, -7));
+    expect(vector("CAREER", NONE, 70).requested).toEqual(stats(0, 2, 10, -6));
+    expect(vector("CAMPUS", NONE, 70).requested).toEqual(stats(0, 3, 4, 6));
+    expect(vector("WORK", NONE, 70).requested).toEqual(stats(12, 1, 3, -7));
+    expect(vector("REST", NONE, 70).requested).toEqual(stats(0, 1, 0, 15));
+    expect(vector("STUDY", NONE, 70)).toMatchObject({ factor: 10, talentApplied: false, efficiencyApplied: false });
   });
 
-  it("特质加成", () => {
-    expect(focusVector("STUDY", "FOCUSED", 70).requested).toEqual(stats(0, 13, 1, -7));
-    expect(focusVector("CAREER", "PRACTICAL", 70).requested).toEqual(stats(0, 2, 12, -6));
-    expect(focusVector("CAMPUS", "OUTGOING", 70).requested).toEqual(stats(0, 3, 6, 6));
-    expect(focusVector("REST", "REFLECTIVE", 70).requested).toEqual(stats(0, 2, 0, 18));
-    // RESILIENT：投入的负身心少扣 2，正身心不变
-    expect(focusVector("STUDY", "RESILIENT", 70).requested.wellbeing).toBe(-5);
-    expect(focusVector("CAREER", "RESILIENT", 70).requested.wellbeing).toBe(-4);
-    expect(focusVector("WORK", "RESILIENT", 70).requested.wellbeing).toBe(-5);
-    expect(focusVector("CAMPUS", "RESILIENT", 70).requested.wellbeing).toBe(6);
-    expect(focusVector("REST", "RESILIENT", 70).requested.wellbeing).toBe(15);
-    // 特质只作用于自己的那一项投入
-    expect(focusVector("CAREER", "FOCUSED", 70).traitApplied).toBe(false);
-    expect(focusVector("STUDY", "FOCUSED", 70).traitApplied).toBe(true);
+  it("六张特质天赋的加成与 03 §2.3 逐项相同", () => {
+    expect(vector("STUDY", trait("FOCUSED"), 70).requested).toEqual(stats(0, 13, 1, -7));
+    expect(vector("CAREER", trait("PRACTICAL"), 70).requested).toEqual(stats(0, 2, 12, -6));
+    expect(vector("CAMPUS", trait("OUTGOING"), 70).requested).toEqual(stats(0, 3, 6, 6));
+    expect(vector("REST", trait("REFLECTIVE"), 70).requested).toEqual(stats(0, 2, 0, 18));
+    // RESILIENT：安排的负身心少扣 2，正身心不变
+    expect(vector("STUDY", trait("RESILIENT"), 70).requested.wellbeing).toBe(-5);
+    expect(vector("CAREER", trait("RESILIENT"), 70).requested.wellbeing).toBe(-4);
+    expect(vector("WORK", trait("RESILIENT"), 70).requested.wellbeing).toBe(-5);
+    expect(vector("CAMPUS", trait("RESILIENT"), 70).requested.wellbeing).toBe(6);
+    expect(vector("REST", trait("RESILIENT"), 70).requested.wellbeing).toBe(15);
+    // 特质只作用于自己的那一类安排
+    expect(vector("CAREER", trait("FOCUSED"), 70).talentApplied).toBe(false);
+    expect(vector("STUDY", trait("FOCUSED"), 70).talentApplied).toBe(true);
+    // FRUGAL 不改安排，只改必要开销
+    expect(vector("STUDY", trait("FRUGAL"), 70).requested).toEqual(stats(0, 11, 1, -7));
+    expect(effectiveUpkeep(trait("FRUGAL"))).toBe(11);
+    expect(effectiveUpkeep(trait("FOCUSED"))).toBe(12);
   });
 
   it("03 §3 例：身心 19、FOCUSED、STUDY → 学业 +8、职业 +1、身心 -7", () => {
-    expect(focusVector("STUDY", "FOCUSED", 19).requested).toEqual(stats(0, 8, 1, -7));
+    expect(vector("STUDY", trait("FOCUSED"), 19).requested).toEqual(stats(0, 8, 1, -7));
   });
 
   it("身心 19/20/39/40 的学习收益分别按 60%/80%/80%/100% 半入", () => {
-    expect(focusVector("STUDY", "FRUGAL", 19).requested.academics).toBe(7); // 6.6
-    expect(focusVector("STUDY", "FRUGAL", 20).requested.academics).toBe(9); // 8.8
-    expect(focusVector("STUDY", "FRUGAL", 39).requested.academics).toBe(9);
-    expect(focusVector("STUDY", "FRUGAL", 40).requested.academics).toBe(11);
-    expect(focusVector("CAREER", "PRACTICAL", 19).requested).toEqual(stats(0, 1, 7, -6)); // 1.2→1，7.2→7
-    expect(focusVector("CAREER", "PRACTICAL", 39).requested).toEqual(stats(0, 2, 10, -6)); // 1.6→2，9.6→10
+    expect(vector("STUDY", NONE, 19).requested.academics).toBe(7); // 6.6
+    expect(vector("STUDY", NONE, 20).requested.academics).toBe(9); // 8.8
+    expect(vector("STUDY", NONE, 39).requested.academics).toBe(9);
+    expect(vector("STUDY", NONE, 40).requested.academics).toBe(11);
+    expect(vector("CAREER", trait("PRACTICAL"), 19).requested).toEqual(stats(0, 1, 7, -6)); // 1.2→1，7.2→7
+    expect(vector("CAREER", trait("PRACTICAL"), 39).requested).toEqual(stats(0, 2, 10, -6)); // 1.6→2，9.6→10
+    expect(vector("STUDY", NONE, 19)).toMatchObject({ factor: 6, efficiencyApplied: true });
   });
 
   it("折减不影响兼职资金与休息的身心恢复", () => {
-    expect(focusVector("WORK", "FRUGAL", 0).requested).toEqual(stats(12, 1, 2, -7)); // 0.6→1，1.8→2
-    expect(focusVector("REST", "FRUGAL", 0).requested).toEqual(stats(0, 1, 0, 15));
-    expect(focusVector("REST", "REFLECTIVE", 10).requested).toEqual(stats(0, 1, 0, 18)); // 学业 2×0.6=1.2→1
-    expect(focusVector("CAMPUS", "FRUGAL", 10).requested.wellbeing).toBe(6);
+    expect(vector("WORK", NONE, 0).requested).toEqual(stats(12, 1, 2, -7)); // 0.6→1，1.8→2
+    expect(vector("REST", NONE, 0).requested).toEqual(stats(0, 1, 0, 15));
+    expect(vector("REST", trait("REFLECTIVE"), 10).requested).toEqual(stats(0, 1, 0, 18)); // 学业 2×0.6=1.2→1
+    expect(vector("CAMPUS", NONE, 10).requested.wellbeing).toBe(6);
+  });
+
+  it("多张天赋：类别加成相加，先加成、再减免负身心、最后算效率", () => {
+    const both = totalsOf(
+      { focus: { STUDY: { academics: 3, wellbeing: -3 } } }, // 学业额外 +3，身心多扣 3
+      { focus: { STUDY: { academics: 2 } } },
+      { focusWellbeingRelief: 2 },
+      { focusWellbeingRelief: 1 },
+    );
+    // 11+3+2=16；身心 -7-3=-10，减免 3 → -7
+    expect(vector("STUDY", both, 70).requested).toEqual(stats(0, 16, 1, -7));
+    // 身心 19：16×0.6=9.6→10，职业 1×0.6→1
+    expect(vector("STUDY", both, 19).requested).toEqual(stats(0, 10, 1, -7));
+    // 减免不会把负的身心变成正的
+    const generous = totalsOf({ focusWellbeingRelief: 3 }, { focusWellbeingRelief: 3 }, { focusWellbeingRelief: 3 });
+    expect(vector("CAREER", generous, 70).requested.wellbeing).toBe(0);
+    // 负的类别加成也照常生效（带代价的天赋）
+    const slow = totalsOf({ focus: { STUDY: { academics: -2 } } });
+    expect(vector("STUDY", slow, 70).requested.academics).toBe(9);
+    // 资金加成不受效率影响
+    const hustler = totalsOf({ focus: { WORK: { money: 2 } } }, { focus: { WORK: { money: 1 } } });
+    expect(vector("WORK", hustler, 0).requested.money).toBe(15);
+  });
+
+  it("效率下限取几张天赋里最高的，不是相加", () => {
+    expect(totalsOf({ efficiencyFloor: 8 }).efficiencyFloor).toBe(8);
+    expect(totalsOf({ efficiencyFloor: 8 }, { efficiencyFloor: 10 }).efficiencyFloor).toBe(10);
+    expect(totalsOf({ efficiencyFloor: 10 }, { efficiencyFloor: 8 }, {}).efficiencyFloor).toBe(10);
+    expect(NONE.efficiencyFloor).toBe(0);
+    expect(vector("STUDY", totalsOf({ efficiencyFloor: 8 }), 0).requested.academics).toBe(9); // 8.8
+    expect(vector("STUDY", totalsOf({ efficiencyFloor: 10 }), 0).requested.academics).toBe(11);
+    expect(vector("STUDY", totalsOf({ efficiencyFloor: 8 }), 0)).toMatchObject({ factor: 8, efficiencyApplied: true });
+    expect(vector("STUDY", totalsOf({ efficiencyFloor: 10 }), 0)).toMatchObject({ factor: 10, efficiencyApplied: false });
+  });
+});
+
+describe("天赋效果的其它作用点（16 §1.3）", () => {
+  it("initial：经济档初始值加上天赋之和，再截断到 0–100", () => {
+    expect(initialStatsFor("MID", NONE)).toEqual(stats(42, 18, 12, 70));
+    expect(initialStatsFor("LOW", totalsOf({ initial: { money: 5 } }, { initial: { money: 10, wellbeing: -10 } }))).toEqual(stats(43, 18, 12, 60));
+    expect(initialStatsFor("HIGH", totalsOf({ initial: { money: 15 } }, { initial: { money: 15 } }, { initial: { money: 15, wellbeing: 15 } }))).toEqual(
+      stats(100, 18, 12, 85),
+    );
+    expect(initialStatsFor("LOW", totalsOf({ initial: { career: -15 } })).career).toBe(0);
+  });
+
+  it("stipend 与 upkeep：同类相加，结果不低于 0", () => {
+    expect(effectiveStipend("LOW", NONE)).toBe(6);
+    expect(effectiveStipend("LOW", totalsOf({ stipend: 1 }, { stipend: 2 }, { stipend: 3 }))).toBe(12);
+    expect(effectiveStipend("LOW", totalsOf({ stipend: -3 }, { stipend: -3 }, { stipend: -3 }))).toBe(0);
+    expect(effectiveUpkeep(totalsOf({ upkeep: 2 }, { upkeep: 1 }, { upkeep: -1 }))).toBe(14);
+    expect(effectiveUpkeep(totalsOf({ upkeep: -2 }, { upkeep: -2 }, { upkeep: -2 }))).toBe(6);
+  });
+
+  it("growth：加到每学期的基础变化上", () => {
+    expect(effectiveGrowth(NONE)).toEqual({ ...TERM_GROWTH });
+    expect(effectiveGrowth(totalsOf({ growth: { academics: 1 } }, { growth: { wellbeing: 1 } }, { growth: { wellbeing: 1 } }))).toEqual(
+      stats(0, 3, 1, -1),
+    );
+  });
+
+  it("readiness、chance、arcWeight：同类相加", () => {
+    const totals = totalsOf(
+      { readiness: 6, chance: { PHD: 5 }, arcWeight: { RESEARCH: 3 } },
+      { readiness: 8, chance: { PHD: 5, LOCAL_JOB: 5, HOME_JOB: 5 } },
+      { readiness: -10, arcWeight: { RESEARCH: 1, FAMILY: 3 } },
+    );
+    expect(totals.readiness).toBe(4);
+    expect(totals.chance).toEqual({ PHD: 10, LOCAL_JOB: 5, HOME_JOB: 5 });
+    expect(totals.arcWeight).toMatchObject({ RESEARCH: 4, FAMILY: 3, CREATIVE: 0 });
   });
 });
 
 describe("必要开销与短缺（03 §4.2）", () => {
-  it("成本：FRUGAL 11，其余 12", () => {
-    expect(upkeep(50, "FRUGAL").cost).toBe(11);
-    expect(upkeep(50, "FOCUSED").cost).toBe(12);
-    expect(upkeep(50, "FOCUSED")).toMatchObject({ paid: 12, shortfall: 0, stress: 0 });
+  it("没有短缺时不产生压力", () => {
+    expect(upkeep(50, 12)).toMatchObject({ cost: 12, paid: 12, shortfall: 0, stress: 0 });
+    expect(upkeep(50, 12).requested).toEqual(stats(-12, 0, 0, 0));
+    expect(Object.is(upkeep(50, 12).requested.wellbeing, -0)).toBe(false);
   });
 
   it("03 §4.2 例：钱 5、身心 20 → 短缺 7、压力 9；开销后钱 0、身心 11；再加基础变化身心 8", () => {
-    const result = upkeep(5, "OUTGOING");
+    const result = upkeep(5, 12);
     expect(result).toMatchObject({ cost: 12, paid: 5, shortfall: 7, stress: 9 });
     const afterUpkeep = applyDelta(stats(5, 30, 30, 20), result.requested).after;
     expect(afterUpkeep).toEqual(stats(0, 30, 30, 11));
@@ -107,30 +199,32 @@ describe("必要开销与短缺（03 §4.2）", () => {
   });
 
   it("压力公式 6 + ceil(shortfall/3)", () => {
-    expect(upkeep(11, "FOCUSED").stress).toBe(7); // 短缺 1
-    expect(upkeep(9, "FOCUSED").stress).toBe(7); // 短缺 3
-    expect(upkeep(8, "FOCUSED").stress).toBe(8); // 短缺 4
-    expect(upkeep(0, "FOCUSED").stress).toBe(10); // 短缺 12
-    expect(upkeep(0, "FRUGAL").stress).toBe(10); // 短缺 11 → ceil(11/3)=4
-    expect(upkeep(11, "FRUGAL").stress).toBe(0);
+    expect(upkeep(11, 12).stress).toBe(7); // 短缺 1
+    expect(upkeep(9, 12).stress).toBe(7); // 短缺 3
+    expect(upkeep(8, 12).stress).toBe(8); // 短缺 4
+    expect(upkeep(0, 12).stress).toBe(10); // 短缺 12
+    expect(upkeep(0, 11).stress).toBe(10); // 短缺 11 → ceil(11/3)=4
+    expect(upkeep(11, 11).stress).toBe(0);
+    expect(upkeep(0, 14).stress).toBe(11); // 开销被天赋抬到 14：短缺 14 → 6+5
   });
 
-  it("身心已为 0 时短缺仍可结算", () => {
-    const result = upkeep(0, "FOCUSED");
-    expect(applyDelta(stats(0, 10, 10, 0), result.requested).after).toEqual(stats(0, 10, 10, 0));
+  it("身心已为 0 时短缺仍可结算；开销为 0 时什么都不扣", () => {
+    expect(applyDelta(stats(0, 10, 10, 0), upkeep(0, 12).requested).after).toEqual(stats(0, 10, 10, 0));
+    expect(upkeep(0, 0)).toMatchObject({ cost: 0, paid: 0, shortfall: 0, stress: 0 });
+    expect(upkeep(0, 0).requested).toEqual(stats(0, 0, 0, 0));
   });
 });
 
-/** 03 §9 的基础循环夹具：不施加任何事件效果，只走资助→投入→必要开销→基础变化。用纯函数拼，不经过状态机。 */
-function baseLoop(economy: Economy, trait: Trait, focuses: Focus[], start: Stats): { stats: Stats; counts: FocusCounts } {
+/** 03 §9 的基础循环夹具：不施加任何事件效果，只走资助→基础安排→必要开销→基础变化。用纯函数拼，不经过状态机。 */
+function baseLoop(economy: Economy, totals: TalentTotals, focuses: Focus[], start: Stats): { stats: Stats; counts: FocusCounts } {
   let current = { ...start };
   const tally = zeroFocusCounts();
   for (const focus of focuses) {
-    current = applyDelta(current, stats(STIPEND[economy], 0, 0, 0)).after;
-    current = applyDelta(current, focusVector(focus, trait, current.wellbeing).requested).after;
+    current = applyDelta(current, stats(effectiveStipend(economy, totals), 0, 0, 0)).after;
+    current = applyDelta(current, vector(focus, totals, current.wellbeing).requested).after;
     tally[focus] += 1;
-    current = applyDelta(current, upkeep(current.money, trait).requested).after;
-    current = applyDelta(current, { ...TERM_GROWTH }).after;
+    current = applyDelta(current, upkeep(current.money, effectiveUpkeep(totals)).requested).after;
+    current = applyDelta(current, effectiveGrowth(totals)).after;
   }
   return { stats: current, counts: tally };
 }
@@ -138,9 +232,10 @@ function baseLoop(economy: Economy, trait: Trait, focuses: Focus[], start: Stats
 describe("基础循环核对（03 §9）", () => {
   const low = stats(28, 18, 12, 70);
   const mid = stats(42, 18, 12, 70);
+  const outgoing = trait("OUTGOING");
 
   it("LOW：WORK, STUDY, CAREER, REST, WORK, STUDY, CAREER, STUDY → 4/72/47/14，PHD 46%、LOCAL 60%、HOME 71%", () => {
-    const result = baseLoop("LOW", "OUTGOING", ["WORK", "STUDY", "CAREER", "REST", "WORK", "STUDY", "CAREER", "STUDY"], low);
+    const result = baseLoop("LOW", outgoing, ["WORK", "STUDY", "CAREER", "REST", "WORK", "STUDY", "CAREER", "STUDY"], low);
     expect(result.stats).toEqual(stats(4, 72, 47, 14));
     expect(probabilities({ degree: "UG", stats: result.stats, focusCounts: result.counts, flags: [] })).toEqual({
       PHD: 46, LOCAL_JOB: 60, HOME_JOB: 71,
@@ -148,7 +243,7 @@ describe("基础循环核对（03 §9）", () => {
   });
 
   it("LOW：…, CAREER, REST → 4/64/46/36，PHD 无资格、LOCAL 58%、HOME 69%", () => {
-    const result = baseLoop("LOW", "OUTGOING", ["WORK", "STUDY", "CAREER", "REST", "WORK", "STUDY", "CAREER", "REST"], low);
+    const result = baseLoop("LOW", outgoing, ["WORK", "STUDY", "CAREER", "REST", "WORK", "STUDY", "CAREER", "REST"], low);
     expect(result.stats).toEqual(stats(4, 64, 46, 36));
     expect(probabilities({ degree: "UG", stats: result.stats, focusCounts: result.counts, flags: [] })).toEqual({
       PHD: null, LOCAL_JOB: 58, HOME_JOB: 69,
@@ -156,13 +251,13 @@ describe("基础循环核对（03 §9）", () => {
   });
 
   it("MID：STUDY, STUDY, REST, STUDY, STUDY, REST, STUDY, STUDY → 26/100/26/34，PHD 73%", () => {
-    const result = baseLoop("MID", "OUTGOING", ["STUDY", "STUDY", "REST", "STUDY", "STUDY", "REST", "STUDY", "STUDY"], mid);
+    const result = baseLoop("MID", outgoing, ["STUDY", "STUDY", "REST", "STUDY", "STUDY", "REST", "STUDY", "STUDY"], mid);
     expect(result.stats).toEqual(stats(26, 100, 26, 34));
     expect(probabilities({ degree: "UG", stats: result.stats, focusCounts: result.counts, flags: [] }).PHD).toBe(73);
   });
 
   it("MID：STUDY × 8 → 26/100/28/0，PHD 仍是 73%", () => {
-    const result = baseLoop("MID", "OUTGOING", Array<Focus>(8).fill("STUDY"), mid);
+    const result = baseLoop("MID", outgoing, Array<Focus>(8).fill("STUDY"), mid);
     expect(result.stats).toEqual(stats(26, 100, 28, 0));
     expect(probabilities({ degree: "UG", stats: result.stats, focusCounts: result.counts, flags: [] }).PHD).toBe(73);
   });
@@ -237,6 +332,26 @@ describe("资格与概率（03 §6–§7）", () => {
     expect(probabilities({ degree: "UG", ...input, stats: stats(0, 60, 60, 100) })).toEqual(ug);
   });
 
+  it("天赋的概率加成：给 n 加 100×加成，再半入并截断；不改变资格（16 §1.3）", () => {
+    const input = { degree: "UG" as const, stats: stats(0, 50, 50, 0), focusCounts: counts({ STUDY: 3, CAREER: 2 }), flags: [] as string[] };
+    // 03 §7.2 第 1 行：26 / 60 / 67
+    expect(probabilities({ ...input, chance: { PHD: 5, LOCAL_JOB: 5, HOME_JOB: 3 } })).toEqual({ PHD: 31, LOCAL_JOB: 65, HOME_JOB: 70 });
+    expect(probabilities({ ...input, chance: { PHD: -8 } })).toEqual({ PHD: 18, LOCAL_JOB: 60, HOME_JOB: 67 });
+    // 加成后仍受上下限约束
+    const strong = { degree: "UG" as const, stats: stats(0, 100, 100, 0), focusCounts: counts({ STUDY: 4, CAREER: 4 }), flags: ["ARC_RESEARCH_3_A"] };
+    expect(probabilities({ ...strong, chance: { PHD: 10, LOCAL_JOB: 10, HOME_JOB: 10 } })).toEqual({ PHD: 85, LOCAL_JOB: 95, HOME_JOB: 95 });
+    const weak = { degree: "UG" as const, stats: stats(0, 0, 0, 0), focusCounts: counts({ STUDY: 3 }), flags: [] as string[] };
+    expect(probabilities({ ...weak, chance: { PHD: 5 } }).PHD).toBe(8);
+    // 没有资格的那一路仍然是 null
+    expect(probabilities({ ...weak, chance: { LOCAL_JOB: 8 } }).LOCAL_JOB).toBeNull();
+    expect(eligibility({ ...weak, chance: { LOCAL_JOB: 8 } }).LOCAL_JOB).toBe(false);
+    // 公式分解里单列一项，合计仍等于截断前的原值
+    const terms = formulaTerms({ ...input, chance: { PHD: 5 } }, "PHD");
+    expect(terms[terms.length - 1]).toEqual({ label: "天赋加成", hundredths: 500 });
+    expect(terms.reduce((sum, term) => sum + term.hundredths, 0)).toBe(3100);
+    expect(formulaTerms(input, "PHD").some((term) => term.label === "天赋加成")).toBe(false);
+  });
+
   it("抽签：roll < p/100 才成功，等号不成功；无资格记 INELIGIBLE", () => {
     expect(outcomeFor(26, 0.25)).toBe("OFFERED");
     expect(outcomeFor(60, 0.6)).toBe("NOT_OFFERED");
@@ -265,46 +380,57 @@ describe("资格与概率（03 §6–§7）", () => {
   });
 });
 
-describe("硕士预算（03 §5.1）", () => {
-  it("普通特质的最低预留：LOW 20/36，MID 12/20，HIGH 8/12", () => {
-    const need = (economy: Economy, program: "MS_1Y" | "MS_2Y") => mastersBudget(program, 0, economy, "FOCUSED").requiredReserve;
+describe("硕士预算（03 §5.1；资助与开销用天赋生效后的值）", () => {
+  const need = (economy: Economy, program: "MS_1Y" | "MS_2Y", totals: TalentTotals = NONE) =>
+    mastersBudget(program, 0, effectiveStipend(economy, totals), effectiveUpkeep(totals)).requiredReserve;
+
+  it("没有相关天赋时的最低预留：LOW 20/36，MID 12/20，HIGH 8/12", () => {
     expect([need("LOW", "MS_1Y"), need("LOW", "MS_2Y")]).toEqual([20, 36]);
     expect([need("MID", "MS_1Y"), need("MID", "MS_2Y")]).toEqual([12, 20]);
     expect([need("HIGH", "MS_1Y"), need("HIGH", "MS_2Y")]).toEqual([8, 12]);
   });
 
-  it("FRUGAL 用成本 11 重算", () => {
-    expect(mastersBudget("MS_1Y", 0, "LOW", "FRUGAL").requiredReserve).toBe(18);
-    expect(mastersBudget("MS_2Y", 0, "LOW", "FRUGAL").requiredReserve).toBe(32);
-    expect(mastersBudget("MS_2Y", 0, "MID", "FRUGAL").requiredReserve).toBe(16);
-    expect(mastersBudget("MS_2Y", 0, "HIGH", "FRUGAL").requiredReserve).toBe(12);
+  it("T_FRUGAL 用成本 11 重算", () => {
+    const frugal = trait("FRUGAL");
+    expect(need("LOW", "MS_1Y", frugal)).toBe(18);
+    expect(need("LOW", "MS_2Y", frugal)).toBe(32);
+    expect(need("MID", "MS_2Y", frugal)).toBe(16);
+    expect(need("HIGH", "MS_2Y", frugal)).toBe(12);
+  });
+
+  it("资助与开销类天赋都会改变预留", () => {
+    expect(need("LOW", "MS_2Y", totalsOf({ stipend: 3 }))).toBe(24); // 12 + (12-9)×4
+    expect(need("LOW", "MS_2Y", totalsOf({ stipend: 3 }, { stipend: 2 }, { stipend: 1 }))).toBe(12); // 资助 12 已覆盖开销
+    expect(need("MID", "MS_1Y", totalsOf({ upkeep: 2 }))).toBe(16); // 8 + (14-10)×2
   });
 
   it("资金比所需少 1 不够、刚好够", () => {
     for (const economy of ["LOW", "MID", "HIGH"] as Economy[]) {
-      for (const trait of ["FOCUSED", "FRUGAL"] as Trait[]) {
+      for (const totals of [NONE, trait("FRUGAL"), totalsOf({ upkeep: 2 }), totalsOf({ stipend: 2 })]) {
         for (const program of ["MS_1Y", "MS_2Y"] as const) {
-          const need = mastersBudget(program, 0, economy, trait).requiredReserve;
-          expect(mastersBudget(program, need - 1, economy, trait).fundingEligible).toBe(false);
-          expect(mastersBudget(program, need, economy, trait).fundingEligible).toBe(true);
+          const stipend = effectiveStipend(economy, totals);
+          const cost = effectiveUpkeep(totals);
+          const required = mastersBudget(program, 0, stipend, cost).requiredReserve;
+          expect(mastersBudget(program, required - 1, stipend, cost).fundingEligible).toBe(false);
+          expect(mastersBudget(program, required, stipend, cost).fundingEligible).toBe(true);
         }
       }
     }
   });
 
   it("账目字段：一年 2 学期费 8，两年 4 学期费 12", () => {
-    expect(mastersBudget("MS_1Y", 30, "MID", "FOCUSED")).toMatchObject({ terms: 2, fee: 8, stipendTotal: 20, upkeepTotal: 24 });
-    expect(mastersBudget("MS_2Y", 30, "MID", "FOCUSED")).toMatchObject({ terms: 4, fee: 12, stipendTotal: 40, upkeepTotal: 48 });
+    expect(mastersBudget("MS_1Y", 30, 10, 12)).toMatchObject({ terms: 2, fee: 8, stipendTotal: 20, upkeepTotal: 24 });
+    expect(mastersBudget("MS_2Y", 30, 10, 12)).toMatchObject({ terms: 4, fee: 12, stipendTotal: 40, upkeepTotal: 48 });
   });
 });
 
-describe("支线权重与分配（06 §3）", () => {
-  it("权重公式", () => {
+describe("支线权重与分配（06 §3；天赋的支线权重加成见 16 §1.3）", () => {
+  it("权重公式：OUTGOING 的友情 +2 来自天赋", () => {
     const weights = arcWeights({
       focusCounts: counts({ STUDY: 2, CAREER: 1, CAMPUS: 1, REST: 1 }),
       stats: stats(10, 60, 49, 39),
-      trait: "OUTGOING",
       economy: "LOW",
+      bonus: trait("OUTGOING").arcWeight,
     });
     expect(weights).toEqual({
       RESEARCH: 1 + 4 + 2,
@@ -314,8 +440,16 @@ describe("支线权重与分配（06 §3）", () => {
       REORIENTATION: 1 + 2 + 2,
       CREATIVE: 1 + 1 + 1,
     });
-    const plain = arcWeights({ focusCounts: counts({}), stats: stats(50, 24, 24, 40), trait: "REFLECTIVE", economy: "HIGH" });
+    const plain = arcWeights({ focusCounts: counts({}), stats: stats(50, 24, 24, 40), economy: "HIGH", bonus: trait("REFLECTIVE").arcWeight });
     expect(plain).toEqual({ RESEARCH: 1, INTERNSHIP: 1, FRIENDSHIP: 1, FAMILY: 1, REORIENTATION: 1, CREATIVE: 2 });
+    const none = arcWeights({ focusCounts: counts({}), stats: stats(50, 24, 24, 40), economy: "HIGH", bonus: NONE.arcWeight });
+    expect(none).toEqual({ RESEARCH: 1, INTERNSHIP: 1, FRIENDSHIP: 1, FAMILY: 1, REORIENTATION: 1, CREATIVE: 1 });
+  });
+
+  it("任意一条支线都可以被天赋加权", () => {
+    const bonus = totalsOf({ arcWeight: { FAMILY: 3 } }, { arcWeight: { REORIENTATION: 3, RESEARCH: 3 } }, { arcWeight: { INTERNSHIP: 2 } }).arcWeight;
+    const weights = arcWeights({ focusCounts: counts({}), stats: stats(50, 24, 24, 40), economy: "MID", bonus });
+    expect(weights).toEqual({ RESEARCH: 4, INTERNSHIP: 3, FRIENDSHIP: 1, FAMILY: 4, REORIENTATION: 4, CREATIVE: 1 });
   });
 
   it("09 §4 向量：seed 20261011 的 arc:A 为 0.9619…，等权重时落在最后一档", () => {

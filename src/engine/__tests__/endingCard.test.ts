@@ -10,8 +10,7 @@ import type {
   TransitionMode,
 } from "../index";
 import { draw01 } from "../rng";
-import { act, asActive, clone, play, start } from "./helpers";
-import type { Policy } from "./helpers";
+import { act, asActive, at, classicPolicy, clone, play, startClassic } from "./helpers";
 
 type Outcomes = Record<"PHD" | "LOCAL_JOB" | "HOME_JOB", Outcome>;
 const stats = (money: number, academics: number, career: number, wellbeing: number): Stats => ({ money, academics, career, wellbeing });
@@ -69,7 +68,7 @@ function card(input: CaseInput): EndingCard {
   const final = graduation(degree, input.stats, input.counts ?? {}, input.flags ?? [], input.outcomes);
   const built: EndingCardInput = {
     seed: input.seed ?? QUIET,
-    profile: { name: "", economy: "MID", expectation: "STABILITY", trait: "FOCUSED", aspiration: "BELONGING", ...input.profile },
+    profile: { economy: "MID", expectation: "STABILITY", aspiration: "BELONGING", talents: [], ...input.profile },
     arcs: input.arcs ?? { A: "FAMILY", B: "FRIENDSHIP" },
     history,
     graduations:
@@ -440,12 +439,12 @@ describe("完结状态与组合写法（14 §4）", () => {
 });
 
 describe("结局卡写入存档后不重算", () => {
-  const policy: Policy = { economy: "HIGH", focus: (_view, state) => (state.termIndex % 2 === 0 ? "CAREER" : "STUDY"), event: () => "A" };
+  const policy = classicPolicy({ talent: "T_PRACTICAL", focus: (state) => (state.termIndex % 2 === 0 ? "CAREER" : "STUDY"), event: "A" });
 
   it("同 seed 同选择得到同一张卡；卡片在确认去向时冻结进状态", () => {
     for (let seed = 0; seed < 25; seed++) {
-      const first = asActive(play(start(seed), policy).state);
-      const second = asActive(play(start(seed), policy).state);
+      const first = asActive(play(startClassic(seed, "HIGH"), policy).state);
+      const second = asActive(play(startClassic(seed, "HIGH"), policy).state);
       expect(first.phase).toBe("ENDING");
       expect(first.ending?.card).toEqual(second.ending?.card);
       expect(first.ending?.card.combo.length).toBeGreaterThan(0);
@@ -453,7 +452,7 @@ describe("结局卡写入存档后不重算", () => {
   });
 
   it("结局卡不修改属性、机会或毕业快照", () => {
-    const results = asActive(play(start(4), policy, (s) => s.phase === "GRAD_RESULTS").state);
+    const results = asActive(play(startClassic(4, "HIGH"), policy, at("GRAD_RESULTS")).state);
     const before = clone(results);
     const ended = asActive(act(results, { type: "CHOOSE_ROUTE", route: "TRANSITION" }));
     expect(ended.stats).toEqual(before.stats);

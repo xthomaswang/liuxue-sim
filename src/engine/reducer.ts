@@ -1,24 +1,32 @@
-// 状态机（docs/06 第 1、5、6 节）。applyAction 是唯一的状态转移入口：
+// 状态机（docs/06 第 1、5、6 节；第二版流程见 docs/16）。applyAction 是唯一的状态转移入口：
 // 先校验 revision、phase、事件 ID 与资金，再在一份拷贝上完成全部更新；失败时原状态原样返回。
 
 import { EVENT_BY_ID } from "../content";
 import { baseReadinessFor, poolCounts, resolveAdmission, sampleOffers } from "./admission";
 import {
-  ALL_TIERS, ASPIRATION_ORDER, CONTENT_VERSION, CORE_EVENT_IDS, ECONOMY_ORDER, EXPECTATION_ORDER, FOCUS_ORDER,
-  HIGH_SCHOOL_EVENT_IDS, INITIAL_STATS, MASTERS_PLANS, MASTERS_PROGRAM_ORDER, MIN_POOL_SIZE, OPPORTUNITY_ORDER,
-  PLAYER_NAME_MAX, RULES_VERSION, STIPEND, TERM_GROWTH, TRAIT_ORDER, UG_TERMS,
+  ALL_TIERS, CONTENT_VERSION, CORE_EVENT_IDS, ECONOMY_ORDER, HIGH_SCHOOL_EVENT_IDS, INITIAL_STATS, MASTERS_PLANS,
+  MASTERS_PROGRAM_ORDER, MIN_POOL_SIZE, OPPORTUNITY_ORDER, RULES_VERSION, STIPEND, TALENT_PICK_CLASSIC,
+  TALENT_PICK_STANDARD, UG_TERMS, UPKEEP_DEFAULT,
 } from "./constants";
 import { computeEndingCard } from "./endingCard";
 import { freezeGraduation, mastersBlockers, offeredList, revealGraduation } from "./graduation";
-import { pickIndex } from "./rng";
 import {
-  applyDelta, arcSlotForTerm, arcWeights, copyStats, focusVector, pickArc, upkeep, upkeepCost, zeroFocusCounts,
-  zeroStats,
+  basePlans, classicTalents, happeningPool, nodeCandidates, planPool, randomEventPool, talentOrder, talentPool,
+} from "./pools";
+import {
+  applyDelta, arcSlotForTerm, arcWeights, copyStats, pickArc, planVector, upkeep, zeroFocusCounts, zeroStats,
 } from "./rules";
+import type { PlanVector } from "./rules";
+import {
+  drawTalents, effectiveGrowth, effectiveStipend, effectiveUpkeep, initialStatsFor, originFor, totalsFor,
+} from "./talents";
+import type { TalentTotals } from "./talents";
+import { mainSlotEvent, rollHappening, termSlate } from "./terms";
+import type { TermSlate } from "./terms";
 import type {
-  Action, ActionResult, ActiveRun, CatalogCheck, Command, Degree, EngineContext, EngineErrorCode, FamilyCandidate,
-  HistoryEntry, HistoryKind, MastersProgram, OfferTier, RunState, RuntimeCatalog, RuntimeSchool, SetupRun, Stats,
-  StoryEvent,
+  Action, ActionResult, ActiveRun, CatalogCheck, Command, Degree, Economy, EngineContext, EngineErrorCode,
+  HistoryEntry, HistoryKind, MastersProgram, OfferTier, PlanCard, RunMode, RunState, RuntimeCatalog, RuntimeSchool,
+  SetupRun, SetupView, Stats, StoryEvent, Talent,
 } from "./types";
 
 class EngineFailure extends Error {
@@ -48,14 +56,31 @@ export function checkCatalog(catalog: RuntimeCatalog): CatalogCheck {
   };
 }
 
-/** 新开一局，停在 SETUP。目录不合格时抛出 CATALOG_POOL_TOO_SMALL。 */
-export function createRun(args: { seed: number; runId: string; catalog: RuntimeCatalog }): SetupRun {
+/**
+ * 新开一局，停在 SETUP。目录不合格时抛出 CATALOG_POOL_TOO_SMALL。
+ * mode 缺省为 standard；classic（只给测试用，docs/16 第 7 节）必须同时给出 classicEconomy。
+ */
+export function createRun(args: {
+  seed: number;
+  runId: string;
+  catalog: RuntimeCatalog;
+  mode?: RunMode;
+  classicEconomy?: Economy;
+}): SetupRun {
   const check = checkCatalog(args.catalog);
   if (!check.ok) throw new Error(`CATALOG_POOL_TOO_SMALL: ${check.message}`);
   if (!Number.isInteger(args.seed) || args.seed < 0 || args.seed > 0xffffffff) {
     throw new Error("INVALID_SEED: seed 必须是 0 到 4294967295 的整数");
   }
-  return {
+  const mode: RunMode = args.mode ?? "standard";
+  if (mode !== "standard" && mode !== "classic") throw new Error("INVALID_MODE: mode 只能是 standard 或 classic");
+  if (mode === "classic" && (args.classicEconomy === undefined || !ECONOMY_ORDER.includes(args.classicEconomy))) {
+    throw new Error("INVALID_MODE: classic 模式必须指定 classicEconomy");
+  }
+  if (mode === "standard" && args.classicEconomy !== undefined) {
+    throw new Error("INVALID_MODE: standard 模式的出身是抽出来的，不能指定经济档");
+  }
+  const run: SetupRun = {
     schemaVersion: 1,
     rulesVersion: RULES_VERSION,
     contentVersion: CONTENT_VERSION,
@@ -66,24 +91,34 @@ export function createRun(args: { seed: number; runId: string; catalog: RuntimeC
     runId: args.runId,
     seed: args.seed,
     revision: 0,
+    mode,
     phase: "SETUP",
   };
+  if (mode === "classic") run.classicEconomy = args.classicEconomy;
+  return run;
 }
 
-/** 固定顺序 LOW、MID、HIGH 的三张家庭档案；期待与特质各自独立抽取，允许相同。 */
-export function familyCandidates(seed: number): FamilyCandidate[] {
-  return ECONOMY_ORDER.map((economy) => {
-    const expectation = EXPECTATION_ORDER[pickIndex(seed, `family:${economy}:expectation`, EXPECTATION_ORDER.length)];
-    const trait = TRAIT_ORDER[pickIndex(seed, `family:${economy}:trait`, TRAIT_ORDER.length)];
-    return {
-      economy,
-      expectation,
-      trait,
-      initialStats: copyStats(INITIAL_STATS[economy]),
-      stipend: STIPEND[economy],
-      upkeep: upkeepCost(trait),
-    };
-  });
+/** 本局可以选的天赋：standard 是十连抽的结果（按抽出顺序），classic 是六张特质天赋。 */
+function setupDraw(state: SetupRun): { draw: Talent[]; pickCount: number } {
+  if (state.mode === "classic") return { draw: classicTalents(), pickCount: TALENT_PICK_CLASSIC };
+  return { draw: drawTalents(state.seed, talentPool()), pickCount: TALENT_PICK_STANDARD };
+}
+
+/** 开局一屏需要的全部信息：抽出来的出身、可选的天赋、要选几张、基础准备度。 */
+export function setupView(state: SetupRun): SetupView {
+  const origin = originFor(state.seed, state.mode === "classic" ? state.classicEconomy : undefined);
+  const { draw, pickCount } = setupDraw(state);
+  return {
+    origin: {
+      ...origin,
+      initialStats: copyStats(INITIAL_STATS[origin.economy]),
+      stipend: STIPEND[origin.economy],
+      upkeep: UPKEEP_DEFAULT,
+    },
+    draw,
+    pickCount,
+    baseReadiness: baseReadinessFor(state.seed),
+  };
 }
 
 /** 20–80 的整数。 */
@@ -91,12 +126,42 @@ export function baseReadiness(seed: number): number {
   return baseReadinessFor(seed);
 }
 
-// ---------- 当前应处理的事件 ----------
+// ---------- 由状态推出的本学期内容 ----------
 
 export function termCountOf(state: ActiveRun): number {
   if (state.stage === "UG") return UG_TERMS;
   if (state.stage === "MS") return (state.mastersYears ?? 0) * 2;
   return 0;
+}
+
+export function talentTotalsOf(state: ActiveRun): TalentTotals {
+  return totalsFor(state.profile.talents);
+}
+
+/** 本学期给出的安排：standard 是四张（docs/16 §2），classic 是五张基础安排。 */
+export function slateOf(state: ActiveRun): TermSlate {
+  if (state.stage !== "UG" && state.stage !== "MS") return { missing: null, plans: [] };
+  if (state.mode === "classic") return { missing: null, plans: basePlans() };
+  return termSlate(state.seed, state.stage, state.termIndex, planPool());
+}
+
+/** 一张安排在当前状态下实际要应用的向量（天赋加成、负身心减免、效率）。 */
+export function planVectorFor(state: ActiveRun, plan: PlanCard, totals: TalentTotals = talentTotalsOf(state)): PlanVector {
+  return planVector(plan.delta, totals.focus[plan.focus], totals.focusWellbeingRelief, state.stats.wellbeing, totals.efficiencyFloor);
+}
+
+function usedRandomEventIds(state: ActiveRun): string[] {
+  const ids: string[] = [];
+  for (const entry of state.history) {
+    if (entry.kind === "EVENT" && entry.eventId && EVENT_BY_ID[entry.eventId]?.kind === "random") ids.push(entry.eventId);
+  }
+  return ids;
+}
+
+function usedHappeningIds(state: ActiveRun): string[] {
+  const ids: string[] = [];
+  for (const entry of state.history) if (entry.kind === "HAPPENING" && entry.happeningId) ids.push(entry.happeningId);
+  return ids;
 }
 
 /** 当前 phase 下唯一合法的事件 ID；不在事件阶段返回 null。 */
@@ -105,7 +170,11 @@ export function expectedEventId(state: ActiveRun): string | null {
     return state.highSchoolNode ? HIGH_SCHOOL_EVENT_IDS[state.highSchoolNode - 1] : null;
   }
   if (state.phase === "CORE_EVENT") {
-    if (state.stage === "UG") return CORE_EVENT_IDS[state.termIndex - 1] ?? null;
+    if (state.stage === "UG") {
+      if (state.mode === "classic") return CORE_EVENT_IDS[state.termIndex - 1] ?? null;
+      // 主线槽：此刻本学期的主线槽事件还没进历史，“已出现过的随机事件”只包含之前学期的。
+      return mainSlotEvent(state.seed, state.termIndex, nodeCandidates(state.termIndex), randomEventPool(), usedRandomEventIds(state)).id;
+    }
     if (state.stage === "MS" && state.mastersYears) {
       const program: MastersProgram = state.mastersYears === 1 ? "MS_1Y" : "MS_2Y";
       return MASTERS_PLANS[program].events[state.termIndex - 1] ?? null;
@@ -132,6 +201,7 @@ interface Step {
   /** 操作被接受时的 revision（操作前的值）。 */
   revision: number;
   actionId: string;
+  totals: TalentTotals;
 }
 
 function record(step: Step, kind: HistoryKind, requested: Stats, extra: Partial<HistoryEntry> = {}): HistoryEntry {
@@ -155,24 +225,48 @@ function record(step: Step, kind: HistoryKind, requested: Stats, extra: Partial<
   return entry;
 }
 
+/** 学期开始：发资助；standard 模式再看有没有突发小事；进入选安排。 */
 function beginTerm(step: Step): void {
-  const stipend = STIPEND[step.draft.profile.economy];
-  record(step, "STIPEND", { ...zeroStats(), money: stipend });
-  step.draft.phase = "FOCUS";
+  const { draft } = step;
+  if (draft.stage !== "UG" && draft.stage !== "MS") fail("WRONG_PHASE", "当前不在学期中。");
+  record(step, "STIPEND", { ...zeroStats(), money: effectiveStipend(draft.profile.economy, step.totals) });
+  if (draft.mode === "standard") {
+    const happening = rollHappening(draft.seed, draft.stage, draft.termIndex, happeningPool(), usedHappeningIds(draft));
+    if (happening) record(step, "HAPPENING", happening.effects, { happeningId: happening.id });
+  }
+  draft.phase = "FOCUS";
 }
 
-function finishTerm(step: Step): void {
-  const { draft } = step;
-  const result = upkeep(draft.stats.money, draft.profile.trait);
+/**
+ * 学期最后一张事件之后，在同一次操作里：必要开销与短缺 → 基础成长 →
+ * 还有学期就直接进入下一学期（发资助、突发小事、选安排），否则冻结毕业快照。没有“学期小结”这一步。
+ */
+function endTerm(step: Step): void {
+  const { draft, totals } = step;
+  if (draft.stage !== "UG" && draft.stage !== "MS") fail("WRONG_PHASE", "当前不在学期中。");
+  const result = upkeep(draft.stats.money, effectiveUpkeep(totals));
   record(step, "UPKEEP", result.requested, {
     upkeep: { cost: result.cost, paid: result.paid, shortfall: result.shortfall, stress: result.stress },
   });
-  record(step, "GROWTH", copyStats(TERM_GROWTH));
-  draft.phase = "TERM_REVIEW";
+  record(step, "GROWTH", effectiveGrowth(totals));
+  if (draft.termIndex < termCountOf(draft)) {
+    draft.termIndex += 1;
+    beginTerm(step);
+    return;
+  }
+  const degree: Degree = draft.stage;
+  draft.graduations[degree] = freezeGraduation({
+    degree,
+    stats: draft.stats,
+    focusCounts: draft.focusCounts,
+    flags: draft.flags,
+    chance: totals.chance,
+  });
+  draft.phase = "GRAD_PREVIEW";
 }
 
 function requireActive(state: RunState): ActiveRun {
-  if (state.phase === "SETUP") fail("WRONG_PHASE", "还没有选定家庭档案。");
+  if (state.phase === "SETUP") fail("WRONG_PHASE", "还没有选定天赋。");
   return state as ActiveRun;
 }
 
@@ -180,13 +274,17 @@ function requireActive(state: RunState): ActiveRun {
 
 function confirmSetup(state: RunState, action: Extract<Action, { type: "CONFIRM_SETUP" }>): ActiveRun {
   if (state.phase !== "SETUP") fail("WRONG_PHASE", "开局选择已经确认。");
-  if (!ECONOMY_ORDER.includes(action.economy) || !ASPIRATION_ORDER.includes(action.aspiration)) {
-    fail("INVALID_ACTION", "家庭档案或个人愿望无效。");
-  }
-  if (typeof action.name !== "string") fail("INVALID_ACTION", "名字无效。");
-  const candidate = familyCandidates(state.seed).find((item) => item.economy === action.economy);
-  if (!candidate) fail("INVALID_ACTION", "家庭档案无效。");
-  const name = Array.from(action.name.trim()).slice(0, PLAYER_NAME_MAX).join("");
+  const { draw, pickCount } = setupDraw(state);
+  const picked = action.talents;
+  if (!Array.isArray(picked) || !picked.every((id) => typeof id === "string")) fail("INVALID_ACTION", "天赋选择无效。");
+  if (picked.length !== pickCount) fail("INVALID_ACTION", `需要恰好选 ${pickCount} 张天赋，实际 ${picked.length} 张。`);
+  if (new Set(picked).size !== picked.length) fail("INVALID_ACTION", "选中的天赋不能重复。");
+  const offered = new Set(draw.map((talent) => talent.id));
+  if (!picked.every((id) => offered.has(id))) fail("INVALID_ACTION", "只能从这一局抽到的天赋里选。");
+
+  const talents = [...picked].sort((a, b) => talentOrder(a) - talentOrder(b));
+  const totals = totalsFor(talents);
+  const origin = originFor(state.seed, state.mode === "classic" ? state.classicEconomy : undefined);
   return {
     schemaVersion: state.schemaVersion,
     rulesVersion: state.rulesVersion,
@@ -198,24 +296,20 @@ function confirmSetup(state: RunState, action: Extract<Action, { type: "CONFIRM_
     runId: state.runId,
     seed: state.seed,
     revision: state.revision,
+    mode: state.mode,
     phase: "HIGH_SCHOOL_EVENT",
     stage: "HS",
     termIndex: 0,
     highSchoolNode: 1,
     mastersYears: null,
-    profile: {
-      name,
-      economy: candidate.economy,
-      expectation: candidate.expectation,
-      trait: candidate.trait,
-      aspiration: action.aspiration,
-    },
-    stats: copyStats(candidate.initialStats),
+    profile: { economy: origin.economy, expectation: origin.expectation, aspiration: origin.aspiration, talents },
+    stats: initialStatsFor(origin.economy, totals),
     focusCounts: zeroFocusCounts(),
     flags: [],
     arcs: { A: null, B: null },
     admission: {
       baseReadiness: baseReadinessFor(state.seed),
+      talentBonus: totals.readiness,
       readinessBonus: null,
       readiness: null,
       strategy: null,
@@ -262,14 +356,14 @@ function chooseEvent(step: Step, action: Extract<Action, { type: "CHOOSE_EVENT" 
     if (ctx.catalog.catalogSha256 !== draft.catalogSha256) {
       fail("INVALID_ACTION", "学校目录版本与本局开局时不一致，无法生成申请结果。");
     }
-    const drawn = resolveAdmission(draft.seed, draft.admission.baseReadiness, draft.flags);
+    const drawn = resolveAdmission(draft.seed, draft.admission.baseReadiness, draft.flags, draft.admission.talentBonus);
     let offers: RuntimeSchool[];
     try {
       offers = sampleOffers(draft.seed, drawn.tier, ctx.catalog);
     } catch (error) {
       fail("CATALOG_POOL_TOO_SMALL", (error as Error).message);
     }
-    draft.admission = { baseReadiness: draft.admission.baseReadiness, ...drawn };
+    draft.admission = { baseReadiness: draft.admission.baseReadiness, talentBonus: draft.admission.talentBonus, ...drawn };
     draft.offers = offers.map((school) => ({ ...school, rank: school.rank ? { ...school.rank } : null }));
     draft.phase = "SCHOOL_OFFERS";
     return;
@@ -279,12 +373,12 @@ function chooseEvent(step: Step, action: Extract<Action, { type: "CHOOSE_EVENT" 
     const slot = arcSlotForTerm(draft.termIndex);
     if (slot) {
       if (slot.beat === 1) {
-        // 权重读取“本学期投入＋主线事件已结算、支线尚未结算”的状态；B 排除 A。分配后不再重抽。
+        // 权重读取“本学期安排＋主线槽事件已结算、支线尚未结算”的状态；B 排除 A。分配后不再重抽。
         const weights = arcWeights({
           focusCounts: draft.focusCounts,
           stats: draft.stats,
-          trait: draft.profile.trait,
           economy: draft.profile.economy,
+          bonus: step.totals.arcWeight,
         });
         draft.arcs[slot.slot] = pickArc(draft.seed, slot.slot, weights, slot.slot === "B" ? draft.arcs.A : null);
       }
@@ -292,7 +386,7 @@ function chooseEvent(step: Step, action: Extract<Action, { type: "CHOOSE_EVENT" 
       return;
     }
   }
-  finishTerm(step);
+  endTerm(step);
 }
 
 function chooseSchool(step: Step, action: Extract<Action, { type: "CHOOSE_SCHOOL" }>): void {
@@ -307,33 +401,18 @@ function chooseSchool(step: Step, action: Extract<Action, { type: "CHOOSE_SCHOOL
   beginTerm(step);
 }
 
-function chooseFocus(step: Step, action: Extract<Action, { type: "CHOOSE_FOCUS" }>): void {
+function choosePlan(step: Step, action: Extract<Action, { type: "CHOOSE_PLAN" }>): void {
   const { draft } = step;
-  if (draft.phase !== "FOCUS") fail("WRONG_PHASE", "现在不是选择投入重心的时候。");
-  if (!FOCUS_ORDER.includes(action.focus)) fail("INVALID_ACTION", "投入重心无效。");
-  const vector = focusVector(action.focus, draft.profile.trait, draft.stats.wellbeing);
-  record(step, "FOCUS", vector.requested, { focus: action.focus, efficiency: vector.factor });
-  draft.focusCounts[action.focus] += 1;
-  draft.phase = "CORE_EVENT";
-}
-
-function nextTerm(step: Step): void {
-  const { draft } = step;
-  if (draft.phase !== "TERM_REVIEW") fail("WRONG_PHASE", "本学期还没有结算。");
-  if (draft.stage !== "UG" && draft.stage !== "MS") fail("WRONG_PHASE", "当前不在学期中。");
-  if (draft.termIndex < termCountOf(draft)) {
-    draft.termIndex += 1;
-    beginTerm(step);
-    return;
+  if (draft.phase !== "FOCUS") fail("WRONG_PHASE", "现在不是选择学期安排的时候。");
+  const plan = slateOf(draft).plans.find((item) => item.id === action.planId);
+  if (!plan) fail("INVALID_ACTION", "只能在这学期给出的安排里选择。");
+  const vector = planVectorFor(draft, plan, step.totals);
+  if (vector.requested.money < 0 && draft.stats.money < -vector.requested.money) {
+    fail("INSUFFICIENT_FUNDS", `需要 ${-vector.requested.money}，当前 ${draft.stats.money}。`);
   }
-  const degree: Degree = draft.stage;
-  draft.graduations[degree] = freezeGraduation({
-    degree,
-    stats: draft.stats,
-    focusCounts: draft.focusCounts,
-    flags: draft.flags,
-  });
-  draft.phase = "GRAD_PREVIEW";
+  record(step, "FOCUS", vector.requested, { focus: plan.focus, planId: plan.id, efficiency: vector.factor });
+  draft.focusCounts[plan.focus] += 1;
+  draft.phase = "CORE_EVENT";
 }
 
 function currentGraduation(draft: ActiveRun): { degree: Degree; graduation: NonNullable<ActiveRun["graduations"]["UG"]> } {
@@ -385,14 +464,20 @@ function chooseRoute(step: Step, action: Extract<Action, { type: "CHOOSE_ROUTE" 
 }
 
 function enterMasters(step: Step, action: Extract<Action, { type: "ENTER_MASTERS" }>): void {
-  const { draft } = step;
+  const { draft, totals } = step;
   if (draft.phase !== "GRAD_RESULTS") fail("WRONG_PHASE", "现在不能选择硕士方案。");
   if (draft.stage !== "UG" || draft.mastersYears !== null) fail("MASTERS_NOT_AVAILABLE", "硕士之后不能再读第二个硕士。");
   if (!MASTERS_PROGRAM_ORDER.includes(action.program)) fail("INVALID_ACTION", "硕士方案无效。");
   const undergrad = draft.graduations.UG;
   if (!undergrad?.outcomes) fail("WRONG_PHASE", "本科毕业机会尚未揭晓。");
-  // 重新校验本科结果与该方案预算，但不重新抽签。
-  const blockers = mastersBlockers(action.program, undergrad, draft.stats.money, draft.profile.economy, draft.profile.trait);
+  // 重新校验本科结果与该方案预算（用天赋生效后的资助与开销），但不重新抽签。
+  const blockers = mastersBlockers(
+    action.program,
+    undergrad,
+    draft.stats.money,
+    effectiveStipend(draft.profile.economy, totals),
+    effectiveUpkeep(totals),
+  );
   if (blockers.length > 0) fail("MASTERS_NOT_AVAILABLE", `不满足硕士方案条件：${blockers.join(", ")}。`);
   const plan = MASTERS_PLANS[action.program];
   undergrad.resolution = "MASTERS";
@@ -408,10 +493,12 @@ function transition(state: RunState, command: Command, ctx: EngineContext): RunS
     fail("INVALID_ACTION", "操作无效。");
   }
   if (command.type === "CONFIRM_SETUP") return confirmSetup(state, command);
+  const draft = cloneRun(requireActive(state));
   const step: Step = {
-    draft: cloneRun(requireActive(state)),
+    draft,
     revision: state.revision,
     actionId: `r${state.revision}:${command.type}`,
+    totals: talentTotalsOf(draft),
   };
   switch (command.type) {
     case "CHOOSE_EVENT":
@@ -420,11 +507,8 @@ function transition(state: RunState, command: Command, ctx: EngineContext): RunS
     case "CHOOSE_SCHOOL":
       chooseSchool(step, command);
       break;
-    case "CHOOSE_FOCUS":
-      chooseFocus(step, command);
-      break;
-    case "NEXT_TERM":
-      nextTerm(step);
+    case "CHOOSE_PLAN":
+      choosePlan(step, command);
       break;
     case "REVEAL_GRADUATION":
       revealGrad(step);

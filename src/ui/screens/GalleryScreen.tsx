@@ -11,10 +11,12 @@ export function GalleryScreen(props: { onClose: () => void }) {
 
   return (
     <div className="screen" data-testid="screen-gallery">
-      <section className="panel">
+      <section className="describe">
         <h2 className="title">{S.galleryTitle}</h2>
-        <p className="muted small">{S.galleryLead}</p>
-        <p className="muted small">{ENDING_CARDS.disclaimer}</p>
+        <p className="muted small">
+          {S.galleryLead}
+          {ENDING_CARDS.disclaimer}
+        </p>
         <button type="button" className="button" data-testid="close-gallery" onClick={props.onClose}>
           {S.galleryClose}
         </button>
@@ -22,7 +24,8 @@ export function GalleryScreen(props: { onClose: () => void }) {
 
       <section aria-label={S.galleryTiers}>
         <h3 className="section-heading">
-          {S.galleryTiers} <span className="muted small">{S.galleryProgress(tierCount, ENDING_CARDS.tiers.length)}</span>
+          {S.galleryTiers}
+          <span className="muted small">{S.galleryProgress(tierCount, ENDING_CARDS.tiers.length)}</span>
         </h3>
         <ul className="gallery-list">
           {ENDING_CARDS.tiers.map((tier) => {
@@ -36,20 +39,11 @@ export function GalleryScreen(props: { onClose: () => void }) {
               >
                 <p className="card-tier">
                   <span className="tier-label">{tier.label}</span>
-                  <span className="tier-kind">{tier.kind}</span>
+                  <span className="card-name">{tier.name}</span>
                 </p>
-                <p className="card-name">{tier.name}</p>
                 {entry ? (
                   <>
-                    <p className="prose roast">{tier.roast}</p>
-                    {tier.phdVariant ? (
-                      <p className="small">
-                        {tier.phdVariant.name}：<span className="roast">{tier.phdVariant.roast}</span>
-                      </p>
-                    ) : null}
-                    <p className="muted small">
-                      {S.galleryCondition}：{tier.condition}
-                    </p>
+                    <p className="roast">{tier.roast}</p>
                     <p className="muted small">{S.galleryCount(entry.count, entry.firstSeed)}</p>
                   </>
                 ) : (
@@ -63,7 +57,7 @@ export function GalleryScreen(props: { onClose: () => void }) {
 
       <section aria-label={S.galleryHidden}>
         <h3 className="section-heading">
-          {S.galleryHidden}{" "}
+          {S.galleryHidden}
           <span className="muted small">{S.galleryProgress(hiddenCount, ENDING_CARDS.hidden.length)}</span>
         </h3>
         <ul className="gallery-list">
@@ -76,15 +70,13 @@ export function GalleryScreen(props: { onClose: () => void }) {
                 data-testid={`gallery-hidden-${item.id}`}
                 data-unlocked={entry ? "true" : "false"}
               >
-                <p className="card-name">
-                  <span className="hidden-id">{item.id}</span> {entry ? item.name : S.galleryUnknown}
+                <p className="card-tier">
+                  <span className="hidden-id">{item.id}</span>
+                  <span className="card-name">{entry ? item.name : S.galleryUnknown}</span>
                 </p>
                 {entry ? (
                   <>
-                    <p className="prose roast">{item.roast}</p>
-                    <p className="muted small">
-                      {S.galleryCondition}：{item.condition}
-                    </p>
+                    <p className="roast">{item.roast}</p>
                     <p className="muted small">{S.galleryCount(entry.count, entry.firstSeed)}</p>
                   </>
                 ) : (
@@ -95,10 +87,6 @@ export function GalleryScreen(props: { onClose: () => void }) {
           })}
         </ul>
       </section>
-
-      <button type="button" className="button wide" onClick={props.onClose}>
-        {S.galleryClose}
-      </button>
     </div>
   );
 }

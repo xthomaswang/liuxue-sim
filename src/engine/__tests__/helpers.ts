@@ -2,11 +2,11 @@
 
 import { makeSampleCatalog } from "../../../tests/helpers/sampleCatalog";
 import {
-  applyAction, createRun, currentEvent, focusView, mastersOptions, routeOptions,
+  applyAction, createRun, currentEvent, focusView, mastersOptions, routeOptions, setupView,
 } from "../index";
 import type {
-  Action, ActionResult, ActiveRun, Aspiration, ChoiceId, Economy, EngineContext, EventView, Focus, FocusView,
-  MastersOption, RouteOption, RunState,
+  Action, ActionResult, ActiveRun, ChoiceId, Economy, EngineContext, EventView, Focus, FocusView, MastersOption,
+  RouteOption, RunState, SetupRun, SetupView,
 } from "../index";
 import { hash32 } from "../rng";
 
@@ -34,16 +34,27 @@ export function asActive(state: RunState): ActiveRun {
   return state;
 }
 
-export function start(seed: number, context: EngineContext = ctx): RunState {
+export function asSetup(state: RunState): SetupRun {
+  if (state.phase !== "SETUP") throw new Error("已经离开 SETUP");
+  return state;
+}
+
+/** 正式玩法（standard）的新局。 */
+export function start(seed: number, context: EngineContext = ctx): SetupRun {
   return createRun({ seed, runId: `test-${seed}`, catalog: context.catalog });
 }
 
+/** 经典模式的新局：给定经济档，之后在六张特质天赋里选一张。 */
+export function startClassic(seed: number, economy: Economy, context: EngineContext = ctx): SetupRun {
+  return createRun({ seed, runId: `classic-${seed}`, catalog: context.catalog, mode: "classic", classicEconomy: economy });
+}
+
 export interface Policy {
-  economy: Economy;
-  aspiration?: Aspiration;
-  name?: string;
+  /** 选哪几张天赋；缺省取抽到的前 pickCount 张。 */
+  talents?(view: SetupView, state: SetupRun): string[];
   event(view: EventView, state: ActiveRun): ChoiceId;
-  focus(view: FocusView, state: ActiveRun): Focus;
+  /** 返回想选的安排 id；不在本学期名单里或买不起时，驱动会改选第一张可选的。 */
+  plan(view: FocusView, state: ActiveRun): string;
   /** 毕业结果出来后做什么；缺省：有机会就按 PHD > LOCAL_JOB > HOME_JOB 接受，否则过渡期。 */
   graduate?(state: ActiveRun, routes: RouteOption[], masters: MastersOption[]): Action;
   school?(state: ActiveRun): string;
@@ -57,7 +68,8 @@ export function defaultGraduate(_state: ActiveRun, routes: RouteOption[]): Actio
 /** 按当前 phase 生成下一步操作；ENDING 返回 null。 */
 export function nextAction(state: RunState, policy: Policy): Action | null {
   if (state.phase === "SETUP") {
-    return { type: "CONFIRM_SETUP", economy: policy.economy, aspiration: policy.aspiration ?? "DISCOVERY", name: policy.name ?? "" };
+    const view = setupView(state);
+    return { type: "CONFIRM_SETUP", talents: policy.talents ? policy.talents(view, state) : view.draw.slice(0, view.pickCount).map((talent) => talent.id) };
   }
   switch (state.phase) {
     case "HIGH_SCHOOL_EVENT":
@@ -65,7 +77,6 @@ export function nextAction(state: RunState, policy: Policy): Action | null {
     case "ARC_EVENT": {
       const view = currentEvent(state);
       if (!view) throw new Error(`${state.phase} 没有当前事件`);
-      if (!view.choices.some((choice) => choice.available)) throw new Error(`${view.event.id} 没有可选项`);
       const wanted = policy.event(view, state);
       const choice = view.choices.find((item) => item.choice.id === wanted && item.available) ?? view.choices.find((item) => item.available);
       if (!choice) throw new Error(`${view.event.id} 没有可选项`);
@@ -75,11 +86,12 @@ export function nextAction(state: RunState, policy: Policy): Action | null {
       return { type: "CHOOSE_SCHOOL", unitid: policy.school ? policy.school(state) : (state.offers ?? [])[0].unitid };
     case "FOCUS": {
       const view = focusView(state);
-      if (!view) throw new Error("FOCUS 没有投入视图");
-      return { type: "CHOOSE_FOCUS", focus: policy.focus(view, state) };
+      if (!view) throw new Error("FOCUS 没有安排视图");
+      const wanted = policy.plan(view, state);
+      const option = view.options.find((item) => item.plan.id === wanted && item.available) ?? view.options.find((item) => item.available);
+      if (!option) throw new Error("这学期没有可选的安排");
+      return { type: "CHOOSE_PLAN", planId: option.plan.id };
     }
-    case "TERM_REVIEW":
-      return { type: "NEXT_TERM" };
     case "GRAD_PREVIEW":
       return { type: "REVEAL_GRADUATION" };
     case "GRAD_RESULTS":
@@ -107,10 +119,33 @@ export function play(from: RunState, policy: Policy, stop?: (state: RunState) =>
   throw new Error("推进步数超出上限，状态机可能卡住");
 }
 
-/** 固定剧本：按给定的投入序列与事件选择表推进。 */
+/** 停在某个阶段（可再限定学期）的判定，用来写 play 的 stop。 */
+export function at(phase: RunState["phase"], termIndex?: number, stage?: "UG" | "MS") {
+  return (state: RunState): boolean =>
+    state.phase === phase &&
+    (termIndex === undefined || (state.phase !== "SETUP" && state.termIndex === termIndex)) &&
+    (stage === undefined || (state.phase !== "SETUP" && state.stage === stage));
+}
+
+/** 经典模式的策略：选一张特质天赋；每学期选一个类别（基础安排的 id 就是类别名）。 */
+export function classicPolicy(args: {
+  talent?: string;
+  focus: Focus | ((state: ActiveRun) => Focus);
+  event: ChoiceId | ((view: EventView, state: ActiveRun) => ChoiceId);
+  graduate?: Policy["graduate"];
+}): Policy {
+  const { focus, event } = args;
+  return {
+    talents: () => [args.talent ?? "T_OUTGOING"],
+    plan: (_view, state) => (typeof focus === "function" ? focus(state) : focus),
+    event: (view, state) => (typeof event === "function" ? event(view, state) : event),
+    graduate: args.graduate,
+  };
+}
+
+/** 经典模式的固定剧本：按给定的类别序列与事件选择表推进。 */
 export function scriptedPolicy(args: {
-  economy: Economy;
-  aspiration?: Aspiration;
+  talent: string;
   focus: Focus[];
   choices: Record<string, ChoiceId>;
   fallback?: ChoiceId;
@@ -118,11 +153,10 @@ export function scriptedPolicy(args: {
 }): Policy {
   let focusIndex = 0;
   return {
-    economy: args.economy,
-    aspiration: args.aspiration,
-    focus: () => {
+    talents: () => [args.talent],
+    plan: () => {
       const focus = args.focus[focusIndex++];
-      if (!focus) throw new Error("剧本里的投入序列用完了");
+      if (!focus) throw new Error("剧本里的类别序列用完了");
       return focus;
     },
     event: (view) => {

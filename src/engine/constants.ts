@@ -1,14 +1,15 @@
-// 全部数值常量集中在这里。数值规则以 docs/03 为准，申请以 docs/13 为准，结局卡以 docs/14 为准。
+// 全部数值常量集中在这里。数值规则以 docs/03 为准，申请以 docs/13 为准，结局卡以 docs/14 为准，
+// 第二版玩法（出身、天赋、学期安排、主线槽、突发小事）以 docs/16 为准。
 // 版本号：规则或内容有会改变结果的修改时必须提升，旧存档据此判为不兼容。
-// 1.1.0 = docs 00–13 的 1.0.0 规则 + docs/14 结局卡。
+// 2.0.0 = docs/16 第二版玩法。
 
 import type {
   ArcId, Aspiration, Economy, EndingTierId, Expectation, Focus, MastersProgram, Opportunity, OfferTier, Stats,
-  StatKey, Strategy, Trait,
+  StatKey, Strategy, TalentRarity,
 } from "./types";
 
-export const RULES_VERSION = "1.1.0";
-export const CONTENT_VERSION = "1.1.0";
+export const RULES_VERSION = "2.0.0";
+export const CONTENT_VERSION = "2.0.0";
 export const SAVE_FORMAT = "liuxue-sim-save";
 
 // ---------- 固定顺序 ----------
@@ -19,7 +20,6 @@ export const ARC_ORDER: readonly ArcId[] = ["RESEARCH", "INTERNSHIP", "FRIENDSHI
 export const OPPORTUNITY_ORDER: readonly Opportunity[] = ["PHD", "LOCAL_JOB", "HOME_JOB"];
 export const ECONOMY_ORDER: readonly Economy[] = ["LOW", "MID", "HIGH"];
 export const EXPECTATION_ORDER: readonly Expectation[] = ["ACADEMIC", "STABILITY", "AUTONOMY"];
-export const TRAIT_ORDER: readonly Trait[] = ["FOCUSED", "PRACTICAL", "OUTGOING", "FRUGAL", "RESILIENT", "REFLECTIVE"];
 export const ASPIRATION_ORDER: readonly Aspiration[] = ["DISCOVERY", "INDEPENDENCE", "BELONGING"];
 /** 有序档；U 是独立池，不在这个序列里。 */
 export const ORDERED_TIERS: readonly OfferTier[] = ["S", "A", "B", "C", "D"];
@@ -37,10 +37,10 @@ export const INITIAL_STATS: Readonly<Record<Economy, Stats>> = {
   HIGH: { money: 56, academics: 18, career: 12, wellbeing: 70 },
 };
 export const STIPEND: Readonly<Record<Economy, number>> = { LOW: 6, MID: 10, HIGH: 14 };
+/** 每学期必要开销的基础值；天赋的 upkeep 效果在此之上增减（T_FRUGAL 为 -1）。 */
 export const UPKEEP_DEFAULT = 12;
-export const UPKEEP_FRUGAL = 11;
 
-/** 五种投入的基础向量（03 §3）。 */
+/** 五种投入的基础向量（03 §3），也就是五张“基础安排”的向量。 */
 export const FOCUS_BASE: Readonly<Record<Focus, Stats>> = {
   STUDY: { money: 0, academics: 11, career: 1, wellbeing: -7 },
   CAREER: { money: 0, academics: 2, career: 10, wellbeing: -6 },
@@ -48,13 +48,6 @@ export const FOCUS_BASE: Readonly<Record<Focus, Stats>> = {
   WORK: { money: 12, academics: 1, career: 3, wellbeing: -7 },
   REST: { money: 0, academics: 1, career: 0, wellbeing: 15 },
 };
-export const TRAIT_FOCUSED_STUDY_ACADEMICS = 2;
-export const TRAIT_PRACTICAL_CAREER_CAREER = 2;
-export const TRAIT_OUTGOING_CAMPUS_CAREER = 2;
-export const TRAIT_RESILIENT_WELLBEING_RELIEF = 2;
-export const TRAIT_REFLECTIVE_REST_ACADEMICS = 1;
-export const TRAIT_REFLECTIVE_REST_WELLBEING = 3;
-
 /** 效率分界：>=40 → 10，20–39 → 8，0–19 → 6（十分数）。 */
 export const EFFICIENCY_FULL_FROM = 40;
 export const EFFICIENCY_REDUCED_FROM = 20;
@@ -116,7 +109,25 @@ export const ORDERED_DISPLAY_TENTHS = 900;
 export const OFFER_COUNT = 3;
 export const MIN_POOL_SIZE = 3;
 
-export const PLAYER_NAME_MAX = 12;
+// ---------- 16：出身、天赋、主线槽、突发小事 ----------
+
+/** origin:economy 的分界：r < 0.30 → LOW；r < 0.75 → MID；否则 HIGH。 */
+export const ORIGIN_LOW_BELOW = 0.3;
+export const ORIGIN_MID_BELOW = 0.75;
+export const TALENT_WEIGHTS: Readonly<Record<TalentRarity, number>> = { N: 100, R: 45, SR: 15, SSR: 4 };
+export const TALENT_DRAW_COUNT = 10;
+export const TALENT_PICK_STANDARD = 3;
+export const TALENT_PICK_CLASSIC = 1;
+/** 第一版六种特质对应的固定天赋；经典模式只在这六张里选一张。 */
+export const CLASSIC_TALENT_IDS: readonly string[] = [
+  "T_FOCUSED", "T_PRACTICAL", "T_OUTGOING", "T_FRUGAL", "T_RESILIENT", "T_REFLECTIVE",
+];
+/** 本科第 2–7 学期主线槽换成随机事件的概率。 */
+export const RANDOM_EVENT_PROBABILITY = 0.45;
+export const RANDOM_EVENT_FIRST_TERM = 2;
+export const RANDOM_EVENT_LAST_TERM = 7;
+/** 每学期开头出现突发小事的概率。 */
+export const HAPPENING_PROBABILITY = 0.6;
 
 // ---------- 07：结局 ----------
 

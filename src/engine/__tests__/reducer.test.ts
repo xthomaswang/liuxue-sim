@@ -1,16 +1,19 @@
-// 状态机与整局流程。期望值来自 docs/06 §5–§6、§9，docs/09 §3、§5。
+// 状态机与整局流程。期望值来自 docs/06 §5–§6、§9，docs/09 §3、§5；流程按 docs/16 §5（没有学期小结）。
+// 这里的整局都走经典模式（docs/16 §7）：固定五张基础安排与原主线事件，数值与第一版相同。
 
 import { describe, expect, it } from "vitest";
-import { ALL_EVENTS, EVENT_BY_ID } from "../../content";
+import { ORIGINAL_EVENTS, EVENT_BY_ID } from "../../content";
 import {
   admissionPreview, admissionResult, currentEvent, focusView, graduationView, lastOutcome, mastersOptions,
-  routeOptions, sceneIntro, stageInfo, termLedger,
+  routeOptions, sceneIntro, setupView, stageInfo, termLedger,
 } from "../index";
 import type { Action, ActiveRun, ChoiceId, Focus, RunState, Stats } from "../index";
 import { draw01 } from "../rng";
 import { totalFocus } from "../rules";
-import { act, actWithRevision, asActive, clone, ctx, play, scriptedPolicy, start, tryAct } from "./helpers";
-import type { Policy } from "./helpers";
+import {
+  act, actWithRevision, asActive, at, classicPolicy, clone, ctx, play, scriptedPolicy, startClassic, tryAct,
+} from "./helpers";
+
 
 const stats = (money: number, academics: number, career: number, wellbeing: number): Stats => ({ money, academics, career, wellbeing });
 
@@ -24,15 +27,17 @@ const SEED13_CHOICES: Record<string, ChoiceId> = {
 };
 
 function seed13(until: (state: RunState) => boolean): { state: ActiveRun; log: Action[] } {
-  const policy = scriptedPolicy({ economy: "LOW", focus: [...SEED13_FOCUS], choices: SEED13_CHOICES });
-  const played = play(start(13), policy, until);
+  // 文档里这一局是 LOW 家庭、特质 OUTGOING；经典模式下对应经济档 LOW 加天赋 T_OUTGOING。
+  const policy = scriptedPolicy({ talent: "T_OUTGOING", focus: [...SEED13_FOCUS], choices: SEED13_CHOICES });
+  const played = play(startClassic(13, "LOW"), policy, until);
   return { state: asActive(played.state), log: played.log };
 }
 
-describe("docs/09 §3：seed 13 的低资助整局", () => {
+describe("docs/09 §3：seed 13 的低资助整局（经典模式）", () => {
   it("逐步走完本科，期末 53/100/69/0，支线 CREATIVE + RESEARCH，机会与硕士入口与文档一致", () => {
-    const { state, log } = seed13((s) => s.phase === "GRAD_RESULTS");
-    expect(state.profile.trait).toBe("OUTGOING");
+    const { state, log } = seed13(at("GRAD_RESULTS"));
+    expect(state.mode).toBe("classic");
+    expect(state.profile).toMatchObject({ economy: "LOW", talents: ["T_OUTGOING"] });
     expect(state.stats).toEqual(stats(53, 100, 69, 0));
     expect(state.arcs).toEqual({ A: "CREATIVE", B: "RESEARCH" });
     expect(state.focusCounts).toEqual({ STUDY: 3, CAREER: 0, CAMPUS: 0, WORK: 5, REST: 0 });
@@ -43,6 +48,8 @@ describe("docs/09 §3：seed 13 的低资助整局", () => {
       "ARC_CREATIVE_2=B", "CORE_05=B", "ARC_RESEARCH_2=A", "CORE_06=A", "ARC_CREATIVE_3=B", "CORE_07=A",
       "ARC_RESEARCH_3=A", "CORE_08=A",
     ]);
+    // 经典模式没有突发小事
+    expect(state.history.some((entry) => entry.kind === "HAPPENING")).toBe(false);
     const grad = state.graduations.UG;
     expect(grad?.frozenStats).toEqual(stats(53, 100, 69, 0));
     expect(grad?.probabilities).toEqual({ PHD: 83, LOCAL_JOB: null, HOME_JOB: 91 });
@@ -56,13 +63,20 @@ describe("docs/09 §3：seed 13 的低资助整局", () => {
     expect(routes.map((option) => [option.route, option.available])).toEqual([
       ["PHD", true], ["LOCAL_JOB", false], ["HOME_JOB", false], ["TRANSITION", true],
     ]);
-    // 2 高中 + 8 投入 + 14 事件 = 24 次生活决策
-    const decisions = log.filter((action) => action.type === "CHOOSE_FOCUS" || action.type === "CHOOSE_EVENT").length;
+    // 2 高中 + 8 次安排 + 14 事件 = 24 次生活决策；没有“继续”这一步
+    const decisions = log.filter((action) => action.type === "CHOOSE_PLAN" || action.type === "CHOOSE_EVENT").length;
     expect(decisions).toBe(24);
+    expect(log.map((action) => action.type)).toEqual([
+      "CONFIRM_SETUP", "CHOOSE_EVENT", "CHOOSE_EVENT", "CHOOSE_SCHOOL",
+      "CHOOSE_PLAN", "CHOOSE_EVENT",
+      ...Array.from({ length: 6 }, () => ["CHOOSE_PLAN", "CHOOSE_EVENT", "CHOOSE_EVENT"]).flat(),
+      "CHOOSE_PLAN", "CHOOSE_EVENT",
+      "REVEAL_GRADUATION",
+    ]);
   });
 
   it("可以直接接受博士结束（本科直博）", () => {
-    const { state } = seed13((s) => s.phase === "GRAD_RESULTS");
+    const { state } = seed13(at("GRAD_RESULTS"));
     const ended = asActive(act(state, { type: "CHOOSE_ROUTE", route: "PHD" }));
     expect(ended.phase).toBe("ENDING");
     expect(ended.ending).toMatchObject({ route: "PHD", degree: "UG", entryMode: "undergrad_direct", transitionMode: null });
@@ -75,7 +89,7 @@ describe("docs/09 §3：seed 13 的低资助整局", () => {
     ["MS_2Y", 2, ["MASTER_01", "MASTER_02", "MASTER_03", "MASTER_04"], 12],
   ] as const) {
     it(`放弃博士继续 ${program}：入学费只扣一次，硕士不新增支线，走到 ENDING`, () => {
-      const { state } = seed13((s) => s.phase === "GRAD_RESULTS");
+      const { state } = seed13(at("GRAD_RESULTS"));
       const fee = program === "MS_1Y" ? 8 : 12;
       const entered = asActive(act(state, { type: "ENTER_MASTERS", program }));
       expect(entered.stage).toBe("MS");
@@ -92,12 +106,7 @@ describe("docs/09 §3：seed 13 的低资助整局", () => {
       expect(lastOutcome(entered)?.kind).toBe("MASTERS_FEE");
       expect(entered.history.filter((entry) => entry.kind === "MASTERS_FEE")).toHaveLength(1);
 
-      const policy: Policy = {
-        economy: "LOW",
-        focus: () => "REST",
-        event: () => "A",
-        graduate: () => ({ type: "CHOOSE_ROUTE", route: "TRANSITION" }),
-      };
+      const policy = classicPolicy({ focus: "REST", event: "A", graduate: () => ({ type: "CHOOSE_ROUTE", route: "TRANSITION" }) });
       const end = asActive(play(entered, policy).state);
       expect(end.phase).toBe("ENDING");
       const msEvents = end.history.filter((entry) => entry.stage === "MS" && entry.kind === "EVENT").map((entry) => entry.eventId);
@@ -121,32 +130,35 @@ describe("docs/09 §3：seed 13 的低资助整局", () => {
   }
 
   it("一年与两年硕士共用 MS 命名空间：同 seed 的原始 roll 相同", () => {
-    const { state } = seed13((s) => s.phase === "GRAD_RESULTS");
-    const policy: Policy = { economy: "LOW", focus: () => "STUDY", event: () => "A" };
+    const { state } = seed13(at("GRAD_RESULTS"));
+    const policy = classicPolicy({ focus: "STUDY", event: "A" });
     const rolls = (["MS_1Y", "MS_2Y"] as const).map((program) => {
-      const end = asActive(play(act(state, { type: "ENTER_MASTERS", program }), policy, (s) => s.phase === "GRAD_RESULTS").state);
+      const end = asActive(play(act(state, { type: "ENTER_MASTERS", program }), policy, at("GRAD_RESULTS")).state);
       return end.graduations.MS?.rolls;
     });
     expect(rolls[0]).toEqual(rolls[1]);
   });
 });
 
-describe("开局与高中（06 §1、13 §1）", () => {
-  it("SETUP 只有 seed 与版本；确认后初始化四属性并进入 HS_01", () => {
-    const setup = start(42);
-    expect(setup.phase).toBe("SETUP");
-    expect(setup.revision).toBe(0);
+describe("经典模式的开局与高中（06 §1、13 §1、16 §7）", () => {
+  it("SETUP 只有 seed、版本与模式；经典模式给六张特质天赋、选一张", () => {
+    const setup = startClassic(42, "MID");
+    expect(setup).toMatchObject({ phase: "SETUP", revision: 0, mode: "classic", classicEconomy: "MID" });
     expect(stageInfo(setup)).toMatchObject({ stage: "SETUP", title: "开局" });
-    expect(admissionPreview(setup).baseReadiness).toBe(65);
-    const run = asActive(act(setup, { type: "CONFIRM_SETUP", economy: "MID", aspiration: "BELONGING", name: "  阿原  " }));
-    expect(run.phase).toBe("HIGH_SCHOOL_EVENT");
-    expect(run.revision).toBe(1);
-    expect(run.stage).toBe("HS");
-    expect(run.highSchoolNode).toBe(1);
-    expect(run.profile.name).toBe("阿原");
-    expect(run.profile.aspiration).toBe("BELONGING");
+    expect(admissionPreview(setup)).toMatchObject({ baseReadiness: 65, talentBonus: 0, readinessSoFar: 65 });
+    const view = setupView(setup);
+    expect(view.origin.economy).toBe("MID");
+    expect(view.origin.initialStats).toEqual(stats(42, 18, 12, 70));
+    expect(view.origin).toMatchObject({ stipend: 10, upkeep: 12 });
+    expect(view.draw.map((talent) => talent.id)).toEqual(["T_FOCUSED", "T_PRACTICAL", "T_OUTGOING", "T_FRUGAL", "T_RESILIENT", "T_REFLECTIVE"]);
+    expect(view.pickCount).toBe(1);
+    expect(view.baseReadiness).toBe(65);
+
+    const run = asActive(act(setup, { type: "CONFIRM_SETUP", talents: ["T_FOCUSED"] }));
+    expect(run).toMatchObject({ phase: "HIGH_SCHOOL_EVENT", revision: 1, stage: "HS", highSchoolNode: 1, mode: "classic" });
+    expect(run.profile).toEqual({ economy: "MID", expectation: view.origin.expectation, aspiration: view.origin.aspiration, talents: ["T_FOCUSED"] });
     expect(run.stats).toEqual(stats(42, 18, 12, 70));
-    expect(run.admission).toMatchObject({ baseReadiness: 65, readiness: null, tier: null });
+    expect(run.admission).toMatchObject({ baseReadiness: 65, talentBonus: 0, readiness: null, tier: null });
     expect(run.school).toBeNull();
     expect(run.offers).toBeNull();
     expect(stageInfo(run)).toMatchObject({ stage: "HS", title: "高中最后一年", step: "事件 1 / 2" });
@@ -154,17 +166,17 @@ describe("开局与高中（06 §1、13 §1）", () => {
     expect(currentEvent(run)?.event.id).toBe("HS_01");
   });
 
-  it("名字截到 12 个码点，可为空，不进入随机", () => {
-    const long = asActive(act(start(7), { type: "CONFIRM_SETUP", economy: "LOW", aspiration: "DISCOVERY", name: "一二三四五六七八九十甲乙丙丁" }));
-    expect(Array.from(long.profile.name)).toHaveLength(12);
-    const empty = asActive(act(start(7), { type: "CONFIRM_SETUP", economy: "LOW", aspiration: "DISCOVERY", name: "" }));
-    expect(empty.profile.name).toBe("");
-    expect(empty.profile.trait).toBe(long.profile.trait);
-    expect(empty.admission.baseReadiness).toBe(long.admission.baseReadiness);
+  it("经典模式只能选一张，且必须是六张特质天赋之一", () => {
+    const setup = startClassic(42, "MID");
+    for (const talents of [[], ["T_FOCUSED", "T_FRUGAL"], ["T_NOT_A_TALENT"], ["T_FOCUSED", "T_FOCUSED"]]) {
+      const result = tryAct(setup, { type: "CONFIRM_SETUP", talents });
+      expect(result.ok ? "OK" : result.error.code).toBe("INVALID_ACTION");
+      expect(result.state).toBe(setup);
+    }
   });
 
-  it("高中只结算两张事件：不发资助、不计投入、不扣费；属性原样带入本科", () => {
-    let run = asActive(act(start(42), { type: "CONFIRM_SETUP", economy: "MID", aspiration: "DISCOVERY", name: "" }));
+  it("高中只结算两张事件：不发资助、不计安排、不扣费；属性原样带入本科", () => {
+    let run = asActive(act(startClassic(42, "MID"), { type: "CONFIRM_SETUP", talents: ["T_FOCUSED"] }));
     const first = currentEvent(run);
     expect(first?.choices.map((choice) => choice.admission?.readinessBonus)).toEqual([10, 6]);
     expect(first?.choices.map((choice) => choice.admission?.readinessAfter)).toEqual([75, 71]);
@@ -193,7 +205,7 @@ describe("开局与高中（06 §1、13 §1）", () => {
     expect(stageInfo(run).title).toBe("申请结果");
 
     const result = admissionResult(run);
-    expect(result).toMatchObject({ baseReadiness: 65, readinessBonus: 10, readiness: 75, strategy: "STEADY" });
+    expect(result).toMatchObject({ baseReadiness: 65, talentBonus: 0, readinessBonus: 10, readiness: 75, strategy: "STEADY" });
     expect(result?.poolRoll).toBe(draw01(42, "admission:pool"));
     expect(result?.tierRoll).toBe(draw01(42, "admission:tier"));
     expect(result?.offers).toHaveLength(3);
@@ -208,10 +220,7 @@ describe("开局与高中（06 §1、13 §1）", () => {
     if (!rejected.ok) expect(rejected.error.code).toBe("SCHOOL_NOT_OFFERED");
 
     const enrolled = asActive(act(run, { type: "CHOOSE_SCHOOL", unitid: result?.offers[1].unitid ?? "" }));
-    expect(enrolled.stage).toBe("UG");
-    expect(enrolled.termIndex).toBe(1);
-    expect(enrolled.highSchoolNode).toBeNull();
-    expect(enrolled.phase).toBe("FOCUS");
+    expect(enrolled).toMatchObject({ stage: "UG", termIndex: 1, highSchoolNode: null, phase: "FOCUS" });
     expect(enrolled.school?.unitid).toBe(result?.offers[1].unitid);
     // 高中后的属性带入本科，只多了第一期资助
     expect(enrolled.stats).toEqual(stats(52, 27, 14, 67));
@@ -222,18 +231,19 @@ describe("开局与高中（06 §1、13 §1）", () => {
     expect(intro?.long).toContain("Sampleville");
     expect(`${intro?.short}${intro?.long}`).not.toContain("{{");
     expect(admissionResult(enrolled)?.chosen?.unitid).toBe(enrolled.school?.unitid);
+    expect(termLedger(enrolled)).toBeNull(); // 第 1 学期之前没有“上一学期”
   });
 
-  it("同 seed 下换家庭档不改变基础准备度，换高中选择只改变分布不重抽 roll", () => {
+  it("同 seed 下换经济档不改变基础准备度，换高中选择只改变分布不重抽 roll", () => {
     const tiers = new Set<string>();
     for (const economy of ["LOW", "MID", "HIGH"] as const) {
       for (const hs1 of ["A", "B"] as const) {
         for (const hs2 of ["A", "B"] as const) {
-          let run = act(start(99), { type: "CONFIRM_SETUP", economy, aspiration: "DISCOVERY", name: "" });
+          let run = act(startClassic(99, economy), { type: "CONFIRM_SETUP", talents: ["T_RESILIENT"] });
           run = act(run, { type: "CHOOSE_EVENT", eventId: "HS_01", choiceId: hs1 });
           run = act(run, { type: "CHOOSE_EVENT", eventId: "HS_02", choiceId: hs2 });
           const result = admissionResult(run);
-          expect(result?.baseReadiness).toBe(admissionPreview(start(99)).baseReadiness);
+          expect(result?.baseReadiness).toBe(admissionPreview(startClassic(99, economy)).baseReadiness);
           expect(result?.poolRoll).toBe(draw01(99, "admission:pool"));
           expect(result?.tierRoll).toBe(draw01(99, "admission:tier"));
           tiers.add(`${hs1}${hs2}:${result?.tier}`);
@@ -244,34 +254,46 @@ describe("开局与高中（06 §1、13 §1）", () => {
   });
 });
 
-describe("学期循环（06 §5、03 §4）", () => {
-  const policy: Policy = { economy: "MID", focus: () => "STUDY", event: () => "B" };
+describe("学期循环（06 §5、03 §4；16 §5：没有学期小结）", () => {
+  const policy = classicPolicy({ talent: "T_RESILIENT", focus: "STUDY", event: "B" });
 
-  it("一个本科学期的阶段顺序、账目与历史记录", () => {
-    let run = asActive(play(start(5), policy, (s) => s.phase === "FOCUS").state);
+  it("一个本科学期：选安排 → 主线 →（支线）→ 同一次操作里结算并进入下一学期", () => {
+    let run = asActive(play(startClassic(5, "MID"), policy, at("FOCUS")).state);
     const view = focusView(run);
     expect(view?.stipend.applied.money).toBe(10);
-    expect(view?.upkeep).toBe(run.profile.trait === "FRUGAL" ? 11 : 12);
+    expect(view?.upkeep).toBe(12);
     expect(view?.efficiency.factor).toBe(10);
+    expect(view?.happening).toBeNull();
+    // 经典模式每学期固定给五张基础安排，id 就是类别名
+    expect(view?.options.map((option) => option.plan.id)).toEqual(["STUDY", "CAREER", "CAMPUS", "WORK", "REST"]);
     expect(view?.options.map((option) => option.focus)).toEqual(["STUDY", "CAREER", "CAMPUS", "WORK", "REST"]);
+    expect(view?.options.every((option) => option.available && option.shortBy === null && option.plan.base === true)).toBe(true);
     const before = clone(run.stats);
 
-    run = asActive(act(run, { type: "CHOOSE_FOCUS", focus: "WORK" }));
+    run = asActive(act(run, { type: "CHOOSE_PLAN", planId: "WORK" }));
     expect(run.phase).toBe("CORE_EVENT");
     expect(run.focusCounts.WORK).toBe(1);
     expect(run.stats.money).toBe(Math.min(100, before.money + 12));
-    expect(lastOutcome(run)).toMatchObject({ kind: "FOCUS", choiceLabel: null });
+    expect(run.history[run.history.length - 1]).toMatchObject({ kind: "FOCUS", focus: "WORK", planId: "WORK", efficiency: 10 });
+    expect(lastOutcome(run)).toMatchObject({ kind: "FOCUS", choiceLabel: null, heading: view?.options[3].name });
     expect(currentEvent(run)?.event.id).toBe("CORE_01");
     expect(currentEvent(run)?.kindLabel).toBe("主线");
     expect(currentEvent(run)?.choices[0].projected).not.toBeNull();
+    expect(termLedger(run)).toBeNull();
 
+    // S1 没有支线：主线之后同一次操作里完成期末结算，直接到第 2 学期选安排
     run = asActive(act(run, { type: "CHOOSE_EVENT", eventId: "CORE_01", choiceId: "B" }));
-    expect(run.phase).toBe("TERM_REVIEW"); // S1 没有支线，主线后直接期末结算
+    expect(run).toMatchObject({ phase: "FOCUS", termIndex: 2 });
+    expect(lastOutcome(run)).toMatchObject({ kind: "EVENT", heading: EVENT_BY_ID.CORE_01.title });
+    const kinds = run.history.filter((entry) => entry.revision === run.revision - 1).map((entry) => `${entry.kind}@${entry.termIndex}`);
+    expect(kinds).toEqual(["EVENT@1", "UPKEEP@1", "GROWTH@1", "STIPEND@2"]);
+    // 上学期的账目显示在这一屏上方
     const ledger = termLedger(run);
     expect(ledger?.lines.map((line) => line.kind)).toEqual(["STIPEND", "FOCUS", "EVENT", "UPKEEP", "GROWTH"]);
-    expect(ledger).toMatchObject({ stage: "UG", termIndex: 1, termCount: 8, isFinalTerm: false, shortfall: 0, stress: 0 });
-    expect(ledger?.endStats).toEqual(run.stats);
-    expect(lastOutcome(run)?.kind).toBe("EVENT");
+    expect(ledger).toMatchObject({ stage: "UG", termIndex: 1, termCount: 8, isFinalTerm: false, shortfall: 0, stress: 0, title: "本科 · 一年级秋" });
+    // 账目的终值是上学期基础成长之后、本学期资助之前
+    expect(ledger?.endStats.money).toBe(run.stats.money - 10);
+    expect(ledger?.startStats.money).toBe(before.money - 10);
     // 每条历史记录的 applied 都是真实变化，前后相接
     for (let i = 1; i < run.history.length; i++) {
       const entry = run.history[i];
@@ -282,29 +304,29 @@ describe("学期循环（06 §5、03 §4）", () => {
     }
     expect(run.history[run.history.length - 1].afterStats).toEqual(run.stats);
 
-    run = asActive(act(run, { type: "NEXT_TERM" }));
-    expect(run.phase).toBe("FOCUS");
-    expect(run.termIndex).toBe(2);
-    expect(lastOutcome(run)).toBeNull();
-    run = asActive(act(run, { type: "CHOOSE_FOCUS", focus: "STUDY" }));
+    run = asActive(act(run, { type: "CHOOSE_PLAN", planId: "STUDY" }));
     expect(run.arcs).toEqual({ A: null, B: null });
+    expect(termLedger(run)).toBeNull(); // 账目只在选安排那一屏显示
     run = asActive(act(run, { type: "CHOOSE_EVENT", eventId: "CORE_02", choiceId: "B" }));
     expect(run.phase).toBe("ARC_EVENT"); // S2 主线结算后分配槽 A
+    expect(run.termIndex).toBe(2);
     expect(run.arcs.A).not.toBeNull();
     expect(run.arcs.B).toBeNull();
     const arcEvent = currentEvent(run);
     expect(arcEvent?.event.id).toBe(`ARC_${run.arcs.A}_1`);
     expect(arcEvent?.kindLabel).toContain("第 1 幕");
     run = asActive(act(run, { type: "CHOOSE_EVENT", eventId: arcEvent?.event.id ?? "", choiceId: "B" }));
-    expect(run.phase).toBe("TERM_REVIEW");
+    expect(run).toMatchObject({ phase: "FOCUS", termIndex: 3 });
     expect(termLedger(run)?.lines.map((line) => line.kind)).toEqual(["STIPEND", "FOCUS", "EVENT", "EVENT", "UPKEEP", "GROWTH"]);
+    expect(termLedger(run)?.termIndex).toBe(2);
   });
 
-  it("本科八学期：支线槽在规定学期推进，两条支线不同，各三幕；结束时投入 8 次、生活决策 24 次", () => {
+  it("本科八学期：支线槽在规定学期推进，两条支线不同，各三幕；结束时安排 8 次、生活决策 24 次", () => {
     for (let seed = 0; seed < 40; seed++) {
-      const { state, log } = play(start(seed), { ...policy, economy: (["LOW", "MID", "HIGH"] as const)[seed % 3] }, (s) => s.phase === "GRAD_PREVIEW");
+      const { state, log } = play(startClassic(seed, (["LOW", "MID", "HIGH"] as const)[seed % 3]), policy, at("GRAD_PREVIEW"));
       const run = asActive(state);
       expect(totalFocus(run.focusCounts)).toBe(8);
+      expect(run.termIndex).toBe(8);
       expect(run.arcs.A).not.toBeNull();
       expect(run.arcs.B).not.toBeNull();
       expect(run.arcs.A).not.toBe(run.arcs.B);
@@ -313,55 +335,58 @@ describe("学期循环（06 §5、03 §4）", () => {
       expect(arcEvents.map((entry) => entry.eventId)).toEqual([
         `ARC_${run.arcs.A}_1`, `ARC_${run.arcs.B}_1`, `ARC_${run.arcs.A}_2`, `ARC_${run.arcs.B}_2`, `ARC_${run.arcs.A}_3`, `ARC_${run.arcs.B}_3`,
       ]);
+      // 经典模式的主线槽固定是原来的八张事件
       const core = run.history.filter((entry) => entry.kind === "EVENT" && entry.eventId?.startsWith("CORE_")).map((entry) => entry.eventId);
       expect(core).toEqual(["CORE_01", "CORE_02", "CORE_03", "CORE_04", "CORE_05", "CORE_06", "CORE_07", "CORE_08"]);
       expect(run.history.filter((entry) => entry.kind === "STIPEND")).toHaveLength(8);
       expect(run.history.filter((entry) => entry.kind === "UPKEEP")).toHaveLength(8);
       expect(run.history.filter((entry) => entry.kind === "GROWTH")).toHaveLength(8);
-      expect(log.filter((action) => action.type === "CHOOSE_FOCUS" || action.type === "CHOOSE_EVENT")).toHaveLength(24);
+      expect(log.filter((action) => action.type === "CHOOSE_PLAN" || action.type === "CHOOSE_EVENT")).toHaveLength(24);
       expect(run.flags).toHaveLength(16);
-      // 毕业快照在最后一学期全部结算后冻结，尚未抽签
+      // 最后一张事件的那次操作里冻结毕业快照，尚未抽签
       expect(run.graduations.UG?.frozenStats).toEqual(run.stats);
       expect(run.graduations.UG?.rolls).toBeNull();
       expect(graduationView(run)?.revealed).toBe(false);
       expect(graduationView(run)?.opportunities.every((item) => item.outcome === null && item.roll === null)).toBe(true);
       expect(stageInfo(run).title).toBe("本科毕业机会");
+      expect(termLedger(run)).toMatchObject({ termIndex: 8, isFinalTerm: true, title: "本科 · 毕业前" });
+      expect(termLedger(run)?.endStats).toEqual(run.stats);
     }
   });
 
-  it("支线分配读取“本学期投入＋主线已结算”的状态，B 排除 A，之后不再重抽", () => {
+  it("支线分配读取“本学期安排＋主线已结算”的状态，B 排除 A，之后不再重抽", () => {
     for (let seed = 100; seed < 130; seed++) {
-      const a = asActive(play(start(seed), policy, (s) => s.phase === "ARC_EVENT").state);
-      const b = asActive(play(a, policy, (s) => s.phase === "ARC_EVENT" && asActive(s).termIndex === 3).state);
+      const a = asActive(play(startClassic(seed, "MID"), policy, at("ARC_EVENT")).state);
+      const b = asActive(play(a, policy, at("ARC_EVENT", 3)).state);
       expect(b.arcs.A).toBe(a.arcs.A);
       expect(b.arcs.B).not.toBe(a.arcs.A);
-      const end = asActive(play(b, policy, (s) => s.phase === "GRAD_PREVIEW").state);
+      const end = asActive(play(b, policy, at("GRAD_PREVIEW")).state);
       expect(end.arcs).toEqual(b.arcs);
     }
   });
 
   it("回响匹配集只看事件出现时已有的标记", () => {
-    const run = asActive(play(start(3), { ...policy, event: () => "B" }, (s) => s.phase === "CORE_EVENT" && asActive(s).termIndex === 2).state);
+    const run = asActive(play(startClassic(3, "MID"), policy, at("CORE_EVENT", 2)).state);
     const view = currentEvent(run);
     expect(view?.event.id).toBe("CORE_02");
     expect(run.flags).toContain("CORE_01_B");
     expect(view?.matchedCallbacks.map((callback) => callback.ifFlag)).toEqual(["CORE_01_B"]);
     expect(view?.defaultCallback?.ifFlag).toBe("CORE_01_B");
-    const other = asActive(play(start(3), { ...policy, event: () => "A" }, (s) => s.phase === "CORE_EVENT" && asActive(s).termIndex === 2).state);
+    const other = asActive(play(startClassic(3, "MID"), { ...policy, event: () => "A" }, at("CORE_EVENT", 2)).state);
     expect(currentEvent(other)?.matchedCallbacks).toEqual([]);
     expect(currentEvent(other)?.defaultCallback).toBeNull();
   });
 });
 
 describe("原子性与拒绝（06 §5、09 §5）", () => {
-  const policy: Policy = { economy: "MID", focus: () => "STUDY", event: () => "B" };
+  const policy = classicPolicy({ talent: "T_RESILIENT", focus: "STUDY", event: "B" });
 
   it("重复或过期的 revision 被拒绝，状态对象原样返回", () => {
-    const run = play(start(8), policy, (s) => s.phase === "FOCUS").state;
-    const ok = tryAct(run, { type: "CHOOSE_FOCUS", focus: "STUDY" });
+    const run = play(startClassic(8, "MID"), policy, at("FOCUS")).state;
+    const ok = tryAct(run, { type: "CHOOSE_PLAN", planId: "STUDY" });
     expect(ok.ok).toBe(true);
     // 连点：第二次仍带着旧 revision
-    const again = actWithRevision(ok.state, { type: "CHOOSE_FOCUS", focus: "STUDY" }, run.revision);
+    const again = actWithRevision(ok.state, { type: "CHOOSE_PLAN", planId: "STUDY" }, run.revision);
     expect(again.ok).toBe(false);
     if (!again.ok) expect(again.error.code).toBe("STALE_REVISION");
     expect(again.state).toBe(ok.state);
@@ -369,17 +394,18 @@ describe("原子性与拒绝（06 §5、09 §5）", () => {
     expect(future.ok).toBe(false);
   });
 
-  it("失败不产生半截修改，也不原地改入参", () => {
-    const run = play(start(8), policy, (s) => s.phase === "CORE_EVENT").state;
+  it("失败不产生半截修改，也不原地改入参；第一版的操作名已经不存在", () => {
+    const run = play(startClassic(8, "MID"), policy, at("CORE_EVENT")).state;
     const snapshot = JSON.stringify(run);
     for (const action of [
+      { type: "CHOOSE_PLAN", planId: "REST" },
       { type: "CHOOSE_FOCUS", focus: "REST" },
       { type: "NEXT_TERM" },
       { type: "REVEAL_GRADUATION" },
       { type: "CHOOSE_ROUTE", route: "TRANSITION" },
       { type: "ENTER_MASTERS", program: "MS_1Y" },
       { type: "CHOOSE_SCHOOL", unitid: "900001" },
-      { type: "CONFIRM_SETUP", economy: "LOW", aspiration: "DISCOVERY", name: "" },
+      { type: "CONFIRM_SETUP", talents: ["T_FOCUSED"] },
       { type: "CHOOSE_EVENT", eventId: "CORE_02", choiceId: "A" },
       { type: "CHOOSE_EVENT", eventId: "CORE_01", choiceId: "C" },
     ] as unknown as Action[]) {
@@ -395,26 +421,31 @@ describe("原子性与拒绝（06 §5、09 §5）", () => {
   });
 
   it("错误代码：错误阶段、错误事件、无效操作", () => {
-    const run = play(start(8), policy, (s) => s.phase === "CORE_EVENT").state;
+    const run = play(startClassic(8, "MID"), policy, at("CORE_EVENT")).state;
     const code = (action: Action) => {
       const result = tryAct(run, action);
       return result.ok ? "OK" : result.error.code;
     };
-    expect(code({ type: "CHOOSE_FOCUS", focus: "REST" })).toBe("WRONG_PHASE");
-    expect(code({ type: "NEXT_TERM" })).toBe("WRONG_PHASE");
+    expect(code({ type: "CHOOSE_PLAN", planId: "REST" })).toBe("WRONG_PHASE");
+    expect(code({ type: "REVEAL_GRADUATION" })).toBe("WRONG_PHASE");
     expect(code({ type: "CHOOSE_EVENT", eventId: "CORE_02", choiceId: "A" })).toBe("WRONG_EVENT");
     expect(code({ type: "CHOOSE_EVENT", eventId: "HS_01", choiceId: "A" })).toBe("WRONG_EVENT");
     expect(code({ type: "CHOOSE_EVENT", eventId: "CORE_01", choiceId: "C" as ChoiceId })).toBe("INVALID_ACTION");
+    expect(code({ type: "NEXT_TERM" } as unknown as Action)).toBe("INVALID_ACTION");
     expect(code({ type: "BOGUS" } as unknown as Action)).toBe("INVALID_ACTION");
-    const setup = start(8);
-    const early = tryAct(setup, { type: "CHOOSE_FOCUS", focus: "REST" });
+    const setup = startClassic(8, "MID");
+    const early = tryAct(setup, { type: "CHOOSE_PLAN", planId: "REST" });
     expect(early.ok ? "OK" : early.error.code).toBe("WRONG_PHASE");
-    const badSetup = tryAct(setup, { type: "CONFIRM_SETUP", economy: "RICH", aspiration: "DISCOVERY", name: "" } as unknown as Action);
-    expect(badSetup.ok ? "OK" : badSetup.error.code).toBe("INVALID_ACTION");
+    const focus = play(setup, policy, at("FOCUS")).state;
+    const unknownPlan = tryAct(focus, { type: "CHOOSE_PLAN", planId: "NAP_ALL_DAY" });
+    expect(unknownPlan.ok ? "OK" : unknownPlan.error.code).toBe("INVALID_ACTION");
+    // 经典模式的名单里只有五张基础安排，池里的其它安排不能选
+    const notOffered = tryAct(focus, { type: "CHOOSE_PLAN", planId: "STUDY_LIBRARY" });
+    expect(notOffered.ok ? "OK" : notOffered.error.code).toBe("INVALID_ACTION");
   });
 
   it("资金不足的选项被拒绝并说明差额；同一事件总有不花钱的选项", () => {
-    const run = asActive(play(start(8), policy, (s) => s.phase === "CORE_EVENT").state);
+    const run = asActive(play(startClassic(8, "MID"), policy, at("CORE_EVENT")).state);
     const broke = clone(run);
     broke.stats.money = 2; // CORE_01_A 花费 3
     const view = currentEvent(broke);
@@ -431,58 +462,61 @@ describe("原子性与拒绝（06 §5、09 §5）", () => {
   });
 
   it("界面显示的变化是截断后的真实变化：学业 99 时不会声称 +11", () => {
-    const run = asActive(play(start(8), policy, (s) => s.phase === "FOCUS").state);
+    const run = asActive(play(startClassic(8, "MID"), policy, at("FOCUS")).state);
     const high = clone(run);
     high.stats.academics = 99;
     const study = focusView(high)?.options.find((option) => option.focus === "STUDY");
-    expect(study?.requested.academics).toBeGreaterThanOrEqual(11);
+    expect(study?.requested.academics).toBe(11);
     expect(study?.applied.academics).toBe(1);
-    const after = asActive(act(high, { type: "CHOOSE_FOCUS", focus: "STUDY" }));
+    const after = asActive(act(high, { type: "CHOOSE_PLAN", planId: "STUDY" }));
     expect(after.stats.academics).toBe(100);
     expect(lastOutcome(after)?.delta.applied.academics).toBe(1);
-    expect(lastOutcome(after)?.delta.requested.academics).toBeGreaterThanOrEqual(11);
+    expect(lastOutcome(after)?.delta.requested.academics).toBe(11);
   });
 
-  it("低身心：投入界面预览折减后的实际效果", () => {
-    const run = asActive(play(start(8), policy, (s) => s.phase === "FOCUS").state);
+  it("低身心：安排界面预览折减后的实际效果", () => {
+    const run = asActive(play(startClassic(8, "MID"), policy, at("FOCUS")).state);
     const tired = clone(run);
     tired.stats.wellbeing = 19;
     tired.stats.academics = 30;
     const view = focusView(tired);
     expect(view?.efficiency.factor).toBe(6);
     expect(view?.efficiency.note).toContain("60%");
-    const expected = tired.profile.trait === "FOCUSED" ? 8 : 7;
-    expect(view?.options[0].requested.academics).toBe(expected);
+    expect(view?.options[0].requested.academics).toBe(7);
     expect(view?.options[0].efficiencyApplied).toBe(true);
-    const after = asActive(act(tired, { type: "CHOOSE_FOCUS", focus: "STUDY" }));
-    expect(after.stats.academics).toBe(30 + expected);
-    expect(after.history[after.history.length - 1]).toMatchObject({ kind: "FOCUS", focus: "STUDY", efficiency: 6 });
+    // T_RESILIENT：负身心少扣 2
+    expect(view?.options[0].requested.wellbeing).toBe(-5);
+    expect(view?.options[0].talentApplied).toBe(true);
+    const after = asActive(act(tired, { type: "CHOOSE_PLAN", planId: "STUDY" }));
+    expect(after.stats.academics).toBe(37);
+    expect(after.history[after.history.length - 1]).toMatchObject({ kind: "FOCUS", focus: "STUDY", planId: "STUDY", efficiency: 6 });
   });
 
-  it("资金短缺：记录短缺与压力，不提前结束，下期照常到账", () => {
-    const run = asActive(play(start(8), policy, (s) => s.phase === "CORE_EVENT").state);
-    const broke = clone(run);
-    broke.stats.money = 5;
-    broke.stats.wellbeing = 20;
-    const cost = broke.profile.trait === "FRUGAL" ? 11 : 12;
+  it("资金短缺：记录短缺与压力，不提前结束，下期照常到账；选安排时就提示预计短缺", () => {
+    const focus = clone(asActive(play(startClassic(8, "MID"), policy, at("FOCUS")).state));
+    focus.stats.money = 5;
+    focus.stats.wellbeing = 30;
+    const options = focusView(focus)?.options ?? [];
+    expect(options.find((option) => option.plan.id === "STUDY")?.projectedShortfall).toBe(7);
+    expect(options.find((option) => option.plan.id === "WORK")?.projectedShortfall).toBe(0); // 兼职 +12 之后够付
+    const broke = asActive(act(focus, { type: "CHOOSE_PLAN", planId: "REST" })); // 身心 30 + 15 = 45
     const view = currentEvent(broke)?.choices[1]; // CORE_01_B 不花钱，身心 +2
-    expect(view?.projected).toEqual({ moneyAfterChoice: 5, upkeep: cost, moneyAfterUpkeep: 0, shortfall: cost - 5 });
+    expect(view?.projected).toEqual({ moneyAfterChoice: 5, upkeep: 12, moneyAfterUpkeep: 0, shortfall: 7 });
     const settled = asActive(act(broke, { type: "CHOOSE_EVENT", eventId: "CORE_01", choiceId: "B" }));
+    expect(settled).toMatchObject({ phase: "FOCUS", termIndex: 2 });
     const ledger = termLedger(settled);
-    const stress = 6 + Math.ceil((cost - 5) / 3);
-    expect(ledger).toMatchObject({ shortfall: cost - 5, stress });
-    expect(settled.stats.money).toBe(0);
-    expect(settled.stats.wellbeing).toBe(Math.max(0, 22 - stress - 3));
+    expect(ledger).toMatchObject({ termIndex: 1, shortfall: 7, stress: 9 });
+    expect(ledger?.endStats).toMatchObject({ money: 0, wellbeing: 47 - 9 - 3 });
     const upkeepEntry = settled.history.find((entry) => entry.kind === "UPKEEP");
-    expect(upkeepEntry?.upkeep).toEqual({ cost, paid: 5, shortfall: cost - 5, stress });
+    expect(upkeepEntry?.upkeep).toEqual({ cost: 12, paid: 5, shortfall: 7, stress: 9 });
     expect(upkeepEntry?.appliedDelta.money).toBe(-5);
-    const next = asActive(act(settled, { type: "NEXT_TERM" }));
-    expect(next.stats.money).toBe(10);
+    expect(ledger?.lines.find((line) => line.kind === "UPKEEP")?.detail).toContain("短缺 7");
+    expect(settled.stats.money).toBe(10); // 下一期资助照常到账
   });
 
-  it("全零属性下每个事件、每种投入、期末结算都合法且有可选项", () => {
-    const base = asActive(play(start(8), policy, (s) => s.phase === "CORE_EVENT").state);
-    for (const event of ALL_EVENTS) {
+  it("全零属性下每个原事件、每种基础安排、期末结算都合法且有可选项", () => {
+    const base = asActive(play(startClassic(8, "MID"), policy, at("CORE_EVENT")).state);
+    for (const event of ORIGINAL_EVENTS) {
       const zero = clone(base);
       zero.stats = stats(0, 0, 0, 0);
       zero.flags = [];
@@ -511,11 +545,13 @@ describe("原子性与拒绝（06 §5、09 §5）", () => {
           zero.termIndex = event.beat * 2;
           zero.arcs = { A: event.arc, B: others[0] };
         }
-      } else {
+      } else if (event.kind === "masters") {
         zero.stage = "MS";
         zero.mastersYears = 2;
         zero.termIndex = event.node;
         zero.phase = "CORE_EVENT";
+      } else {
+        throw new Error("原事件里不应有随机事件");
       }
       const view = currentEvent(zero);
       expect(view?.event.id).toBe(event.id);
@@ -523,7 +559,7 @@ describe("原子性与拒绝（06 §5、09 §5）", () => {
       expect(available.length).toBeGreaterThanOrEqual(1);
       for (const choice of available) {
         const result = tryAct(zero, { type: "CHOOSE_EVENT", eventId: event.id, choiceId: choice.choice.id });
-        expect(result.ok).toBe(true);
+        expect(result.ok, `${event.id}_${choice.choice.id}`).toBe(true);
         const after = asActive(result.state);
         for (const key of ["money", "academics", "career", "wellbeing"] as const) {
           expect(Number.isInteger(after.stats[key])).toBe(true);
@@ -533,32 +569,32 @@ describe("原子性与拒绝（06 §5、09 §5）", () => {
       }
     }
     for (const focus of ["STUDY", "CAREER", "CAMPUS", "WORK", "REST"] as Focus[]) {
-      const zero = clone(asActive(play(start(8), policy, (s) => s.phase === "FOCUS").state));
+      const zero = clone(asActive(play(startClassic(8, "MID"), policy, at("FOCUS")).state));
       zero.stats = stats(0, 0, 0, 0);
       expect(focusView(zero)?.options).toHaveLength(5);
-      const after = asActive(play(act(zero, { type: "CHOOSE_FOCUS", focus }), policy, (s) => s.phase === "TERM_REVIEW").state);
+      expect(focusView(zero)?.options.every((option) => option.available)).toBe(true);
+      const after = asActive(play(act(zero, { type: "CHOOSE_PLAN", planId: focus }), policy, at("FOCUS", 2)).state);
       for (const key of ["money", "academics", "career", "wellbeing"] as const) {
         expect(after.stats[key]).toBeGreaterThanOrEqual(0);
         expect(after.stats[key]).toBeLessThanOrEqual(100);
       }
-      expect(tryAct(after, { type: "NEXT_TERM" }).ok).toBe(true);
     }
   });
 });
 
 describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
-  const policy: Policy = { economy: "MID", focus: () => "STUDY", event: () => "B" };
+  const policy = classicPolicy({ talent: "T_FOCUSED", focus: "STUDY", event: "B" });
 
-  /** 取一局真实走到 GRAD_PREVIEW 的本科状态，再把毕业快照改成需要的样子（只为构造边界，不经过事件）。 */
+  /** 取一局真实走到 GRAD_RESULTS 的本科状态，再把毕业快照改成需要的样子（只为构造边界，不经过事件）。 */
   function undergradAt(options: {
     seed?: number;
     stats: Stats;
     economy?: "LOW" | "MID" | "HIGH";
-    trait?: ActiveRun["profile"]["trait"];
+    talent?: string;
     outcomes: Record<"PHD" | "LOCAL_JOB" | "HOME_JOB", "OFFERED" | "NOT_OFFERED" | "INELIGIBLE">;
   }): ActiveRun {
-    const base = clone(asActive(play(start(options.seed ?? 21), { ...policy, economy: options.economy ?? "MID" }, (s) => s.phase === "GRAD_RESULTS").state));
-    if (options.trait) base.profile.trait = options.trait;
+    const base = clone(asActive(play(startClassic(options.seed ?? 21, options.economy ?? "MID"), policy, at("GRAD_RESULTS")).state));
+    if (options.talent) base.profile.talents = [options.talent];
     base.stats = { ...options.stats };
     const grad = base.graduations.UG;
     if (!grad) throw new Error("缺少本科快照");
@@ -574,7 +610,7 @@ describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
   const none = { PHD: "NOT_OFFERED", LOCAL_JOB: "INELIGIBLE", HOME_JOB: "NOT_OFFERED" } as const;
 
   it("揭晓只发生一次；揭晓后不可再抽", () => {
-    const preview = play(start(21), policy, (s) => s.phase === "GRAD_PREVIEW").state;
+    const preview = play(startClassic(21, "MID"), policy, at("GRAD_PREVIEW")).state;
     const revealed = asActive(act(preview, { type: "REVEAL_GRADUATION" }));
     expect(revealed.phase).toBe("GRAD_RESULTS");
     expect(graduationView(revealed)?.revealed).toBe(true);
@@ -583,6 +619,8 @@ describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
     for (const key of ["PHD", "LOCAL_JOB", "HOME_JOB"] as const) {
       expect(revealed.graduations.UG?.rolls?.[key]).toBe(draw01(21, `grad:UG:${key}`));
     }
+    // 揭晓后仍能看到最后一学期的账目
+    expect(termLedger(revealed)).toMatchObject({ termIndex: 8, isFinalTerm: true });
   });
 
   it("只能接受当前检查点 OFFERED 的机会；TRANSITION 始终可选", () => {
@@ -598,9 +636,10 @@ describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
     const noOffer = asActive(act(empty, { type: "CHOOSE_ROUTE", route: "TRANSITION" }));
     expect(noOffer.ending).toMatchObject({ route: "TRANSITION", transitionMode: "NO_OFFER", entryMode: null });
     expect(noOffer.phase).toBe("ENDING");
+    expect(termLedger(noOffer)).toBeNull();
     // 终局后任何操作都被拒绝
     expect(tryAct(noOffer, { type: "CHOOSE_ROUTE", route: "TRANSITION" }).ok).toBe(false);
-    expect(tryAct(noOffer, { type: "NEXT_TERM" }).ok).toBe(false);
+    expect(tryAct(noOffer, { type: "CHOOSE_PLAN", planId: "REST" }).ok).toBe(false);
   });
 
   it("可读硕士但放弃，过渡期仍是 NO_OFFER", () => {
@@ -645,17 +684,17 @@ describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
     expect(tryAct(ok, { type: "ENTER_MASTERS", program: "MS_1Y" }).ok).toBe(true);
   });
 
-  it("预算：比所需少 1 不可、刚好够可；FRUGAL 成本不同；不可选时写明差额", () => {
-    const cases: Array<["LOW" | "MID" | "HIGH", ActiveRun["profile"]["trait"], number, number]> = [
-      ["LOW", "FOCUSED", 20, 36],
-      ["MID", "FOCUSED", 12, 20],
-      ["HIGH", "FOCUSED", 8, 12],
-      ["LOW", "FRUGAL", 18, 32],
-      ["MID", "FRUGAL", 10, 16],
+  it("预算：比所需少 1 不可、刚好够可；T_FRUGAL 成本不同；不可选时写明差额", () => {
+    const cases: Array<["LOW" | "MID" | "HIGH", string, number, number]> = [
+      ["LOW", "T_FOCUSED", 20, 36],
+      ["MID", "T_FOCUSED", 12, 20],
+      ["HIGH", "T_FOCUSED", 8, 12],
+      ["LOW", "T_FRUGAL", 18, 32],
+      ["MID", "T_FRUGAL", 10, 16],
     ];
-    for (const [economy, trait, oneYear, twoYears] of cases) {
+    for (const [economy, talent, oneYear, twoYears] of cases) {
       for (const [program, need] of [["MS_1Y", oneYear], ["MS_2Y", twoYears]] as const) {
-        const short = undergradAt({ economy, trait, stats: stats(need - 1, 70, 40, 30), outcomes: none });
+        const short = undergradAt({ economy, talent, stats: stats(need - 1, 70, 40, 30), outcomes: none });
         const option = mastersOptions(short).find((item) => item.program === program);
         expect(option?.requiredReserve).toBe(need);
         expect(option?.eligible).toBe(false);
@@ -663,7 +702,7 @@ describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
         expect(option?.blockers[0].text).toContain(`需要预留 ${need}`);
         expect(option?.blockers[0].text).toContain("还差 1");
         expect(tryAct(short, { type: "ENTER_MASTERS", program }).ok).toBe(false);
-        const enough = undergradAt({ economy, trait, stats: stats(need, 70, 40, 30), outcomes: none });
+        const enough = undergradAt({ economy, talent, stats: stats(need, 70, 40, 30), outcomes: none });
         expect(mastersOptions(enough).find((item) => item.program === program)?.eligible).toBe(true);
         expect(tryAct(enough, { type: "ENTER_MASTERS", program }).ok).toBe(true);
       }
@@ -673,7 +712,7 @@ describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
   it("硕士后不出现二硕；本科旧 offer 不复活；没有机会仍能进入过渡期", () => {
     const run = undergradAt({ stats: stats(60, 80, 40, 60), outcomes: { PHD: "OFFERED", LOCAL_JOB: "NOT_OFFERED", HOME_JOB: "NOT_OFFERED" } });
     const entered = act(run, { type: "ENTER_MASTERS", program: "MS_1Y" });
-    const results = asActive(play(entered, { ...policy, focus: () => "REST" }, (s) => s.phase === "GRAD_RESULTS").state);
+    const results = asActive(play(entered, classicPolicy({ focus: "REST", event: "B" }), at("GRAD_RESULTS")).state);
     expect(results.stage).toBe("MS");
     expect(stageInfo(results).title).toBe("硕士毕业机会");
     expect(mastersOptions(results)).toEqual([]);
@@ -698,7 +737,7 @@ describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
 
   it("硕士后入博记为 masters_entry", () => {
     const run = undergradAt({ stats: stats(60, 90, 40, 60), outcomes: none });
-    const results = clone(asActive(play(act(run, { type: "ENTER_MASTERS", program: "MS_2Y" }), policy, (s) => s.phase === "GRAD_RESULTS").state));
+    const results = clone(asActive(play(act(run, { type: "ENTER_MASTERS", program: "MS_2Y" }), policy, at("GRAD_RESULTS")).state));
     const ms = results.graduations.MS;
     if (!ms) throw new Error("缺少硕士快照");
     ms.outcomes = { PHD: "OFFERED", LOCAL_JOB: "NOT_OFFERED", HOME_JOB: "NOT_OFFERED" };
@@ -708,7 +747,8 @@ describe("毕业、硕士与去向（03 §5、§8；06 §6）", () => {
 
   it("毕业视图：资格路径、公式分解合计等于截断前的原值、上下限标注", () => {
     for (let seed = 0; seed < 30; seed++) {
-      const run = asActive(play(start(seed), { ...policy, focus: (_view, state) => (["STUDY", "CAREER", "WORK", "REST"] as Focus[])[(seed + state.termIndex) % 4] }, (s) => s.phase === "GRAD_RESULTS").state);
+      const rotating = classicPolicy({ focus: (state) => (["STUDY", "CAREER", "WORK", "REST"] as Focus[])[(seed + state.termIndex) % 4], event: "B" });
+      const run = asActive(play(startClassic(seed, "MID"), rotating, at("GRAD_RESULTS")).state);
       const view = graduationView(run);
       expect(view?.opportunities.map((item) => item.id)).toEqual(["PHD", "LOCAL_JOB", "HOME_JOB"]);
       expect(view?.opportunities.map((item) => item.name)).toEqual(["博士项目", "留美工作", "回国工作"]);

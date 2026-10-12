@@ -14,7 +14,6 @@ import { GalleryScreen } from "./screens/GalleryScreen";
 import { GradScreen } from "./screens/GradScreen";
 import { OffersScreen } from "./screens/OffersScreen";
 import { SetupScreen } from "./screens/SetupScreen";
-import { TermReviewScreen } from "./screens/TermReviewScreen";
 import { APP_TITLE, S, TIER_NAME, TIER_ORDER } from "./strings";
 
 export function App(props: { catalog?: RuntimeCatalog; storage?: SaveStorage }) {
@@ -63,12 +62,10 @@ function Shell() {
     return (
       <Frame>
         <section className="panel" data-testid="save-problem" role="alert">
-          <h1 className="title">{S.saveProblemTitle}</h1>
+          <h1 className="title">{boot.reason === "CORRUPT" ? S.saveProblemTitle : S.saveOutdatedTitle}</h1>
           <p className="prose">{boot.reason === "CORRUPT" ? S.saveProblemCorrupt : S.saveProblemVersion}</p>
-          <p className="prose">{S.saveProblemNote}</p>
-          <p className="muted small">
-            {S.saveProblemDetail}：{boot.detail}
-          </p>
+          <p className="prose">{boot.reason === "CORRUPT" ? S.saveProblemNote : S.saveOutdatedNote}</p>
+          <p className="muted small">{boot.detail}</p>
           <button type="button" className="button primary" data-testid="save-problem-restart" onClick={() => store.restart()}>
             {S.restart}
           </button>
@@ -90,7 +87,7 @@ function Shell() {
 
 function Frame(props: { children: ReactNode }) {
   return (
-    <div className="app" data-testid="app">
+    <div className="app standalone" data-testid="app">
       <main className="content">{props.children}</main>
     </div>
   );
@@ -162,7 +159,7 @@ function Game(props: { state: RunState }) {
               {store.saveStatus === "saved" ? S.saved : S.unsaved}
             </span>
             <button type="button" className="ghost-button" data-testid="restart" onClick={onRestartClick}>
-              {S.restart}
+              {state.phase === "SETUP" ? S.reroll : S.restart}
             </button>
           </div>
         </div>
@@ -229,8 +226,6 @@ function PhaseScreen(props: { state: RunState; onOpenGallery: () => void }) {
       return <OffersScreen state={state} />;
     case "FOCUS":
       return <FocusScreen state={state} />;
-    case "TERM_REVIEW":
-      return <TermReviewScreen state={state} />;
     case "GRAD_PREVIEW":
     case "GRAD_RESULTS":
       return <GradScreen state={state} />;

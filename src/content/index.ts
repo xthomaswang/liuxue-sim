@@ -1,5 +1,5 @@
-// 静态内容的唯一入口。JSON 由 scripts/extract-content.ts（事件与文案）和 scripts/schools（学校目录）生成，
-// endingCards.json 为手写（见 docs/14）。运行时不解析 Markdown。
+// 静态内容的唯一入口。JSON 由 scripts/extract-content.ts（事件、文案、天赋、学期安排、突发小事）
+// 和 scripts/schools（学校目录）生成，endingCards.json 为手写（见 docs/14）。运行时不解析 Markdown。
 
 import type {
   Aspiration,
@@ -10,12 +10,15 @@ import type {
   Expectation,
   FinalRoute,
   Focus,
+  Happening,
   HiddenEndingId,
   MastersProgram,
   MoneyBand,
+  PlanCard,
   RuntimeCatalog,
   StatKey,
   StoryEvent,
+  Talent,
   Trait,
   WellbeingBand,
 } from "../engine/types";
@@ -24,7 +27,12 @@ import arcsJson from "./events/arcs.json";
 import coreJson from "./events/core.json";
 import highschoolJson from "./events/highschool.json";
 import mastersJson from "./events/masters.json";
+import randomJson from "./events/random.json";
+import variantsJson from "./events/variants.json";
+import happeningsJson from "./happenings.json";
+import plansJson from "./plans.json";
 import catalogJson from "./schools/catalog.runtime.json";
+import talentsJson from "./talents.json";
 import textsJson from "./texts.json";
 
 export type RouteVariantKey =
@@ -100,10 +108,23 @@ export const HIGH_SCHOOL_EVENTS = highschoolJson as unknown as StoryEvent[];
 export const CORE_EVENTS = coreJson as unknown as StoryEvent[];
 export const ARC_EVENTS = arcsJson as unknown as StoryEvent[];
 export const MASTERS_EVENTS = mastersJson as unknown as StoryEvent[];
-export const ALL_EVENTS: StoryEvent[] = [...HIGH_SCHOOL_EVENTS, ...CORE_EVENTS, ...ARC_EVENTS, ...MASTERS_EVENTS];
+/** 第一版的 32 个事件（docs/04、05、10、12）。 */
+export const ORIGINAL_EVENTS: StoryEvent[] = [...HIGH_SCHOOL_EVENTS, ...CORE_EVENTS, ...ARC_EVENTS, ...MASTERS_EVENTS];
+/** 主线节点的变体（docs/19）：id 形如 CORE_0n_V2，与原来的 CORE_0n 是同一节点的候选。 */
+export const CORE_VARIANTS = variantsJson as unknown as StoryEvent[];
+/** 随机事件池（docs/20）：本科第 2–7 学期的主线槽可能换成其中一张。 */
+export const RANDOM_EVENTS = randomJson as unknown as StoryEvent[];
+export const ALL_EVENTS: StoryEvent[] = [...ORIGINAL_EVENTS, ...CORE_VARIANTS, ...RANDOM_EVENTS];
 export const EVENT_BY_ID: Readonly<Record<string, StoryEvent>> = Object.fromEntries(
   ALL_EVENTS.map((event) => [event.id, event]),
 );
+
+/** 天赋池（docs/17），数组顺序即池内顺序。 */
+export const TALENTS = talentsJson as unknown as Talent[];
+/** 学期安排池（docs/18），数组顺序即池内顺序。 */
+export const PLANS = plansJson as unknown as PlanCard[];
+/** 突发小事池（docs/21），数组顺序即池内顺序。 */
+export const HAPPENINGS = happeningsJson as unknown as Happening[];
 
 export const TEXTS = textsJson as unknown as Texts;
 export const ENDING_CARDS = endingCardsJson as unknown as EndingCardsContent;

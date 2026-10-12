@@ -6,7 +6,7 @@ import {
   baseReadinessFor, drawTier, finalReadiness, readinessBonusFromFlags, resolveAdmission, sampleOffers,
   strategyFromFlags, tierOdds, tierWeights,
 } from "../admission";
-import { baseReadiness, checkCatalog, createRun, familyCandidates } from "../index";
+import { baseReadiness, checkCatalog, createRun } from "../index";
 import type { OfferTier, Strategy } from "../index";
 import { draw01, hash32, pickIndex } from "../rng";
 
@@ -42,14 +42,14 @@ describe("随机源（06 §1、09 §4）", () => {
   });
 });
 
-describe("家庭档案与基础准备度", () => {
+describe("基础准备度", () => {
   it("seed 42 的基础准备度为 65，HS_01_A 后 75、B 后 71", () => {
     expect(baseReadiness(42)).toBe(65);
     expect(finalReadiness(65, 10)).toBe(75);
     expect(finalReadiness(65, 6)).toBe(71);
   });
 
-  it("基础准备度是 20–80 的整数，与家庭档无关", () => {
+  it("基础准备度是 20–80 的整数，只由 seed 决定", () => {
     for (let seed = 0; seed < 2000; seed++) {
       const value = baseReadinessFor(seed);
       expect(Number.isInteger(value)).toBe(true);
@@ -58,28 +58,21 @@ describe("家庭档案与基础准备度", () => {
     }
   });
 
-  it("三张档案固定 LOW/MID/HIGH，初始值与资助按 03 §2.1", () => {
-    const [low, mid, high] = familyCandidates(13);
-    expect([low.economy, mid.economy, high.economy]).toEqual(["LOW", "MID", "HIGH"]);
-    expect(low.initialStats).toEqual({ money: 28, academics: 18, career: 12, wellbeing: 70 });
-    expect(mid.initialStats).toEqual({ money: 42, academics: 18, career: 12, wellbeing: 70 });
-    expect(high.initialStats).toEqual({ money: 56, academics: 18, career: 12, wellbeing: 70 });
-    expect([low.stipend, mid.stipend, high.stipend]).toEqual([6, 10, 14]);
-    // docs/09 §3：seed 13 的 LOW 档特质为 OUTGOING
-    expect(low.trait).toBe("OUTGOING");
-    for (const candidate of [low, mid, high]) {
-      expect(candidate.upkeep).toBe(candidate.trait === "FRUGAL" ? 11 : 12);
-    }
-  });
-
-  it("期待与特质由固定 key 独立抽取", () => {
-    const expectations = ["ACADEMIC", "STABILITY", "AUTONOMY"];
-    const traits = ["FOCUSED", "PRACTICAL", "OUTGOING", "FRUGAL", "RESILIENT", "REFLECTIVE"];
+  it("天赋的准备度加成与 HS_01 加成相加后截断到 0–100（16 §1.3）", () => {
+    expect(finalReadiness(65, 10, 6)).toBe(81);
+    expect(finalReadiness(80, 10, 18)).toBe(100);
+    expect(finalReadiness(20, 6, -10)).toBe(16);
+    expect(finalReadiness(20, 0, -30)).toBe(0);
     for (let seed = 0; seed < 100; seed++) {
-      for (const candidate of familyCandidates(seed)) {
-        expect(candidate.expectation).toBe(expectations[Math.floor(draw01(seed, `family:${candidate.economy}:expectation`) * 3)]);
-        expect(candidate.trait).toBe(traits[Math.floor(draw01(seed, `family:${candidate.economy}:trait`) * 6)]);
-      }
+      const base = baseReadinessFor(seed);
+      const plain = resolveAdmission(seed, base, ["HS_01_A", "HS_02_B"]);
+      const boosted = resolveAdmission(seed, base, ["HS_01_A", "HS_02_B"], 8);
+      expect(plain.readiness).toBe(base + 10);
+      expect(boosted.readiness).toBe(Math.min(100, base + 18));
+      // 天赋只改变准备度（从而改变权重），不改变抽签用的 roll
+      expect(boosted.poolRoll).toBe(plain.poolRoll);
+      expect(boosted.tierRoll).toBe(plain.tierRoll);
+      expect(boosted.weights).toEqual(tierWeights(boosted.readiness, "STEADY"));
     }
   });
 });

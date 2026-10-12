@@ -29,8 +29,9 @@ export function strategyFromFlags(flags: readonly string[]): Strategy {
   return singleFromFlags(flags, STRATEGY_BY_FLAG, "HS_02");
 }
 
-export function finalReadiness(base: number, bonus: number): number {
-  return clamp(base + bonus, 0, 100);
+/** readiness = clamp(基础 + HS_01 加成 + 天赋加成, 0, 100)。 */
+export function finalReadiness(base: number, bonus: number, talentBonus: number = 0): number {
+  return clamp(base + bonus + talentBonus, 0, 100);
 }
 
 /** S/A/B/C/D 五个非负整数权重，精确总和 5000（13 §3.2）。 */
@@ -126,10 +127,15 @@ export interface AdmissionDraw {
 }
 
 /** HS_02 结算后一次性生成的申请结果（不含选校）。进 U 也读取并记录 tierRoll。 */
-export function resolveAdmission(seed: number, baseReadiness: number, flags: readonly string[]): AdmissionDraw {
+export function resolveAdmission(
+  seed: number,
+  baseReadiness: number,
+  flags: readonly string[],
+  talentBonus: number = 0,
+): AdmissionDraw {
   const readinessBonus = readinessBonusFromFlags(flags);
   const strategy = strategyFromFlags(flags);
-  const readiness = finalReadiness(baseReadiness, readinessBonus);
+  const readiness = finalReadiness(baseReadiness, readinessBonus, talentBonus);
   const weights = tierWeights(readiness, strategy);
   const poolRoll = draw01(seed, "admission:pool");
   const tierRoll = draw01(seed, "admission:tier");

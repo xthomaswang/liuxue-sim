@@ -17,6 +17,7 @@ if [[ ! -f "$DIST/index.html" ]]; then
 fi
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
+rm -f "$OUT"/*.json "$OUT"/*.png "$OUT"/*.js
 
 BIN="$OUT/snap"
 if [[ ! -x "$BIN" || "$ROOT/scripts/e2e/snap.swift" -nt "$BIN" ]]; then
@@ -33,22 +34,25 @@ for _ in $(seq 1 50); do
   sleep 0.1
 done
 
-# docs/09 第 3 节那条可复核路线：seed 13、LOW 家庭，本科拿到博士机会且两个硕士方案都可选。
-ROUTE_13='"seed":13,"economy":"LOW","aspiration":"DISCOVERY","focus":["WORK","STUDY","WORK","STUDY","WORK","STUDY","WORK","WORK","STUDY","REST","STUDY","REST"],"choices":{"HS_01":"A","HS_02":"B","CORE_01":"B","CORE_02":"B","ARC_CREATIVE_1":"B","CORE_03":"B","ARC_RESEARCH_1":"B","CORE_04":"B","ARC_CREATIVE_2":"B","CORE_05":"B","ARC_RESEARCH_2":"A","CORE_06":"A","ARC_CREATIVE_3":"B","CORE_07":"A","ARC_RESEARCH_3":"A","CORE_08":"A"}'
-
 FAILED=0
+# run <名字> <CONFIG 的 JSON> <宽> <light|dark> <full 或空> <期望停在的阶段>
 run() {
   local name="$1" config="$2" width="$3" theme="$4" full="$5" expect="$6"
-  local script="$OUT/$name.js" png="$OUT/$name.png" output
+  local script="$OUT/$name.js" png="$OUT/$name.png" output summary
   { printf 'const CONFIG = %s;\n' "$config"; cat "$ROOT/scripts/e2e/pilot.js"; } >"$script"
   if ! output="$("$BIN" "http://127.0.0.1:$PORT/index.html" "$width" 844 "$png" "$script" "$theme" $full 2>&1)"; then
     echo "✗ $name：$output"
     FAILED=1
     return
   fi
-  local summary
   summary="$(printf '%s\n' "$output" | sed -n 's/^script -> //p')"
-  if [[ "$summary" != *"\"phase\":\"$expect\""* || "$summary" != *'"problems":[]'* ]]; then
+  # 阶段要对、页面上没有异常文字；游戏过程中不该有任何可展开的长文（结局页只允许“回看这次经历”一处）。
+  if ! printf '%s' "$summary" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+limit = 1 if d["phase"] == "ENDING" else 0
+ok = d["phase"] == sys.argv[1] and not d["problems"] and d["expandButtons"] <= limit
+sys.exit(0 if ok else 1)' "$expect" 2>/dev/null; then
     echo "✗ $name：$summary"
     FAILED=1
     return
@@ -57,18 +61,24 @@ run() {
   echo "✓ $name：$(printf '%s' "$summary" | python3 -c 'import json,sys; d=json.load(sys.stdin); d.pop("screenText",None); print(json.dumps(d,ensure_ascii=False))')"
 }
 
-echo "==> 在真实 WebKit 中自动通关（$DIST）"
-run setup-390-light     '{"seed":20261011,"economy":"MID","aspiration":"BELONGING","stopAt":"SETUP"}' 390 light full SETUP
-run offers-390-light    '{"seed":20261011,"economy":"MID","aspiration":"BELONGING","stopAt":"SCHOOL_OFFERS"}' 390 light full SCHOOL_OFFERS
-run ug-phd-390-dark     "{$ROUTE_13,\"after\":\"card\"}" 390 dark "" ENDING
-run ms1-560-light       "{$ROUTE_13,\"masters\":\"MS_1Y\",\"after\":\"expand\"}" 560 light full ENDING
-run ms2-390-light       "{$ROUTE_13,\"masters\":\"MS_2Y\",\"after\":\"card\"}" 390 light "" ENDING
-run auto-high-1200-light '{"seed":7,"economy":"HIGH","aspiration":"INDEPENDENCE"}' 1200 light full ENDING
-run auto-mid-390-dark   '{"seed":42,"economy":"MID","aspiration":"BELONGING","masters":"MS_2Y","after":"gallery"}' 390 dark full ENDING
+# 走到硕士路线需要“本科没有工作机会、学业够、钱够”。这套策略本科以休息为主、只学一次、不求职，
+# 事件一律选 B（不做出可展示的成果），所以多半两种工作都没有申请资格；进硕士后再学习和求职。
+TO_MASTERS='"focus":["REST","STUDY","REST","CAMPUS","REST","WORK","REST","CAMPUS","STUDY","CAREER","STUDY","CAREER"],"fallback":["REST","CAMPUS","WORK","STUDY","CAREER"],"choices":{"HS_01":"A"},"defaultChoice":"B"'
 
-# 关掉再打开：第一次运行停在学期小结并写入持久化存储，第二次运行什么都不点，恢复出来的界面必须与第一次完全一样。
-SNAP_PERSISTENT=1 run save-before "{$ROUTE_13,\"stopAt\":\"TERM_REVIEW\"}" 390 light "" TERM_REVIEW
-SNAP_PERSISTENT=1 run save-after '{"resume":true,"stopAt":"TERM_REVIEW","after":"clear"}' 390 light "" TERM_REVIEW
+echo "==> 在真实 WebKit 中自动通关（$DIST）"
+run setup-390-light   '{"seed":20261011,"stopAt":"SETUP"}' 390 light full SETUP
+run offers-390-light  '{"seed":20261011,"stopAt":"SCHOOL_OFFERS"}' 390 light full SCHOOL_OFFERS
+run plan-390-light    '{"seed":20261011,"stopAt":"FOCUS"}' 390 light full FOCUS
+run event-390-dark    '{"seed":20261011,"stopAt":"CORE_EVENT"}' 390 dark full CORE_EVENT
+run ug-390-dark       '{"seed":7,"after":"card"}' 390 dark "" ENDING
+run ms1-560-light     "{\"seed\":100,$TO_MASTERS,\"masters\":\"MS_1Y\",\"requireMasters\":true,\"after\":\"lookback\"}" 560 light full ENDING
+run ms2-390-light     "{\"seed\":300,$TO_MASTERS,\"masters\":\"MS_2Y\",\"requireMasters\":true,\"after\":\"card\"}" 390 light "" ENDING
+run wide-1200-light   '{"seed":42}' 1200 light full ENDING
+run gallery-390-dark  '{"seed":43,"after":"gallery"}' 390 dark full ENDING
+
+# 关掉再打开：第一次运行停在一幕支线事件并写入持久化存储，第二次运行什么都不点，恢复出来的界面必须与第一次完全一样。
+SNAP_PERSISTENT=1 run save-before '{"seed":13,"stopAt":"ARC_EVENT"}' 390 light "" ARC_EVENT
+SNAP_PERSISTENT=1 run save-after '{"resume":true,"stopAt":"ARC_EVENT","after":"clear"}' 390 light "" ARC_EVENT
 if [[ -f "$OUT/save-before.json" && -f "$OUT/save-after.json" ]] && python3 - "$OUT/save-before.json" "$OUT/save-after.json" <<'PY'
 import json, sys
 before, after = (json.load(open(path)) for path in sys.argv[1:3])

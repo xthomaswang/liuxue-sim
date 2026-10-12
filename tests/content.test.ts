@@ -6,7 +6,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { buildContent } from "../scripts/extract-content.ts";
-import { ALL_EVENTS, ENDING_CARDS, EVENT_BY_ID, TEXTS } from "../src/content";
+import {
+  ALL_EVENTS, CORE_VARIANTS, ENDING_CARDS, EVENT_BY_ID, HAPPENINGS, ORIGINAL_EVENTS, PLANS, RANDOM_EVENTS, TALENTS, TEXTS,
+} from "../src/content";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -18,13 +20,18 @@ describe("从 docs 提取的内容", () => {
     }
   });
 
-  it("共 32 个事件、64 个唯一标记，按类型数量正确", () => {
-    expect(ALL_EVENTS).toHaveLength(32);
-    expect(Object.keys(EVENT_BY_ID)).toHaveLength(32);
-    const kinds = ALL_EVENTS.reduce<Record<string, number>>((acc, e) => ({ ...acc, [e.kind]: (acc[e.kind] ?? 0) + 1 }), {});
+  it("第一版的 32 个事件、64 个唯一标记，按类型数量正确", () => {
+    expect(ORIGINAL_EVENTS).toHaveLength(32);
+    const kinds = ORIGINAL_EVENTS.reduce<Record<string, number>>((acc, e) => ({ ...acc, [e.kind]: (acc[e.kind] ?? 0) + 1 }), {});
     expect(kinds).toEqual({ highschool: 2, core: 8, arc: 18, masters: 4 });
-    const flags = ALL_EVENTS.flatMap((e) => e.choices.flatMap((c) => c.setFlags));
+    const flags = ORIGINAL_EVENTS.flatMap((e) => e.choices.flatMap((c) => c.setFlags));
     expect(new Set(flags).size).toBe(64);
+  });
+
+  it("全部事件的 id 与标记互不重复", () => {
+    expect(Object.keys(EVENT_BY_ID)).toHaveLength(ALL_EVENTS.length);
+    const flags = ALL_EVENTS.flatMap((e) => e.choices.flatMap((c) => c.setFlags));
+    expect(new Set(flags).size).toBe(ALL_EVENTS.length * 2);
   });
 
   it("入学旁白只使用允许的模板变量", () => {
@@ -32,6 +39,44 @@ describe("从 docs 提取的内容", () => {
     const found = JSON.stringify(TEXTS).match(/\{\{[^}]*\}\}/g) ?? [];
     expect(found.length).toBeGreaterThan(0);
     for (const variable of found) expect(allowed.has(variable), variable).toBe(true);
+  });
+});
+
+describe("第二版内容（docs/16–21）", () => {
+  it("每个本科节点至少有两张变体，随机事件与突发小事足够一局不重复", () => {
+    for (let stage = 1; stage <= 8; stage++) {
+      expect(CORE_VARIANTS.filter((e) => e.kind === "core" && e.stage === stage).length, `节点 ${stage}`).toBeGreaterThanOrEqual(2);
+    }
+    // 一局最多 6 个学期可能出随机事件；本科 8 学期 + 硕士 4 学期最多 12 条突发小事。
+    expect(RANDOM_EVENTS.length).toBeGreaterThanOrEqual(6);
+    for (const stage of ["UG", "MS"] as const) {
+      const usable = HAPPENINGS.filter((h) => h.scope === "ANY" || h.scope === stage).length;
+      expect(usable, stage).toBeGreaterThanOrEqual(stage === "UG" ? 8 : 4);
+    }
+  });
+
+  it("天赋池足够十连抽，四种稀有度都有，六张固定天赋在池里", () => {
+    expect(TALENTS.length).toBeGreaterThanOrEqual(20);
+    expect(new Set(TALENTS.map((t) => t.rarity))).toEqual(new Set(["N", "R", "SR", "SSR"]));
+    for (const id of ["T_FOCUSED", "T_PRACTICAL", "T_OUTGOING", "T_FRUGAL", "T_RESILIENT", "T_REFLECTIVE"]) {
+      expect(TALENTS.some((t) => t.id === id), id).toBe(true);
+    }
+  });
+
+  it("学期安排：每个类别一张基础安排、至少两张可选，且只有校园与休息类会花钱", () => {
+    for (const focus of ["STUDY", "CAREER", "CAMPUS", "WORK", "REST"] as const) {
+      const group = PLANS.filter((p) => p.focus === focus);
+      expect(group.filter((p) => p.base).map((p) => p.id), focus).toEqual([focus]);
+      expect(group.length, focus).toBeGreaterThanOrEqual(2);
+    }
+    for (const plan of PLANS.filter((p) => p.delta.money < 0)) expect(["CAMPUS", "REST"]).toContain(plan.focus);
+  });
+
+  it("突发小事按属性求和大致平衡", () => {
+    for (const key of ["money", "academics", "career", "wellbeing"] as const) {
+      const total = HAPPENINGS.reduce((sum, h) => sum + h.effects[key], 0);
+      expect(Math.abs(total), key).toBeLessThanOrEqual(6);
+    }
   });
 });
 

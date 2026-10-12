@@ -1,4 +1,4 @@
-// 结局与人生回顾（docs/07）：全部由可枚举模块确定性查表组合，没有新的抽签。
+// 结局与人生回顾（docs/07；第二版的小调整见 docs/16 第 8 节）：全部由可枚举模块确定性查表组合，没有新的抽签。
 // 身心与资金状态只读最终检查点的毕业快照；结局卡直接取确认去向时冻结的那一张。
 
 import { EVENT_BY_ID, TEXTS } from "../content";
@@ -8,6 +8,8 @@ import {
   WELLBEING_STEADY_FROM, WELLBEING_STRETCHED_FROM,
 } from "./constants";
 import { FOCUS_SUMMARY_NAMES, schoolDisplayName, termTitle, tidyCjkSpacing, truncateCodePoints } from "./labels";
+import { talentTotalsOf } from "./reducer";
+import { talentsByIds } from "./talents";
 import { opportunityViews } from "./views";
 import type {
   ActiveRun, ChoiceId, EducationPath, EndingRecord, EndingView, FinalRoute, MoneyBand, ReviewEntry, RunState,
@@ -57,8 +59,24 @@ function chosenChoice(run: ActiveRun, eventId: string): ChoiceId {
   return hasA ? "A" : "B";
 }
 
+/** 本科第 termIndex 学期主线槽里实际出现的那张事件（节点事件、变体或随机事件），取自历史。 */
+function mainSlotEventId(run: ActiveRun, termIndex: number): string | null {
+  const entry = run.history.find((item) => {
+    if (item.kind !== "EVENT" || item.stage !== "UG" || item.termIndex !== termIndex || !item.eventId) return false;
+    const kind = EVENT_BY_ID[item.eventId]?.kind;
+    return kind === "core" || kind === "random";
+  });
+  return entry?.eventId ?? null;
+}
+
+/** 回顾的固定集合：高中两张、本科第 1/4/8 学期主线槽实际出现的事件、两条支线第三幕、读过硕士加 MASTER_04。 */
 function reviewEventIds(run: ActiveRun): string[] {
-  const ids = ["HS_01", "HS_02", "CORE_01", "CORE_04", "CORE_08"];
+  const ids = ["HS_01", "HS_02"];
+  for (const termIndex of [1, 4, 8]) {
+    const eventId = mainSlotEventId(run, termIndex);
+    if (!eventId) throw new Error(`REVIEW_MAIN_SLOT_MISSING: 本科第 ${termIndex} 学期没有主线槽事件记录`);
+    ids.push(eventId);
+  }
   for (const slot of ["A", "B"] as const) {
     const arc = run.arcs[slot];
     if (arc) ids.push(`ARC_${arc}_3`);
@@ -92,13 +110,14 @@ function reviewEntries(run: ActiveRun): ReviewEntry[] {
   return entries;
 }
 
-/** 关键经历：优先已完成的 MASTER_04，否则实际最后发生的支线第 3 幕，否则 CORE_08。 */
+/** 关键经历：优先已完成的 MASTER_04，否则实际最后发生的支线第 3 幕，否则本科第 8 学期主线槽的事件。 */
 function keyExperience(run: ActiveRun): string {
   const candidates: string[] = [];
   if (run.mastersYears !== null) candidates.push("MASTER_04");
   if (run.arcs.B) candidates.push(`ARC_${run.arcs.B}_3`); // 槽 B 第三幕在 S7，晚于槽 A 的 S6
   if (run.arcs.A) candidates.push(`ARC_${run.arcs.A}_3`);
-  candidates.push("CORE_08");
+  const finalMain = mainSlotEventId(run, 8);
+  if (finalMain) candidates.push(finalMain);
   const eventId = candidates.find((id) => run.flags.includes(`${id}_A`) || run.flags.includes(`${id}_B`));
   if (!eventId) throw new Error("KEY_EXPERIENCE_MISSING");
   const event = EVENT_BY_ID[eventId];
@@ -140,6 +159,7 @@ export function endingView(state: RunState): EndingView | null {
   const variant = variantKey(ending);
   const schoolName = schoolDisplayName(school);
   const strategyName = a.strategy === "REACH" ? "冲刺" : "稳健";
+  const chance = talentTotalsOf(run).chance;
 
   const arcRecaps: string[] = [];
   for (const slot of ["A", "B"] as const) {
@@ -166,7 +186,7 @@ export function endingView(state: RunState): EndingView | null {
       keyExperience: keyExperience(run),
       status: `${TEXTS.ending.stateShort[wb]}${TEXTS.ending.stateShort[money]}`,
     },
-    opportunities: opportunityViews(checkpoint),
+    opportunities: opportunityViews(checkpoint, chance),
     full: {
       body: TEXTS.ending.route[variant].body,
       bridge: tidyCjkSpacing(TEXTS.ending.bridge[educationPath].split("{schoolName}").join(schoolName)),
@@ -186,8 +206,9 @@ export function endingView(state: RunState): EndingView | null {
       })),
       epilogue: TEXTS.ending.epilogue[variant],
       undergradOpportunities:
-        run.mastersYears !== null && run.graduations.UG ? opportunityViews(run.graduations.UG) : null,
+        run.mastersYears !== null && run.graduations.UG ? opportunityViews(run.graduations.UG, chance) : null,
     },
+    talents: talentsByIds(run.profile.talents),
     card: ending.card,
   };
 }

@@ -1,126 +1,177 @@
 // @vitest-environment jsdom
-// 各界面的呈现约定：默认短文、展开不改状态、资金不足的选项、样本目录提示、种子、图鉴、重开确认。
+// 各屏的呈现约定：开局抽天赋、没有展开、资金不足的选项、样本目录提示、种子、图鉴、重开确认。
 
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { makeSampleCatalog } from "../../../tests/helpers/sampleCatalog";
 import { createMemoryStorage } from "../../app/storage";
-import { ENDING_CARDS, EVENT_BY_ID } from "../../content";
+import { ENDING_CARDS, TALENTS } from "../../content";
+import { currentEvent, focusView, setupView, termLedger } from "../../engine";
+import type { RunState } from "../../engine";
 import {
   advanceUntil,
+  app,
+  brokePolicy,
   click,
+  findSeed,
   flush,
   mount,
+  newRun,
   newTrail,
   phase,
   revision,
-  seed13Policy,
   seededStorage,
-  spendthrift,
+  simulate,
   stats,
+  steadyPolicy,
   step,
 } from "./harness";
-import type { Policy } from "./harness";
 
 afterEach(() => cleanup());
 
-describe("默认短文与展开", () => {
-  it("事件默认只显示 summary 与 shortResult；展开看长文不改变 revision", async () => {
+const talentButtons = () => Array.from(app().querySelectorAll<HTMLButtonElement>("button[data-testid^='talent-']"));
+const startButton = () => screen.getByTestId("start") as HTMLButtonElement;
+
+describe("开局：出身是抽的，十张天赋选三张", () => {
+  it("必须选满才可开始；可以取消；选满后其余不可再点", async () => {
     await mount(seededStorage(7));
-    await click("family-MID");
-    await click("aspiration-DISCOVERY");
+    const view = setupView(newRun(7));
+    expect(view.pickCount).toBe(3);
+    const cards = talentButtons();
+    expect(cards.map((card) => card.getAttribute("data-testid"))).toEqual(view.draw.map((talent) => `talent-${talent.id}`));
+    for (const talent of view.draw) {
+      const card = screen.getByTestId(`talent-${talent.id}`);
+      expect(card.textContent).toContain(talent.name);
+      expect(card.textContent).toContain(talent.text);
+      expect(card.querySelector(".rarity")?.textContent).toBe(talent.rarity);
+      expect(card.getAttribute("aria-pressed")).toBe("false");
+    }
+    expect(screen.getByTestId("talent-count").textContent).toBe("已选 0 / 3");
+    expect(startButton().disabled).toBe(true);
+
+    const ids = view.draw.map((talent) => `talent-${talent.id}`);
+    await click(ids[0]);
+    await click(ids[1]);
+    expect(screen.getByTestId("talent-count").textContent).toBe("已选 2 / 3");
+    expect(startButton().disabled).toBe(true);
+    await click(ids[2]);
+    expect(screen.getByTestId(ids[2]).getAttribute("aria-pressed")).toBe("true");
+    expect(startButton().disabled).toBe(false);
+    // 选满之后，第四张点不了。
+    expect((screen.getByTestId(ids[3]) as HTMLButtonElement).disabled).toBe(true);
+    await click(ids[3]);
+    expect(screen.getByTestId("talent-count").textContent).toBe("已选 3 / 3");
+
+    // 取消一张：回到不可开始，其余重新可点；换一张再开始。
+    await click(ids[1]);
+    expect(screen.getByTestId(ids[1]).getAttribute("aria-pressed")).toBe("false");
+    expect(startButton().disabled).toBe(true);
+    expect((screen.getByTestId(ids[3]) as HTMLButtonElement).disabled).toBe(false);
+    expect(revision()).toBe(0);
+    await click(ids[3]);
     await click("start");
-
-    const hs01 = EVENT_BY_ID.HS_01;
-    expect(screen.getByTestId("event-summary").textContent).toBe(hs01.summary);
-    expect(screen.queryByText(hs01.body)).toBeNull();
-    const before = { revision: revision(), stats: stats() };
-    await click("expand-story");
-    expect(screen.getByText(hs01.body)).toBeTruthy();
-    await click("expand-intro");
-    expect(revision()).toBe(before.revision);
-    expect(stats()).toEqual(before.stats);
-    await click("expand-story");
-    expect(screen.queryByText(hs01.body)).toBeNull();
-
-    await click("choice-A");
-    const choice = hs01.choices[0];
-    const outcome = screen.getByTestId("last-outcome");
-    expect(outcome.textContent).toContain(choice.shortResult);
-    expect(outcome.textContent).not.toContain(choice.result);
-    const afterChoice = revision();
-    await click("expand-result");
-    expect(screen.getByTestId("last-outcome").textContent).toContain(choice.result);
-    expect(revision()).toBe(afterChoice);
-
-    // HS_02 命中上一张事件的回响：默认只出短回响，长回响在展开区。
-    const callback = EVENT_BY_ID.HS_02.callbacks.find((item) => item.ifFlag === "HS_01_A");
-    expect(screen.getByText(callback?.shortText ?? "?")).toBeTruthy();
-    expect(screen.queryByText(callback?.text ?? "?")).toBeNull();
-    await click("expand-story");
-    expect(screen.getByText(callback?.text ?? "?")).toBeTruthy();
-    expect(revision()).toBe(afterChoice);
+    expect(phase()).toBe("HIGH_SCHOOL_EVENT");
+    expect(screen.getByTestId("stat-money")).toBeTruthy();
   });
 
-  it("实际变化用截断后的值显示：选项预览与结算后的属性一致", async () => {
-    await mount(seededStorage(7));
-    await click("family-MID");
-    await click("aspiration-DISCOVERY");
-    await click("start");
-    const before = stats();
-    const preview = screen.getByTestId("choice-A").querySelector("[data-stat='academics']")?.textContent ?? "";
-    const expected = Number(/[+-]\d+/.exec(preview)?.[0]);
-    await click("choice-A");
-    expect(stats().academics - before.academics).toBe(expected);
+  it("同一个种子得到相同的出身与十张天赋；换一批得到新的一局", async () => {
+    const readSetup = async () => {
+      const view = await mount(createMemoryStorage());
+      fireEvent.click(screen.getByTestId("seed-toggle"));
+      fireEvent.change(screen.getByTestId("seed-input"), { target: { value: "42" } });
+      await click("seed-apply");
+      expect(app().getAttribute("data-seed")).toBe("42");
+      const snapshot = {
+        origin: screen.getByTestId("origin-card").textContent,
+        talents: talentButtons().map((card) => card.textContent),
+      };
+      view.unmount();
+      return snapshot;
+    };
+    const first = await readSetup();
+    const second = await readSetup();
+    expect(second).toEqual(first);
+    expect(first.talents.length).toBe(10);
+    // docs/09 第 4 节：seed 42 的基础申请准备度是 65。
+    expect(first.origin).toContain("申请准备度 65");
+
+    // 开局阶段的“换一批”不需要确认。
+    await mount(seededStorage(42));
+    const runId = app().getAttribute("data-run-id");
+    await click("restart");
+    expect(screen.queryByTestId("restart-confirm")).toBeNull();
+    expect(phase()).toBe("SETUP");
+    expect(app().getAttribute("data-run-id")).not.toBe(runId);
+  });
+
+  it("不合法的种子不会开新局", async () => {
+    await mount(seededStorage(5));
+    fireEvent.change(screen.getByTestId("seed-input"), { target: { value: "4294967296" } });
+    await click("seed-apply");
+    expect(screen.getByRole("alert").textContent).toContain("0 到 4294967295");
+    expect(app().getAttribute("data-seed")).toBe("5");
+  });
+
+  it("天赋池里的稀有度都有对应的样式类", () => {
+    expect(TALENTS.length).toBeGreaterThanOrEqual(10);
+    expect(new Set(TALENTS.map((talent) => talent.rarity))).toEqual(new Set(["N", "R", "SR", "SSR"]));
   });
 });
 
-describe("资金不足的选项", () => {
-  it("被禁用并写明差额，而且每张事件始终有能点的选项", async () => {
-    const policy: Policy = { economy: "LOW", aspiration: "BELONGING", focus: () => "STUDY", choice: spendthrift };
-    await mount(seededStorage(13));
-    const trail = newTrail();
+describe("资金不足", () => {
+  // 专挑花钱选项的打法下，途中至少出现一次“选项因资金不足不可选”的第一个种子。
+  const sawUnavailable = (state: RunState): boolean => {
+    if (state.phase === "FOCUS") return focusView(state)?.options.some((option) => !option.available) ?? false;
+    if (state.phase === "CORE_EVENT" || state.phase === "ARC_EVENT") {
+      return currentEvent(state)?.choices.some((item) => !item.available) ?? false;
+    }
+    return false;
+  };
+  const brokeSeed = () =>
+    findSeed((candidate) => {
+      let seen = false;
+      simulate(candidate, brokePolicy, (state) => {
+        seen = seen || sawUnavailable(state);
+        return state.phase === "GRAD_PREVIEW";
+      });
+      return seen;
+    });
+
+  it("不可选的选项被禁用并写明差额；每一屏始终有能点的选项；资金见底也能走到毕业", async () => {
+    const storage = seededStorage(brokeSeed());
+    await mount(storage);
     let checked = 0;
-    await advanceUntil(policy, trail, () => {
-      if (["CORE_EVENT", "ARC_EVENT"].includes(phase())) {
-        for (const id of ["A", "B"]) {
-          const button = screen.getByTestId(`choice-${id}`) as HTMLButtonElement;
-          if (button.disabled) {
-            const note = screen.getByTestId(`short-${id}`).textContent ?? "";
-            const match = /^需要 (\d+)，当前 (\d+)$/.exec(note);
-            expect(match).toBeTruthy();
-            expect(Number(match?.[2])).toBe(stats().money);
-            expect(Number(match?.[1])).toBeGreaterThan(stats().money);
-            checked += 1;
-          }
-        }
+    let shortfallSeen = false;
+    await advanceUntil(storage, brokePolicy, newTrail(), () => phase() === "GRAD_PREVIEW", (state) => {
+      if (state.phase === "SETUP") return;
+      const buttons = Array.from(
+        app().querySelectorAll<HTMLButtonElement>("button[data-testid^='plan-'], button[data-testid^='choice-']"),
+      );
+      if (buttons.length > 0) expect(buttons.some((button) => !button.disabled)).toBe(true);
+      for (const button of buttons.filter((item) => item.disabled)) {
+        const id = (button.getAttribute("data-testid") ?? "").replace(/^(plan|choice)-/, "");
+        const match = /^资金不足：需要 (\d+)，当前 (\d+)$/.exec(screen.getByTestId(`short-${id}`).textContent ?? "");
+        expect(match).toBeTruthy();
+        expect(Number(match?.[2])).toBe(stats().money);
+        expect(Number(match?.[1])).toBeGreaterThan(stats().money);
+        checked += 1;
       }
-      return phase() === "GRAD_PREVIEW";
+      // 上学期出现过短缺时，结算那一行会多一句说明。
+      const ledger = termLedger(state);
+      if (state.phase === "FOCUS" && ledger && ledger.shortfall > 0) {
+        expect(screen.getByTestId("term-settlement").textContent).toContain(
+          `资金短缺 ${ledger.shortfall}，身心多扣 ${ledger.stress}。`,
+        );
+        shortfallSeen = true;
+      }
     });
     expect(checked).toBeGreaterThan(0);
-    expect(trail.disabledSeen.length).toBeGreaterThan(0);
-    // 资金见底也照常走到毕业。
+    expect(shortfallSeen).toBe(true);
     expect(phase()).toBe("GRAD_PREVIEW");
-  });
-
-  it("期末资金短缺时，学期小结写明短缺与额外的身心消耗", async () => {
-    const policy: Policy = { economy: "LOW", aspiration: "BELONGING", focus: () => "STUDY", choice: spendthrift };
-    await mount(seededStorage(13));
-    const trail = newTrail();
-    let seen = false;
-    await advanceUntil(policy, trail, () => {
-      if (phase() === "TERM_REVIEW" && screen.queryByTestId("shortfall-note")) {
-        expect(screen.getByTestId("shortfall-note").textContent).toMatch(/^资金短缺 \d+：.*身心额外 -\d+。$/);
-        expect(stats().money).toBe(0);
-        seen = true;
-      }
-      return seen || phase() === "GRAD_PREVIEW";
-    });
-    expect(seen).toBe(true);
   });
 });
 
-describe("开局、目录与种子", () => {
+describe("目录与重新开始", () => {
   it("样本目录有明显提示", async () => {
     await mount(createMemoryStorage());
     expect(screen.getByTestId("sample-banner").textContent).toBe("样本目录（开发用，非正式学校数据）");
@@ -134,74 +185,22 @@ describe("开局、目录与种子", () => {
     expect(screen.queryByTestId("screen-setup")).toBeNull();
   });
 
-  it("指定同一个种子，得到相同的三张家庭卡与申请准备度", async () => {
-    const readSetup = async () => {
-      const view = await mount(createMemoryStorage());
-      await click("seed-toggle");
-      fireEvent.change(screen.getByTestId("seed-input"), { target: { value: "42" } });
-      await click("seed-apply");
-      expect(screen.getByTestId("app").getAttribute("data-seed")).toBe("42");
-      const snapshot = {
-        readiness: screen.getByTestId("base-readiness").textContent,
-        cards: ["LOW", "MID", "HIGH"].map((economy) => screen.getByTestId(`family-card-${economy}`).textContent),
-      };
-      view.unmount();
-      return snapshot;
-    };
-    const first = await readSetup();
-    const second = await readSetup();
-    expect(second).toEqual(first);
-    // docs/09 第 4 节：seed 42 的基础申请准备度是 65。
-    expect(first.readiness).toBe("申请准备度 65");
-  });
-
-  it("不合法的种子不会开新局", async () => {
-    await mount(seededStorage(5));
-    await click("seed-toggle");
-    fireEvent.change(screen.getByTestId("seed-input"), { target: { value: "4294967296" } });
-    await click("seed-apply");
-    expect(screen.getByRole("alert").textContent).toContain("0 到 4294967295");
-    expect(screen.getByTestId("app").getAttribute("data-seed")).toBe("5");
-  });
-
-  it("开局页不显示四属性；未选家庭与愿望时不能开始", async () => {
-    await mount(seededStorage(5));
-    expect(screen.queryByTestId("stat-money")).toBeNull();
-    expect((screen.getByTestId("start") as HTMLButtonElement).disabled).toBe(true);
-    await click("family-LOW");
-    expect((screen.getByTestId("start") as HTMLButtonElement).disabled).toBe(true);
-    await click("aspiration-BELONGING");
-    expect((screen.getByTestId("start") as HTMLButtonElement).disabled).toBe(false);
-    fireEvent.change(screen.getByTestId("name-input"), { target: { value: "  阿树  " } });
-    await click("start");
-    expect(phase()).toBe("HIGH_SCHOOL_EVENT");
-    expect(stats().money).toBe(28);
-  });
-});
-
-describe("重新开始", () => {
-  it("游戏进行中需要一次确认；开局页直接换一局", async () => {
-    await mount(seededStorage(5));
-    const firstRun = screen.getByTestId("app").getAttribute("data-run-id");
-    await click("restart");
-    expect(screen.queryByTestId("restart-confirm")).toBeNull();
-    const secondRun = screen.getByTestId("app").getAttribute("data-run-id");
-    expect(secondRun).not.toBe(firstRun);
-
-    await click("family-MID");
-    await click("aspiration-DISCOVERY");
-    await click("start");
+  it("游戏进行中重新开始需要一次确认", async () => {
+    const storage = seededStorage(5);
+    await mount(storage);
+    await step(storage, steadyPolicy, newTrail());
+    const runId = app().getAttribute("data-run-id");
     await click("restart");
     expect(screen.getByTestId("restart-confirm")).toBeTruthy();
     expect(phase()).toBe("HIGH_SCHOOL_EVENT");
     await click("restart-no");
     expect(screen.queryByTestId("restart-confirm")).toBeNull();
-    expect(screen.getByTestId("app").getAttribute("data-run-id")).toBe(secondRun);
+    expect(app().getAttribute("data-run-id")).toBe(runId);
 
     await click("restart");
     await click("restart-yes");
     expect(phase()).toBe("SETUP");
-    expect(screen.getByTestId("app").getAttribute("data-run-id")).not.toBe(secondRun);
+    expect(app().getAttribute("data-run-id")).not.toBe(runId);
   });
 });
 
@@ -209,7 +208,6 @@ describe("留学人生图鉴", () => {
   it("结局后记录对应等级；刷新不重复计数；未解锁的隐藏结局不露名字", async () => {
     const storage = seededStorage(13);
     let view = await mount(storage);
-    const trail = newTrail();
 
     // 开局就能打开图鉴，此时全部未解锁。
     await click("open-gallery");
@@ -228,45 +226,41 @@ describe("留学人生图鉴", () => {
     await click("close-gallery");
     expect(phase()).toBe("SETUP");
 
-    await advanceUntil(seed13Policy, trail, () => phase() === "GRAD_RESULTS");
-    await click("route-PHD");
+    await advanceUntil(storage, steadyPolicy, newTrail(), () => phase() === "ENDING");
     await flush();
     const tierId = screen.getByTestId("ending-card").getAttribute("data-tier") ?? "";
     const hiddenIds = Array.from(screen.getByTestId("ending-card").querySelectorAll("[data-testid^='card-hidden-']")).map(
       (node) => (node.getAttribute("data-testid") ?? "").replace("card-hidden-", ""),
     );
 
-    const check = async () => {
+    const check = async (times: number) => {
       await click("open-gallery");
       const item = screen.getByTestId(`gallery-tier-${tierId}`);
       expect(item.getAttribute("data-unlocked")).toBe("true");
-      expect(item.textContent).toContain("解锁 1 次 · 首次种子 13");
+      expect(item.textContent).toContain(`解锁 ${times} 次 · 首次种子 13`);
       for (const id of hiddenIds) {
         expect(screen.getByTestId(`gallery-hidden-${id}`).getAttribute("data-unlocked")).toBe("true");
       }
-      const unlockedTiers = ENDING_CARDS.tiers.filter(
+      const unlocked = ENDING_CARDS.tiers.filter(
         (tier) => screen.getByTestId(`gallery-tier-${tier.id}`).getAttribute("data-unlocked") === "true",
       );
-      expect(unlockedTiers.map((tier) => tier.id)).toEqual([tierId]);
+      expect(unlocked.map((tier) => tier.id)).toEqual([tierId]);
       await click("close-gallery");
     };
-    await check();
+    await check(1);
 
     view.unmount();
     view = await mount(storage);
     expect(phase()).toBe("ENDING");
-    await check();
+    await check(1);
 
-    // 再玩一局（新 runId）到同一个结局，次数才会加一。
+    // 同一个种子再玩一局（新的 runId）到同一个结局，次数才会加一。
     await click("replay-seed");
     expect(phase()).toBe("SETUP");
-    const again = newTrail();
-    await step(seed13Policy, again);
-    await advanceUntil(seed13Policy, again, () => phase() === "GRAD_RESULTS");
-    await click("route-PHD");
+    await advanceUntil(storage, steadyPolicy, newTrail(), () => phase() === "ENDING");
     await flush();
-    await click("open-gallery");
-    expect(screen.getByTestId(`gallery-tier-${tierId}`).textContent).toContain("解锁 2 次 · 首次种子 13");
+    expect(screen.getByTestId("ending-card").getAttribute("data-tier")).toBe(tierId);
+    await check(2);
     view.unmount();
   });
 });

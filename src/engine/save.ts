@@ -5,16 +5,20 @@
 import { ALL_EVENTS } from "../content";
 import {
   ALL_TIERS, ARC_ORDER, ASPIRATION_ORDER, CONTENT_VERSION, ECONOMY_ORDER, EXPECTATION_ORDER, FOCUS_ORDER, OFFER_COUNT,
-  RULES_VERSION, SAVE_FORMAT, STAT_KEYS, STAT_MAX, STAT_MIN, TRAIT_ORDER, UG_TERMS,
+  RULES_VERSION, SAVE_FORMAT, STAT_KEYS, STAT_MAX, STAT_MIN, TALENT_PICK_CLASSIC, TALENT_PICK_STANDARD, UG_TERMS,
 } from "./constants";
+import { findTalent } from "./pools";
 import { applyAction, createRun } from "./reducer";
 import { totalFocus } from "./rules";
-import type { Action, ActiveRun, EngineContext, LoadResult, Phase, RunState, SaveEnvelope } from "./types";
+import type {
+  Action, ActiveRun, Economy, EngineContext, LoadResult, Phase, RunMode, RunState, SaveEnvelope,
+} from "./types";
 
 const PHASES: readonly Phase[] = [
-  "SETUP", "HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "TERM_REVIEW", "GRAD_PREVIEW",
-  "GRAD_RESULTS", "ENDING",
+  "SETUP", "HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS",
+  "ENDING",
 ];
+const MODES: readonly RunMode[] = ["standard", "classic"];
 const KNOWN_FLAGS: ReadonlySet<string> = new Set(ALL_EVENTS.flatMap((event) => event.choices.flatMap((choice) => choice.setFlags)));
 const EVENT_IDS: readonly string[] = ALL_EVENTS.map((event) => event.id);
 
@@ -32,9 +36,21 @@ export function serializeSave(state: RunState, log: Action[]): string {
   return JSON.stringify(envelope);
 }
 
-/** 从 seed 重放整段操作，返回最终状态；任何一步被拒绝则抛错。 */
-export function replay(args: { seed: number; runId: string; log: Action[] }, ctx: EngineContext): RunState {
-  let state: RunState = createRun({ seed: args.seed, runId: args.runId, catalog: ctx.catalog });
+/**
+ * 从 seed 重放整段操作，返回最终状态；任何一步被拒绝则抛错。
+ * mode 缺省为 standard；重放 classic 模式的局要同时给出 classicEconomy。
+ */
+export function replay(
+  args: { seed: number; runId: string; log: Action[]; mode?: RunMode; classicEconomy?: Economy },
+  ctx: EngineContext,
+): RunState {
+  let state: RunState = createRun({
+    seed: args.seed,
+    runId: args.runId,
+    catalog: ctx.catalog,
+    mode: args.mode,
+    classicEconomy: args.classicEconomy,
+  });
   args.log.forEach((action, index) => {
     const result = applyAction(state, { ...action, revision: state.revision }, ctx);
     if (!result.ok) throw new Error(`REPLAY_REJECTED: 第 ${index + 1} 步 ${String(action?.type)} 被拒绝（${result.error.code}）`);
@@ -72,16 +88,24 @@ export function invariantProblem(state: unknown): string | null {
   if (!isInt(state.seed) || state.seed < 0 || state.seed > 0xffffffff) return "seed 无效";
   if (typeof state.runId !== "string") return "runId 无效";
   if (!isInt(state.revision) || state.revision < 0) return "revision 无效";
-  if (state.phase === "SETUP") return null;
+  if (!MODES.includes(state.mode as RunMode)) return "mode 无效";
+  if (state.phase === "SETUP") {
+    if (state.mode === "classic" && !ECONOMY_ORDER.includes(state.classicEconomy as never)) return "classic 模式缺少经济档";
+    if (state.mode === "standard" && state.classicEconomy !== undefined) return "standard 模式不应指定经济档";
+    return null;
+  }
 
   const run = state as unknown as ActiveRun;
   const profile = state.profile;
   if (!isRecord(profile)) return "profile 缺失";
-  if (typeof profile.name !== "string") return "profile.name 无效";
   if (!ECONOMY_ORDER.includes(profile.economy as never)) return "profile.economy 无效";
   if (!EXPECTATION_ORDER.includes(profile.expectation as never)) return "profile.expectation 无效";
-  if (!TRAIT_ORDER.includes(profile.trait as never)) return "profile.trait 无效";
   if (!ASPIRATION_ORDER.includes(profile.aspiration as never)) return "profile.aspiration 无效";
+  if (!Array.isArray(profile.talents) || !profile.talents.every((id) => typeof id === "string")) return "profile.talents 无效";
+  const talents = profile.talents as string[];
+  if (talents.length !== (state.mode === "classic" ? TALENT_PICK_CLASSIC : TALENT_PICK_STANDARD)) return "天赋数量不对";
+  if (new Set(talents).size !== talents.length) return "天赋有重复";
+  if (!talents.every((id) => findTalent(id) !== undefined)) return "天赋不在天赋池里";
 
   const stats = statsProblem(state.stats, "stats");
   if (stats) return stats;
@@ -114,7 +138,8 @@ export function invariantProblem(state: unknown): string | null {
     }
   }
   if (!isRecord(state.graduations)) return "graduations 缺失";
-  if (!isRecord(state.admission) || !isInt((state.admission as Record<string, unknown>).baseReadiness)) return "admission 无效";
+  const admission = state.admission;
+  if (!isRecord(admission) || !isInt(admission.baseReadiness) || !isInt(admission.talentBonus)) return "admission 无效";
 
   // 学段与阶段的一致性
   const phase = run.phase;
@@ -122,7 +147,7 @@ export function invariantProblem(state: unknown): string | null {
   const total = totalFocus(run.focusCounts);
   if (stage === "HS") {
     if (phase !== "HIGH_SCHOOL_EVENT" && phase !== "SCHOOL_OFFERS") return "高中阶段的 phase 无效";
-    if (total !== 0 || run.termIndex !== 0) return "高中阶段不应有投入或学期";
+    if (total !== 0 || run.termIndex !== 0) return "高中阶段不应有学期安排或学期";
     if (run.school !== null) return "高中阶段不应已有学校";
   } else {
     if (phase === "HIGH_SCHOOL_EVENT" || phase === "SCHOOL_OFFERS") return "phase 与学段不符";
@@ -132,9 +157,10 @@ export function invariantProblem(state: unknown): string | null {
     if (stage === "MS" && run.mastersYears === null) return "硕士阶段缺少学制";
     if (stage === "UG" && run.mastersYears !== null) return "本科阶段不应已有硕士学制";
     if (run.termIndex < 1 || run.termIndex > termCount) return "termIndex 越界";
+    // 选安排之前（FOCUS）本学期还没计数；其余学期内阶段与毕业阶段都已经计入本学期。
     const before = stage === "UG" ? 0 : UG_TERMS;
     const expected = before + run.termIndex - (phase === "FOCUS" ? 1 : 0);
-    if (total !== expected) return `投入次数 ${total} 与学段进度不符（应为 ${expected}）`;
+    if (total !== expected) return `安排次数 ${total} 与学段进度不符（应为 ${expected}）`;
     if ((phase === "GRAD_PREVIEW" || phase === "GRAD_RESULTS" || phase === "ENDING") && run.termIndex !== termCount) {
       return "毕业阶段的 termIndex 不在最后一学期";
     }
@@ -200,7 +226,17 @@ export function loadSave(text: string, ctx: EngineContext): LoadResult {
 
   let replayed: RunState;
   try {
-    replayed = replay({ seed: typedState.seed, runId: typedState.runId, log: typedLog }, ctx);
+    replayed = replay(
+      {
+        seed: typedState.seed,
+        runId: typedState.runId,
+        log: typedLog,
+        mode: typedState.mode,
+        classicEconomy:
+          typedState.mode !== "classic" ? undefined : typedState.phase === "SETUP" ? typedState.classicEconomy : typedState.profile.economy,
+      },
+      ctx,
+    );
   } catch (error) {
     return { ok: false, reason: "CORRUPT", detail: `操作记录无法重放：${(error as Error).message}` };
   }

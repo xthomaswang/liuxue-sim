@@ -1,6 +1,6 @@
 // 纯展示用的小工具：把引擎给的数值排成文字，不做任何规则判断。
 
-import type { Delta, RuntimeSchool, StatKey, Stats, TierOdds } from "../engine";
+import type { Delta, RuntimeSchool, StatKey, Stats, TermLedger, TierOdds } from "../engine";
 import { RANK_CATEGORY_NAME, S, STAT_ORDER, TIER_BASIS_NOTE, TIER_NAME } from "./strings";
 
 export function signed(value: number): string {
@@ -28,17 +28,24 @@ export function asDelta(requested: Stats, applied: Stats): Delta {
   return { requested, applied };
 }
 
+/** 把上学期的必要开销、短缺压力与基础成长合成一行。 */
+export function settlementDelta(ledger: TermLedger): Delta {
+  const zero = (): Stats => ({ money: 0, academics: 0, career: 0, wellbeing: 0 });
+  const total: Delta = { requested: zero(), applied: zero() };
+  for (const line of ledger.lines) {
+    if (line.kind !== "UPKEEP" && line.kind !== "GROWTH") continue;
+    for (const key of STAT_ORDER) {
+      total.requested[key] += line.delta.requested[key];
+      total.applied[key] += line.delta.applied[key];
+    }
+  }
+  return total;
+}
+
 /** 如 “S 档 约 17.6%”“未分档 约 10.0%”“D 档 0%”。 */
 export function oddsText(odds: TierOdds): string {
   const approximate = /^\d/.test(odds.label) && odds.label !== "0%";
   return `${TIER_NAME[odds.tier]} ${approximate ? `${S.about} ` : ""}${odds.label}`;
-}
-
-/** 百分点的百分之一 → 带符号的百分点文字，如 9000 → "+90"、750 → "+7.5"。 */
-export function hundredthsText(hundredths: number): string {
-  const value = hundredths / 100;
-  const text = Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
-  return hundredths > 0 ? `+${text}` : text;
 }
 
 export function rollText(roll: number): string {

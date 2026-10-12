@@ -1,5 +1,6 @@
 // 从 docs/*.md 提取游戏内容，生成 src/content 下的静态 JSON。
 // 文案不手工重打：事件来自 04/05/10/12 各自唯一的 json 代码块，开局与结局文案来自 02/03/05/07 的表格与固定段落。
+// 第二版内容（docs/16）：天赋 17、学期安排 18、主线变体 19、随机事件 20、突发小事 21，同样各有一个 json 代码块。
 // 运行：node scripts/extract-content.ts   （游戏运行时只读生成的 JSON，不解析 Markdown）
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -103,6 +104,7 @@ interface RawEvent {
   arc?: string;
   beat?: number;
   node?: number;
+  scope?: string;
   title: string;
   summary: string;
   body: string;
@@ -119,22 +121,23 @@ function extractEvents(markdown: string, doc: string): RawEvent[] {
 function normalizeEvent(event: RawEvent): RawEvent {
   // 固定键顺序，生成文件稳定可比对。
   const base = { id: event.id, kind: event.kind } as Record<string, unknown>;
-  for (const key of ["stage", "arc", "beat", "node"] as const) {
+  for (const key of ["stage", "arc", "beat", "node", "scope"] as const) {
     if (event[key] !== undefined) base[key] = event[key];
   }
   return {
     ...(base as { id: string; kind: string }),
     title: event.title,
     summary: event.summary,
-    body: event.body,
-    callbacks: event.callbacks.map((cb) => ({ ifFlag: cb.ifFlag, shortText: cb.shortText, text: cb.text })),
+    // 第二版的新事件可以不写长文：长正文回退为摘要，长结果回退为短结果。
+    body: event.body || event.summary,
+    callbacks: (event.callbacks ?? []).map((cb) => ({ ifFlag: cb.ifFlag, shortText: cb.shortText, text: cb.text })),
     choices: event.choices.map((choice) => ({
       id: choice.id,
       label: choice.label,
       effects: Object.fromEntries(STAT_KEYS.map((key) => [key, choice.effects[key]])),
       setFlags: [...choice.setFlags],
       shortResult: choice.shortResult,
-      result: choice.result,
+      result: choice.result || choice.shortResult,
     })),
   };
 }
@@ -349,6 +352,230 @@ function extractTexts(root: string): Json {
   };
 }
 
+// ---------- 第二版内容：天赋、学期安排、主线变体、随机事件、突发小事 ----------
+
+const FOCUSES = ["STUDY", "CAREER", "CAMPUS", "WORK", "REST"] as const;
+const OPPORTUNITIES = ["PHD", "LOCAL_JOB", "HOME_JOB"];
+const ARCS = ["RESEARCH", "INTERNSHIP", "FRIENDSHIP", "FAMILY", "REORIENTATION", "CREATIVE"];
+
+function extractJson(markdown: string, doc: string): unknown {
+  const blocks = [...markdown.matchAll(/```json\s*\n([\s\S]*?)\n```/g)];
+  if (blocks.length !== 1) throw new Error(`${doc}: 期望恰好一个 json 代码块，实际 ${blocks.length} 个`);
+  return JSON.parse(blocks[0][1]);
+}
+
+function isInt(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value);
+}
+
+function checkStatMap(map: unknown, limit: number, what: string, partial: boolean): void {
+  if (typeof map !== "object" || map === null) throw new Error(`${what} 不是对象`);
+  const keys = Object.keys(map);
+  if (!partial && keys.slice().sort().join(",") !== [...STAT_KEYS].sort().join(",")) throw new Error(`${what} 必须列全四项`);
+  for (const key of keys) {
+    if (!(STAT_KEYS as readonly string[]).includes(key)) throw new Error(`${what} 出现未知属性 ${key}`);
+    const value = (map as Record<string, unknown>)[key];
+    if (!isInt(value) || Math.abs(value) > limit) throw new Error(`${what}.${key} 超出范围 ±${limit}`);
+  }
+}
+
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${canonical(record[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/** 第一版六种特质对应的固定天赋，效果必须与 docs/03 第 2.3 节逐项相同（经典模式靠它与 Python 参考实现对拍）。 */
+const CLASSIC_TALENTS: Record<string, unknown> = {
+  T_FOCUSED: { focus: { STUDY: { academics: 2 } } },
+  T_PRACTICAL: { focus: { CAREER: { career: 2 } } },
+  T_OUTGOING: { focus: { CAMPUS: { career: 2 } }, arcWeight: { FRIENDSHIP: 2 } },
+  T_FRUGAL: { upkeep: -1 },
+  T_RESILIENT: { focusWellbeingRelief: 2 },
+  T_REFLECTIVE: { focus: { REST: { academics: 1, wellbeing: 3 } }, arcWeight: { CREATIVE: 1 } },
+};
+
+interface RawTalent {
+  id: string;
+  name: string;
+  rarity: string;
+  text: string;
+  effects: Record<string, unknown>;
+}
+
+function extractTalents(root: string): RawTalent[] {
+  const doc = "17_TALENTS.md";
+  const talents = extractJson(readDoc(root, doc), doc) as RawTalent[];
+  const seen = new Set<string>();
+  for (const talent of talents) {
+    const what = `天赋 ${talent.id}`;
+    if (!/^T_[A-Z0-9_]+$/.test(talent.id) || seen.has(talent.id)) throw new Error(`${what}：id 不合规或重复`);
+    seen.add(talent.id);
+    if (!["N", "R", "SR", "SSR"].includes(talent.rarity)) throw new Error(`${what}：稀有度无效`);
+    if (!talent.name || [...talent.name].length > 8) throw new Error(`${what}：名称为空或超过 8 个字`);
+    if (!talent.text || [...talent.text].length > 40) throw new Error(`${what}：说明为空或超过 40 个字`);
+    const effects = talent.effects ?? {};
+    for (const key of Object.keys(effects)) {
+      const value = effects[key];
+      const at = `${what}.effects.${key}`;
+      if (key === "initial") checkStatMap(value, 15, at, true);
+      else if (key === "growth") checkStatMap(value, 1, at, true);
+      else if (key === "stipend") { if (!isInt(value) || Math.abs(value) > 3) throw new Error(`${at} 超出 ±3`); }
+      else if (key === "upkeep") { if (!isInt(value) || Math.abs(value) > 2) throw new Error(`${at} 超出 ±2`); }
+      else if (key === "focusWellbeingRelief") { if (!isInt(value) || value < 1 || value > 3) throw new Error(`${at} 应为 1–3`); }
+      else if (key === "readiness") { if (!isInt(value) || value < -10 || value > 12) throw new Error(`${at} 应为 -10–12`); }
+      else if (key === "efficiencyFloor") { if (value !== 8 && value !== 10) throw new Error(`${at} 只能是 8 或 10`); }
+      else if (key === "focus") {
+        for (const [focus, map] of Object.entries(value as Record<string, unknown>)) {
+          if (!(FOCUSES as readonly string[]).includes(focus)) throw new Error(`${at} 出现未知类别 ${focus}`);
+          checkStatMap(map, 3, `${at}.${focus}`, true);
+        }
+      } else if (key === "chance") {
+        for (const [opportunity, bonus] of Object.entries(value as Record<string, unknown>)) {
+          if (!OPPORTUNITIES.includes(opportunity) || !isInt(bonus) || Math.abs(bonus) > 8) throw new Error(`${at}.${opportunity} 无效`);
+        }
+      } else if (key === "arcWeight") {
+        for (const [arc, weight] of Object.entries(value as Record<string, unknown>)) {
+          if (!ARCS.includes(arc) || !isInt(weight) || weight < 1 || weight > 3) throw new Error(`${at}.${arc} 无效`);
+        }
+      } else throw new Error(`${at}：未知的效果键`);
+    }
+  }
+  if (talents.length > 0) {
+    for (const [id, expected] of Object.entries(CLASSIC_TALENTS)) {
+      const talent = talents.find((entry) => entry.id === id);
+      if (!talent) throw new Error(`缺少固定天赋 ${id}`);
+      if (canonical(talent.effects) !== canonical(expected)) throw new Error(`固定天赋 ${id} 的效果必须与 docs/03 的特质相同`);
+    }
+  }
+  return talents.map((talent) => ({ id: talent.id, name: talent.name, rarity: talent.rarity, text: talent.text, effects: talent.effects ?? {} }));
+}
+
+interface RawPlan {
+  id: string;
+  focus: string;
+  name: string;
+  base?: boolean;
+  delta: Record<string, number>;
+}
+
+function extractPlans(root: string): RawPlan[] {
+  const doc = "18_TERM_PLANS.md";
+  const plans = extractJson(readDoc(root, doc), doc) as RawPlan[];
+  if (plans.length === 0) return [];
+  // 五张基础安排必须与 docs/03 第 3 节的表逐项相同。
+  const baseTable = findTable(readDoc(root, "03_SYSTEMS_AND_PROBABILITIES.md"), ["focus", "名称", "money", "academics", "career", "wellbeing"], "03");
+  const seen = new Set<string>();
+  for (const plan of plans) {
+    const what = `安排 ${plan.id}`;
+    if (seen.has(plan.id)) throw new Error(`${what}：id 重复`);
+    seen.add(plan.id);
+    if (!(FOCUSES as readonly string[]).includes(plan.focus)) throw new Error(`${what}：类别无效`);
+    if (!plan.name || [...plan.name].length > 12) throw new Error(`${what}：名称为空或超过 12 个字`);
+    checkStatMap(plan.delta, 17, `${what}.delta`, false);
+    if (plan.delta.money < 0 && plan.focus !== "CAMPUS" && plan.focus !== "REST") throw new Error(`${what}：只有 CAMPUS 与 REST 类别可以花钱`);
+    if (plan.base) {
+      if (plan.id !== plan.focus) throw new Error(`${what}：基础安排的 id 必须等于类别名`);
+      const row = baseTable.rows.find((cells) => cells[0] === plan.focus);
+      const expected = row ? row.slice(2).map((cell) => Number(cell.replace("+", ""))) : [];
+      const actual = STAT_KEYS.map((key) => plan.delta[key]);
+      if (expected.join(",") !== actual.join(",")) throw new Error(`${what}：基础安排的数值必须与 docs/03 的表相同`);
+    } else if (!new RegExp(`^${plan.focus}_[A-Z0-9_]+$`).test(plan.id)) {
+      throw new Error(`${what}：变体 id 应为 ${plan.focus}_XXX`);
+    }
+  }
+  for (const focus of FOCUSES) {
+    const group = plans.filter((plan) => plan.focus === focus);
+    if (group.filter((plan) => plan.base).length !== 1) throw new Error(`类别 ${focus} 需要恰好一张基础安排`);
+    if (group.length < 2) throw new Error(`类别 ${focus} 至少要有两张安排`);
+    if (!group.some((plan) => plan.delta.money >= 0)) throw new Error(`类别 ${focus} 至少要有一张不花钱的安排`);
+  }
+  return plans.map((plan) => ({
+    id: plan.id,
+    focus: plan.focus,
+    name: plan.name,
+    ...(plan.base ? { base: true } : {}),
+    delta: Object.fromEntries(STAT_KEYS.map((key) => [key, plan.delta[key]])),
+  }));
+}
+
+function checkEventShape(event: RawEvent): void {
+  if (!event.title || !event.summary) throw new Error(`${event.id} 缺少 title/summary`);
+  if (!Array.isArray(event.choices) || event.choices.map((c) => c.id).join(",") !== "A,B") throw new Error(`${event.id} 的选项必须是 A、B`);
+  if (!event.choices.some((c) => c.effects.money >= 0)) throw new Error(`${event.id} 没有不花钱的选项`);
+  for (const choice of event.choices) {
+    const flag = `${event.id}_${choice.id}`;
+    checkStatMap(choice.effects, 8, `${flag}.effects`, false);
+    if (Object.values(choice.effects).reduce((sum, v) => sum + Math.abs(v), 0) > 16) throw new Error(`${flag} 总量超界`);
+    if (choice.setFlags.length !== 1 || choice.setFlags[0] !== flag) throw new Error(`${flag} 的 setFlags 不合约定`);
+    if (!choice.label || !choice.shortResult) throw new Error(`${flag} 缺少 label/shortResult`);
+  }
+}
+
+function extractExtraEvents(root: string, originals: RawEvent[]): { variants: RawEvent[]; random: RawEvent[] } {
+  const variants = (extractJson(readDoc(root, "19_MAIN_EVENT_VARIANTS.md"), "19") as RawEvent[]).map((event) => ({ ...event, callbacks: event.callbacks ?? [] }));
+  const random = (extractJson(readDoc(root, "20_RANDOM_EVENTS.md"), "20") as RawEvent[]).map((event) => ({ ...event, callbacks: event.callbacks ?? [] }));
+  const ids = new Set(originals.map((event) => event.id));
+  const coreStage = new Map<string, number>();
+  for (const event of originals) if (event.kind === "core") coreStage.set(event.id, event.stage ?? 0);
+  for (const event of variants) {
+    const match = /^CORE_0([1-8])_V[2-9]$/.exec(event.id);
+    if (!match || event.kind !== "core" || event.stage !== Number(match[1])) throw new Error(`主线变体 ${event.id}：id、kind 或 stage 不合约定`);
+    if (ids.has(event.id)) throw new Error(`事件 ID 重复：${event.id}`);
+    ids.add(event.id);
+    coreStage.set(event.id, event.stage);
+    checkEventShape(event);
+  }
+  for (const event of variants) {
+    for (const cb of event.callbacks) {
+      const stage = coreStage.get(cb.ifFlag.replace(/_[AB]$/, ""));
+      if (stage === undefined || stage >= (event.stage ?? 0) || !cb.text || !cb.shortText) throw new Error(`${event.id} 的回响无效：${cb.ifFlag}`);
+    }
+  }
+  for (const event of random) {
+    if (!/^RANDOM_\d{2}$/.test(event.id) || event.kind !== "random" || event.scope !== "UG") throw new Error(`随机事件 ${event.id}：id、kind 或 scope 不合约定`);
+    if (ids.has(event.id)) throw new Error(`事件 ID 重复：${event.id}`);
+    ids.add(event.id);
+    if (event.callbacks.length > 0) throw new Error(`随机事件 ${event.id} 不使用回响`);
+    checkEventShape(event);
+  }
+  const text = JSON.stringify([variants, random]);
+  if (/\{\{[^}]*\}\}/.test(text)) throw new Error("新事件里出现了模板变量");
+  return { variants: variants.map(normalizeEvent), random: random.map(normalizeEvent) };
+}
+
+interface RawHappening {
+  id: string;
+  scope: string;
+  text: string;
+  effects: Record<string, number>;
+}
+
+function extractHappenings(root: string): RawHappening[] {
+  const doc = "21_HAPPENINGS.md";
+  const happenings = extractJson(readDoc(root, doc), doc) as RawHappening[];
+  const seen = new Set<string>();
+  for (const item of happenings) {
+    const what = `突发小事 ${item.id}`;
+    if (!/^HAP_\d{2}$/.test(item.id) || seen.has(item.id)) throw new Error(`${what}：id 不合规或重复`);
+    seen.add(item.id);
+    if (!["ANY", "UG", "MS"].includes(item.scope)) throw new Error(`${what}：scope 无效`);
+    if (!item.text || [...item.text].length > 40) throw new Error(`${what}：文字为空或超过 40 个字`);
+    checkStatMap(item.effects, 5, `${what}.effects`, false);
+    const total = Object.values(item.effects).reduce((sum, v) => sum + Math.abs(v), 0);
+    if (total === 0 || total > 8) throw new Error(`${what}：四项绝对值之和应在 1–8`);
+  }
+  return happenings.map((item) => ({
+    id: item.id,
+    scope: item.scope,
+    text: item.text,
+    effects: Object.fromEntries(STAT_KEYS.map((key) => [key, item.effects[key]])),
+  }));
+}
+
 // ---------- 入口 ----------
 
 export interface BuiltContent {
@@ -372,6 +599,12 @@ export function buildContent(root: string): BuiltContent {
   }
   validateEvents(all);
   files["src/content/texts.json"] = `${JSON.stringify(extractTexts(root), null, 2)}\n`;
+  const extra = extractExtraEvents(root, all);
+  files["src/content/events/variants.json"] = `${JSON.stringify(extra.variants, null, 2)}\n`;
+  files["src/content/events/random.json"] = `${JSON.stringify(extra.random, null, 2)}\n`;
+  files["src/content/talents.json"] = `${JSON.stringify(extractTalents(root), null, 2)}\n`;
+  files["src/content/plans.json"] = `${JSON.stringify(extractPlans(root), null, 2)}\n`;
+  files["src/content/happenings.json"] = `${JSON.stringify(extractHappenings(root), null, 2)}\n`;
   return { files };
 }
 

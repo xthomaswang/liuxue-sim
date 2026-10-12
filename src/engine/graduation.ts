@@ -1,22 +1,23 @@
 // 毕业机会（docs/03 §5–§7）：资格、整数概率、一次抽签，以及硕士方案的预算资格。
 // 只读对应检查点的冻结快照；学校、档次、准备度、经济档、期待、愿望都不进公式。
+// 第二版（docs/16 §1.3）：天赋可以给某一路机会的概率加若干百分点，不改变资格。
 
 import {
   CAREER_COUNT_CAP, FLAG_CREATIVE_WORK, FLAG_INTERNSHIP_PROJECT, FLAG_MASTERS_PROJECT, FLAG_MASTERS_REPORT,
   FLAG_RESEARCH_REPORT, MASTERS_ACADEMICS_MIN, MASTERS_PLANS, OPPORTUNITY_ORDER, PROBABILITY_MAX_JOB,
-  PROBABILITY_MAX_PHD_MS, PROBABILITY_MAX_PHD_UG, PROBABILITY_MIN, STIPEND, STUDY_COUNT_CAP, WORK_COUNT_CAP,
+  PROBABILITY_MAX_PHD_MS, PROBABILITY_MAX_PHD_UG, PROBABILITY_MIN, STUDY_COUNT_CAP, WORK_COUNT_CAP,
 } from "./constants";
 import { draw01 } from "./rng";
-import { clamp, copyStats, upkeepCost } from "./rules";
-import type {
-  Degree, Economy, FocusCounts, Graduation, MastersProgram, Opportunity, Outcome, Stats, Trait,
-} from "./types";
+import { clamp, copyStats } from "./rules";
+import type { Degree, FocusCounts, Graduation, MastersProgram, Opportunity, Outcome, Stats } from "./types";
 
 export interface GradInput {
   degree: Degree;
   stats: Stats;
   focusCounts: FocusCounts;
   flags: readonly string[];
+  /** 天赋给各路机会的概率加成（百分点）；缺省为没有。 */
+  chance?: Partial<Record<Opportunity, number>>;
 }
 
 export interface GradVariables {
@@ -111,6 +112,7 @@ export function formulaTerms(input: GradInput, opportunity: Opportunity): Formul
             { label: "硕士学历", hundredths: 500 * v.M },
             { label: "硕士应用项目", hundredths: 500 * v.MP },
           ];
+  all.push({ label: "天赋加成", hundredths: 100 * (input.chance?.[opportunity] ?? 0) });
   return all.filter((term, index) => index === 0 || term.hundredths !== 0);
 }
 
@@ -191,10 +193,9 @@ export interface MastersBudget {
   fundingEligible: boolean;
 }
 
-export function mastersBudget(program: MastersProgram, money: number, economy: Economy, trait: Trait): MastersBudget {
+/** stipend 与 cost 是天赋生效后的每学期资助与必要开销。 */
+export function mastersBudget(program: MastersProgram, money: number, stipend: number, cost: number): MastersBudget {
   const plan = MASTERS_PLANS[program];
-  const cost = upkeepCost(trait);
-  const stipend = STIPEND[economy];
   return {
     program,
     terms: plan.terms,
@@ -213,13 +214,13 @@ export function mastersBlockers(
   program: MastersProgram,
   undergrad: Graduation,
   money: number,
-  economy: Economy,
-  trait: Trait,
+  stipend: number,
+  cost: number,
 ): MastersBlocker[] {
   const blockers: MastersBlocker[] = [];
   const outcomes = undergrad.outcomes;
   if (outcomes && (outcomes.LOCAL_JOB === "OFFERED" || outcomes.HOME_JOB === "OFFERED")) blockers.push("HAS_JOB_OFFER");
   if (undergrad.frozenStats.academics < MASTERS_ACADEMICS_MIN) blockers.push("ACADEMICS_BELOW_55");
-  if (!mastersBudget(program, money, economy, trait).fundingEligible) blockers.push("FUNDS_SHORT");
+  if (!mastersBudget(program, money, stipend, cost).fundingEligible) blockers.push("FUNDS_SHORT");
   return blockers;
 }

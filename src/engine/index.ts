@@ -2,12 +2,12 @@
 // 界面只通过这里的函数读写游戏状态，不自己计算任何规则。
 //
 // 流程（docs/06 第 5–6 节）：
-//   createRun → SETUP
-//   CONFIRM_SETUP → HIGH_SCHOOL_EVENT(HS_01) → CHOOSE_EVENT → HIGH_SCHOOL_EVENT(HS_02)
+//   createRun → SETUP（出身与十张天赋由 seed 推出）
+//   CONFIRM_SETUP（选三张天赋）→ HIGH_SCHOOL_EVENT(HS_01) → CHOOSE_EVENT → HIGH_SCHOOL_EVENT(HS_02)
 //   → CHOOSE_EVENT（同一原子操作里生成申请结果与三校 offer）→ SCHOOL_OFFERS
-//   → CHOOSE_SCHOOL（进入本科第 1 学期并发放资助）→ FOCUS
-//   每学期：FOCUS → CHOOSE_FOCUS → CORE_EVENT → CHOOSE_EVENT →（本科 S2–S7：ARC_EVENT → CHOOSE_EVENT）
-//           → 自动期末结算 → TERM_REVIEW → NEXT_TERM →（下一学期 FOCUS，或冻结毕业快照 → GRAD_PREVIEW）
+//   → CHOOSE_SCHOOL（进入本科第 1 学期：发资助、可能有突发小事）→ FOCUS
+//   每学期：FOCUS → CHOOSE_PLAN → CORE_EVENT → CHOOSE_EVENT →（本科 S2–S7：ARC_EVENT → CHOOSE_EVENT）
+//           → 同一操作里期末结算并直接进入下一学期的 FOCUS，或冻结毕业快照 → GRAD_PREVIEW（docs/16）
 //   GRAD_PREVIEW → REVEAL_GRADUATION → GRAD_RESULTS → CHOOSE_ROUTE → ENDING
 //                                               或（仅本科）ENTER_MASTERS → 硕士第 1 学期 FOCUS
 //
@@ -16,7 +16,7 @@
 export * from "./types";
 export { RULES_VERSION, CONTENT_VERSION } from "./constants";
 export { draw01, hash32, pickIndex } from "./rng";
-export { applyAction, baseReadiness, checkCatalog, createRun, familyCandidates } from "./reducer";
+export { applyAction, baseReadiness, checkCatalog, createRun, setupView } from "./reducer";
 export {
   admissionPreview,
   admissionResult,
