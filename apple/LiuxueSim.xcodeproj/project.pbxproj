@@ -144,10 +144,11 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/WebApp/index.html",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# 把网页构建产物整个目录拷进 app 包的 WebApp/，由 WebAppSchemeHandler 提供给 WKWebView。\nset -eu\nSRC=\"${LIUXUE_WEB_DIST%/}\"\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/WebApp\"\nif [ ! -f \"${SRC}/index.html\" ]; then\n  echo \"error: 找不到网页构建产物 ${SRC}/index.html —— 先在项目根目录运行 npm run build\" >&2\n  exit 1\nfi\nmkdir -p \"${DEST}\"\nrsync -a --delete --exclude \".DS_Store\" \"${SRC}/\" \"${DEST}/\"\n";
+			shellScript = "# 把网页构建产物整个目录拷进 app 包的 WebApp/，由 WebAppSchemeHandler 提供给 WKWebView。\nset -eu\nSRC=\"${LIUXUE_WEB_DIST%/}\"\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/WebApp\"\nif [ ! -f \"${SRC}/index.html\" ]; then\n  echo \"error: 找不到网页构建产物 ${SRC}/index.html —— 先在项目根目录运行 npm run build\" >&2\n  exit 1\nfi\nmkdir -p \"${DEST}\"\nrsync -a --delete --exclude \".DS_Store\" \"${SRC}/\" \"${DEST}/\"\n# 声明的输出文件每次都更新时间戳：网页内容一变，Xcode 就会重新签名，不会留下失效的签名。\ntouch \"${DEST}/index.html\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
