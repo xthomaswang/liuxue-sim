@@ -1,0 +1,109 @@
+{
+  "seed": 13,
+  "economy": "LOW",
+  "trait": "OUTGOING",
+  "focus": [
+    "WORK",
+    "STUDY",
+    "WORK",
+    "STUDY",
+    "WORK",
+    "STUDY",
+    "WORK",
+    "WORK"
+  ],
+  "stats": {
+    "money": 53,
+    "academics": 100,
+    "career": 69,
+    "wellbeing": 0
+  },
+  "choices": [
+    [
+      "HS_01",
+      "A"
+    ],
+    [
+      "HS_02",
+      "B"
+    ],
+    [
+      "CORE_01",
+      "B"
+    ],
+    [
+      "CORE_02",
+      "B"
+    ],
+    [
+      "ARC_CREATIVE_1",
+      "B"
+    ],
+    [
+      "CORE_03",
+      "B"
+    ],
+    [
+      "ARC_RESEARCH_1",
+      "B"
+    ],
+    [
+      "CORE_04",
+      "B"
+    ],
+    [
+      "ARC_CREATIVE_2",
+      "B"
+    ],
+    [
+      "CORE_05",
+      "B"
+    ],
+    [
+      "ARC_RESEARCH_2",
+      "A"
+    ],
+    [
+      "CORE_06",
+      "A"
+    ],
+    [
+      "ARC_CREATIVE_3",
+      "B"
+    ],
+    [
+      "CORE_07",
+      "A"
+    ],
+    [
+      "ARC_RESEARCH_3",
+      "A"
+    ],
+    [
+      "CORE_08",
+      "A"
+    ]
+  ],
+  "probabilities": {
+    "PHD": 83,
+    "LOCAL_JOB": null,
+    "HOME_JOB": 91
+  },
+  "offers": {
+    "PHD": true,
+    "LOCAL_JOB": false,
+    "HOME_JOB": false
+  },
+  "masters_options": [
+    [
+      1,
+      2,
+      8
+    ],
+    [
+      2,
+      4,
+      12
+    ]
+  ]
+}

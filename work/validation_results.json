@@ -1,0 +1,401 @@
+{
+  "events": 32,
+  "choices": 64,
+  "core": 8,
+  "arcs": 18,
+  "masters": 4,
+  "highschool": 2,
+  "formula_cases": 9,
+  "undergraduate_simulations": 12960,
+  "choice_coverage": 64,
+  "totals": {
+    "runs": 12960,
+    "masters_eligible": 459,
+    "UG_PHD_offer": 5168,
+    "MS_1Y": 459,
+    "MS_2Y": 391
+  },
+  "examples": {
+    "LOW_UG": {
+      "seed": 0,
+      "trait": "FOCUSED",
+      "style": "RESEARCH",
+      "stats": {
+        "money": 6,
+        "academics": 100,
+        "career": 55,
+        "wellbeing": 40
+      },
+      "counts": {
+        "STUDY": 4,
+        "CAREER": 0,
+        "CAMPUS": 0,
+        "WORK": 3,
+        "REST": 1
+      },
+      "p": {
+        "PHD": 73,
+        "LOCAL_JOB": null,
+        "HOME_JOB": 79
+      },
+      "offers": {
+        "PHD": false,
+        "LOCAL_JOB": false,
+        "HOME_JOB": true
+      }
+    },
+    "MID_UG": {
+      "seed": 0,
+      "trait": "FOCUSED",
+      "style": "RESEARCH",
+      "stats": {
+        "money": 24,
+        "academics": 100,
+        "career": 60,
+        "wellbeing": 43
+      },
+      "counts": {
+        "STUDY": 6,
+        "CAREER": 0,
+        "CAMPUS": 0,
+        "WORK": 0,
+        "REST": 2
+      },
+      "p": {
+        "PHD": 73,
+        "LOCAL_JOB": null,
+        "HOME_JOB": 79
+      },
+      "offers": {
+        "PHD": false,
+        "LOCAL_JOB": false,
+        "HOME_JOB": true
+      }
+    },
+    "MID_MS_1Y": {
+      "seed": 3,
+      "trait": "FOCUSED",
+      "style": "RESEARCH",
+      "UGstats": {
+        "money": 21,
+        "academics": 100,
+        "career": 53,
+        "wellbeing": 44
+      },
+      "UGp": {
+        "PHD": 73,
+        "LOCAL_JOB": null,
+        "HOME_JOB": 74
+      },
+      "UGoffers": {
+        "PHD": true,
+        "LOCAL_JOB": false,
+        "HOME_JOB": false
+      },
+      "stats": {
+        "money": 9,
+        "academics": 100,
+        "career": 70,
+        "wellbeing": 17
+      },
+      "p": {
+        "PHD": 83,
+        "LOCAL_JOB": 89,
+        "HOME_JOB": 95
+      },
+      "offers": {
+        "PHD": true,
+        "LOCAL_JOB": true,
+        "HOME_JOB": true
+      }
+    },
+    "MID_MS_2Y": {
+      "seed": 3,
+      "trait": "FOCUSED",
+      "style": "RESEARCH",
+      "UGstats": {
+        "money": 21,
+        "academics": 100,
+        "career": 53,
+        "wellbeing": 44
+      },
+      "UGp": {
+        "PHD": 73,
+        "LOCAL_JOB": null,
+        "HOME_JOB": 74
+      },
+      "UGoffers": {
+        "PHD": true,
+        "LOCAL_JOB": false,
+        "HOME_JOB": false
+      },
+      "stats": {
+        "money": 13,
+        "academics": 100,
+        "career": 82,
+        "wellbeing": 22
+      },
+      "p": {
+        "PHD": 83,
+        "LOCAL_JOB": 95,
+        "HOME_JOB": 95
+      },
+      "offers": {
+        "PHD": true,
+        "LOCAL_JOB": true,
+        "HOME_JOB": true
+      }
+    },
+    "HIGH_UG": {
+      "seed": 0,
+      "trait": "FOCUSED",
+      "style": "RESEARCH",
+      "stats": {
+        "money": 70,
+        "academics": 100,
+        "career": 60,
+        "wellbeing": 43
+      },
+      "counts": {
+        "STUDY": 6,
+        "CAREER": 0,
+        "CAMPUS": 0,
+        "WORK": 0,
+        "REST": 2
+      },
+      "p": {
+        "PHD": 73,
+        "LOCAL_JOB": null,
+        "HOME_JOB": 79
+      },
+      "offers": {
+        "PHD": false,
+        "LOCAL_JOB": false,
+        "HOME_JOB": true
+      }
+    },
+    "HIGH_MS_1Y": {
+      "seed": 3,
+      "trait": "FOCUSED",
+      "style": "RESEARCH",
+      "UGstats": {
+        "money": 67,
+        "academics": 100,
+        "career": 53,
+        "wellbeing": 44
+      },
+      "UGp": {
+        "PHD": 73,
+        "LOCAL_JOB": null,
+        "HOME_JOB": 74
+      },
+      "UGoffers": {
+        "PHD": true,
+        "LOCAL_JOB": false,
+        "HOME_JOB": false
+      },
+      "stats": {
+        "money": 63,
+        "academics": 100,
+        "career": 70,
+        "wellbeing": 17
+      },
+      "p": {
+        "PHD": 83,
+        "LOCAL_JOB": 89,
+        "HOME_JOB": 95
+      },
+      "offers": {
+        "PHD": true,
+        "LOCAL_JOB": true,
+        "HOME_JOB": true
+      }
+    },
+    "HIGH_MS_2Y": {
+      "seed": 3,
+      "trait": "FOCUSED",
+      "style": "RESEARCH",
+      "UGstats": {
+        "money": 67,
+        "academics": 100,
+        "career": 53,
+        "wellbeing": 44
+      },
+      "UGp": {
+        "PHD": 73,
+        "LOCAL_JOB": null,
+        "HOME_JOB": 74
+      },
+      "UGoffers": {
+        "PHD": true,
+        "LOCAL_JOB": false,
+        "HOME_JOB": false
+      },
+      "stats": {
+        "money": 63,
+        "academics": 100,
+        "career": 81,
+        "wellbeing": 22
+      },
+      "p": {
+        "PHD": 83,
+        "LOCAL_JOB": 95,
+        "HOME_JOB": 95
+      },
+      "offers": {
+        "PHD": true,
+        "LOCAL_JOB": true,
+        "HOME_JOB": true
+      }
+    }
+  },
+  "rng_vectors": [
+    {
+      "seed": 0,
+      "key": "grad:UG:PHD",
+      "u32": 3759835791,
+      "roll": 0.875404987251386
+    },
+    {
+      "seed": 42,
+      "key": "grad:UG:PHD",
+      "u32": 2793983821,
+      "roll": 0.6505250514019281
+    },
+    {
+      "seed": 42,
+      "key": "grad:MS:PHD",
+      "u32": 1280292120,
+      "roll": 0.2980912383645773
+    },
+    {
+      "seed": 20261011,
+      "key": "arc:A",
+      "u32": 4131378773,
+      "roll": 0.9619115788955241
+    },
+    {
+      "seed": 42,
+      "key": "admission:readiness",
+      "u32": 3237752238,
+      "roll": 0.7538479375652969
+    }
+  ],
+  "actual_profile_tests": {
+    "runs": 2160,
+    "masters_eligible": 76,
+    "no_offer": 58
+  },
+  "actual_low_masters_example": {
+    "seed": 13,
+    "economy": "LOW",
+    "trait": "OUTGOING",
+    "focus": [
+      "WORK",
+      "STUDY",
+      "WORK",
+      "STUDY",
+      "WORK",
+      "STUDY",
+      "WORK",
+      "WORK"
+    ],
+    "stats": {
+      "money": 53,
+      "academics": 100,
+      "career": 69,
+      "wellbeing": 0
+    },
+    "choices": [
+      [
+        "HS_01",
+        "A"
+      ],
+      [
+        "HS_02",
+        "B"
+      ],
+      [
+        "CORE_01",
+        "B"
+      ],
+      [
+        "CORE_02",
+        "B"
+      ],
+      [
+        "ARC_CREATIVE_1",
+        "B"
+      ],
+      [
+        "CORE_03",
+        "B"
+      ],
+      [
+        "ARC_RESEARCH_1",
+        "B"
+      ],
+      [
+        "CORE_04",
+        "B"
+      ],
+      [
+        "ARC_CREATIVE_2",
+        "B"
+      ],
+      [
+        "CORE_05",
+        "B"
+      ],
+      [
+        "ARC_RESEARCH_2",
+        "A"
+      ],
+      [
+        "CORE_06",
+        "A"
+      ],
+      [
+        "ARC_CREATIVE_3",
+        "B"
+      ],
+      [
+        "CORE_07",
+        "A"
+      ],
+      [
+        "ARC_RESEARCH_3",
+        "A"
+      ],
+      [
+        "CORE_08",
+        "A"
+      ]
+    ],
+    "probabilities": {
+      "PHD": 83,
+      "LOCAL_JOB": null,
+      "HOME_JOB": 91
+    },
+    "offers": {
+      "PHD": true,
+      "LOCAL_JOB": false,
+      "HOME_JOB": false
+    },
+    "masters_options": [
+      [
+        1,
+        2,
+        8
+      ],
+      [
+        2,
+        4,
+        12
+      ]
+    ]
+  },
+  "admissions_cases": 202,
+  "rng_cross_language_vectors": 5,
+  "markdown_files": 15
+}
