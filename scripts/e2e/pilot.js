@@ -1,5 +1,6 @@
 // 端到端自动点击脚本：在真实 WebKit 里从开局点到指定阶段。由 scripts/e2e-webkit.sh 在前面拼上一行
-//   const CONFIG = { seed, economy, aspiration, focus?, choices?, masters?, stopAt?, after? };
+//   const CONFIG = { seed, economy, aspiration, focus?, choices?, masters?, stopAt?, after?, resume? };
+// resume: true 表示不开新局，只检查页面加载后恢复出来的存档停在 stopAt。
 // 再交给 scripts/e2e/snap.swift 执行。返回值是一段 JSON 摘要，由外层脚本检查。
 // 只通过 data-testid 找元素、只做点击与输入，不碰游戏内部状态。
 
@@ -86,16 +87,23 @@ await settle();
 await settle();
 checkText();
 
-// 用指定种子开局，保证可复现。
-await click("seed-toggle");
-const input = q("seed-input");
-Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, String(CONFIG.seed));
-input.dispatchEvent(new Event("input", { bubbles: true }));
-await settle();
-await click("seed-apply");
-
 const stopAt = CONFIG.stopAt ?? "ENDING";
-if (stopAt === "SETUP") {
+if (CONFIG.resume) {
+  // 什么都不点：读档恢复出来的阶段必须就是上一次停下的地方。
+  if (phase() !== stopAt) throw new Error(`读档后停在 ${phase()}，期望 ${stopAt}`);
+} else {
+  // 用指定种子开局，保证可复现。
+  await click("seed-toggle");
+  const input = q("seed-input");
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, String(CONFIG.seed));
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  await settle();
+  await click("seed-apply");
+}
+
+if (CONFIG.resume) {
+  // 已在上面检查过阶段。
+} else if (stopAt === "SETUP") {
   await click(`family-${CONFIG.economy}`);
   await click(`aspiration-${CONFIG.aspiration}`);
 } else {
@@ -108,6 +116,10 @@ if (stopAt === "SETUP") {
 measureScreen();
 
 const summary = { phase: phase(), clicks, screens, defaultChars, problems };
+// 顶栏的阶段标题与四属性、当前屏的正文：用来比较“关掉再打开”前后是否完全一样。
+summary.stageTitle = q("stage-title")?.innerText ?? null;
+summary.stats = document.querySelector(".stat-strip")?.innerText.replace(/\s+/g, " ") ?? null;
+summary.screenText = (document.querySelector(".screen")?.innerText ?? "").replace(/\s+/g, " ").slice(0, 400);
 if (phase() === "ENDING") {
   summary.title = q("ending-title")?.innerText ?? null;
   summary.label = q("ending-label")?.innerText ?? null;
@@ -126,6 +138,9 @@ if (CONFIG.after === "expand" && phase() === "ENDING") {
   window.scrollTo(0, 0);
 } else if (CONFIG.after === "card" && phase() === "ENDING") {
   q("ending-card").scrollIntoView();
+} else if (CONFIG.after === "clear") {
+  // 测试收尾：清掉持久化存储里的存档，不给下一次运行留痕迹。
+  localStorage.clear();
 } else if (CONFIG.after === "gallery") {
   await click("open-gallery");
   summary.galleryUnlocked = document.querySelectorAll('[data-testid^="gallery-tier-"][data-unlocked="true"]').length;

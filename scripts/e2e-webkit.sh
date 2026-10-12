@@ -53,7 +53,8 @@ run() {
     FAILED=1
     return
   fi
-  echo "✓ $name：$summary"
+  printf '%s\n' "$summary" >"$OUT/$name.json"
+  echo "✓ $name：$(printf '%s' "$summary" | python3 -c 'import json,sys; d=json.load(sys.stdin); d.pop("screenText",None); print(json.dumps(d,ensure_ascii=False))')"
 }
 
 echo "==> 在真实 WebKit 中自动通关（$DIST）"
@@ -64,6 +65,22 @@ run ms1-560-light       "{$ROUTE_13,\"masters\":\"MS_1Y\",\"after\":\"expand\"}"
 run ms2-390-light       "{$ROUTE_13,\"masters\":\"MS_2Y\",\"after\":\"card\"}" 390 light "" ENDING
 run auto-high-1200-light '{"seed":7,"economy":"HIGH","aspiration":"INDEPENDENCE"}' 1200 light full ENDING
 run auto-mid-390-dark   '{"seed":42,"economy":"MID","aspiration":"BELONGING","masters":"MS_2Y","after":"gallery"}' 390 dark full ENDING
+
+# 关掉再打开：第一次运行停在学期小结并写入持久化存储，第二次运行什么都不点，恢复出来的界面必须与第一次完全一样。
+SNAP_PERSISTENT=1 run save-before "{$ROUTE_13,\"stopAt\":\"TERM_REVIEW\"}" 390 light "" TERM_REVIEW
+SNAP_PERSISTENT=1 run save-after '{"resume":true,"stopAt":"TERM_REVIEW","after":"clear"}' 390 light "" TERM_REVIEW
+if [[ -f "$OUT/save-before.json" && -f "$OUT/save-after.json" ]] && python3 - "$OUT/save-before.json" "$OUT/save-after.json" <<'PY'
+import json, sys
+before, after = (json.load(open(path)) for path in sys.argv[1:3])
+keys = ["phase", "stageTitle", "stats", "screenText"]
+sys.exit(0 if all(before[k] == after[k] and before[k] for k in keys) else 1)
+PY
+then
+  echo "✓ 存档恢复：重新打开后阶段、四属性与当前屏内容与关闭前一致"
+else
+  echo "✗ 存档恢复：重新打开后的界面与关闭前不一致"
+  FAILED=1
+fi
 
 echo "    截图与脚本在：$OUT"
 echo "    系统：macOS $(sw_vers -productVersion)（build $(sw_vers -buildVersion)）"

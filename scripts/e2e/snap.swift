@@ -15,7 +15,8 @@ final class Runner: NSObject, WKNavigationDelegate {
 
   init(url: URL, width: CGFloat, height: CGFloat, out: String, script: String, dark: Bool, full: Bool) {
     let config = WKWebViewConfiguration()
-    config.websiteDataStore = .nonPersistent()
+    // 默认每次都是全新的存储；SNAP_PERSISTENT=1 时用持久化存储，用来测“关掉再打开”后的存档恢复。
+    config.websiteDataStore = ProcessInfo.processInfo.environment["SNAP_PERSISTENT"] == "1" ? .default() : .nonPersistent()
     web = WKWebView(frame: NSRect(x: 0, y: 0, width: width, height: height), configuration: config)
     web.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
     window = NSWindow(contentRect: NSRect(x: -20000, y: -20000, width: width, height: height),
@@ -43,7 +44,7 @@ final class Runner: NSObject, WKNavigationDelegate {
     web.callAsyncJavaScript(script.isEmpty ? "return 'ok'" : script, arguments: [:], in: nil, in: .page) { result in
       switch result {
       case .failure(let error): self.fail("script failed: \(error)")
-      case .success(let value): print("script -> \(value ?? "nil")")
+      case .success(let value): print("script -> \(value)")
       }
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.measure() }
     }

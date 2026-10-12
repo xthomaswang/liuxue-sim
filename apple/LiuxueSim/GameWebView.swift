@@ -93,9 +93,15 @@ struct GameWebView: PlatformViewRepresentable {
               window.webkit.messageHandlers.\(LogBridge.name).postMessage(parts.map(text).join(' '));
             } catch (e) {}
           }
+          // 捕获阶段监听：脚本、样式等资源加载失败不会冒泡到 window，只有这样才能看到。
           window.addEventListener('error', function (event) {
+            var target = event.target;
+            if (target && target !== window && (target.src || target.href)) {
+              post(['resource failed to load: ' + (target.src || target.href)]);
+              return;
+            }
             post([event.message + ' @ ' + (event.filename || '') + ':' + (event.lineno || 0) + ':' + (event.colno || 0)]);
-          });
+          }, true);
           window.addEventListener('unhandledrejection', function (event) {
             post(['unhandledrejection', event.reason]);
           });
