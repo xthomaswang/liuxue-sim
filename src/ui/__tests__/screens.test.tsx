@@ -1,177 +1,194 @@
 // @vitest-environment jsdom
-// 各屏的呈现约定：开局抽天赋、没有展开、资金不足的选项、样本目录提示、种子、图鉴、重开确认。
+// 各屏的呈现约定：分点的限制与随机分配、图册三块、目录与种子。
 
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { makeSampleCatalog } from "../../../tests/helpers/sampleCatalog";
-import { createMemoryStorage } from "../../app/storage";
-import { ENDING_CARDS, TALENTS } from "../../content";
-import { currentEvent, focusView, setupView, termLedger } from "../../engine";
-import type { RunState } from "../../engine";
+import { ACHIEVEMENTS, EARLY_ENDINGS, ENDING_CARDS, ENDING_FLAVORS, TALENTS } from "../../content";
+import { setupView, startPreview } from "../../engine";
 import {
-  advanceUntil,
+  POINT_KEYS,
+  ZERO_POINTS,
   app,
-  brokePolicy,
   click,
-  findSeed,
-  flush,
+  createMemoryStorage,
+  defaultStart,
   mount,
-  newRun,
-  newTrail,
+  openSeed,
   phase,
-  revision,
-  seededStorage,
-  simulate,
-  stats,
-  steadyPolicy,
-  step,
+  pickTalents,
+  playToSummary,
+  pointValues,
+  pointsLeft,
+  savedEnding,
+  talentIds,
 } from "./harness";
 
 afterEach(() => cleanup());
 
-const talentButtons = () => Array.from(app().querySelectorAll<HTMLButtonElement>("button[data-testid^='talent-']"));
-const startButton = () => screen.getByTestId("start") as HTMLButtonElement;
+const button = (id: string) => screen.getByTestId(id) as HTMLButtonElement;
 
-describe("开局：出身是抽的，十张天赋选三张", () => {
-  it("必须选满才可开始；可以取消；选满后其余不可再点", async () => {
-    await mount(seededStorage(7));
-    const view = setupView(newRun(7));
-    expect(view.pickCount).toBe(3);
-    const cards = talentButtons();
-    expect(cards.map((card) => card.getAttribute("data-testid"))).toEqual(view.draw.map((talent) => `talent-${talent.id}`));
-    for (const talent of view.draw) {
-      const card = screen.getByTestId(`talent-${talent.id}`);
-      expect(card.textContent).toContain(talent.name);
-      expect(card.textContent).toContain(talent.text);
-      expect(card.querySelector(".rarity")?.textContent).toBe(talent.rarity);
-      expect(card.getAttribute("aria-pressed")).toBe("false");
+describe("分点", () => {
+  it("每项 0 到上限，总和不能超过可分配点数；点数用完才能开始", async () => {
+    const seed = 12;
+    const start = defaultStart(seed);
+    const view = setupView(start.setup);
+    const budget = startPreview(start.setup, start.talents, ZERO_POINTS).pointBudget;
+    await mount(createMemoryStorage());
+    await openSeed(seed);
+    await pickTalents();
+
+    expect(pointsLeft()).toBe(budget);
+    expect(pointValues()).toEqual(ZERO_POINTS);
+    // 一项加到上限就不能再加。
+    for (let i = 0; i < view.pointMax; i++) await click("point-plus-family");
+    expect(pointValues().family).toBe(view.pointMax);
+    expect(button("point-plus-family").disabled).toBe(true);
+    expect(button("begin-life").disabled).toBe(true);
+    // 预览跟着变：家境决定开局资金与资助。
+    const preview = startPreview(start.setup, start.talents, { ...ZERO_POINTS, family: view.pointMax });
+    expect(screen.getByTestId("preview-money").textContent).toBe(`资金 ${preview.stats.money}`);
+    expect(screen.getByTestId("start-preview").textContent).toContain(`每学期资助 ${preview.stipend}`);
+    // 把剩下的点数加完：之后所有 ＋ 都不能点。
+    let guard = 0;
+    while (pointsLeft() > 0 && guard++ < 100) {
+      const key = POINT_KEYS.find((candidate) => !button(`point-plus-${candidate}`).disabled);
+      await click(`point-plus-${key}`);
     }
-    expect(screen.getByTestId("talent-count").textContent).toBe("已选 0 / 3");
-    expect(startButton().disabled).toBe(true);
-
-    const ids = view.draw.map((talent) => `talent-${talent.id}`);
-    await click(ids[0]);
-    await click(ids[1]);
-    expect(screen.getByTestId("talent-count").textContent).toBe("已选 2 / 3");
-    expect(startButton().disabled).toBe(true);
-    await click(ids[2]);
-    expect(screen.getByTestId(ids[2]).getAttribute("aria-pressed")).toBe("true");
-    expect(startButton().disabled).toBe(false);
-    // 选满之后，第四张点不了。
-    expect((screen.getByTestId(ids[3]) as HTMLButtonElement).disabled).toBe(true);
-    await click(ids[3]);
-    expect(screen.getByTestId("talent-count").textContent).toBe("已选 3 / 3");
-
-    // 取消一张：回到不可开始，其余重新可点；换一张再开始。
-    await click(ids[1]);
-    expect(screen.getByTestId(ids[1]).getAttribute("aria-pressed")).toBe("false");
-    expect(startButton().disabled).toBe(true);
-    expect((screen.getByTestId(ids[3]) as HTMLButtonElement).disabled).toBe(false);
-    expect(revision()).toBe(0);
-    await click(ids[3]);
-    await click("start");
-    expect(phase()).toBe("HIGH_SCHOOL_EVENT");
-    expect(screen.getByTestId("stat-money")).toBeTruthy();
+    expect(pointsLeft()).toBe(0);
+    for (const key of POINT_KEYS) expect(button(`point-plus-${key}`).disabled).toBe(true);
+    expect(button("begin-life").disabled).toBe(false);
+    const total = POINT_KEYS.reduce((sum, key) => sum + pointValues()[key], 0);
+    expect(total).toBe(budget);
   });
 
-  it("同一个种子得到相同的出身与十张天赋；换一批得到新的一局", async () => {
-    const readSetup = async () => {
-      const view = await mount(createMemoryStorage());
-      fireEvent.click(screen.getByTestId("seed-toggle"));
-      fireEvent.change(screen.getByTestId("seed-input"), { target: { value: "42" } });
-      await click("seed-apply");
-      expect(app().getAttribute("data-seed")).toBe("42");
-      const snapshot = {
-        origin: screen.getByTestId("origin-card").textContent,
-        talents: talentButtons().map((card) => card.textContent),
-      };
-      view.unmount();
-      return snapshot;
-    };
-    const first = await readSetup();
-    const second = await readSetup();
-    expect(second).toEqual(first);
-    expect(first.talents.length).toBe(10);
-    // docs/09 第 4 节：seed 42 的基础申请准备度是 65。
-    expect(first.origin).toContain("申请准备度 65");
-
-    // 开局阶段的“换一批”不需要确认。
-    await mount(seededStorage(42));
-    const runId = app().getAttribute("data-run-id");
-    await click("restart");
-    expect(screen.queryByTestId("restart-confirm")).toBeNull();
-    expect(phase()).toBe("SETUP");
-    expect(app().getAttribute("data-run-id")).not.toBe(runId);
+  it("随机分配：每次都把点数分完，且每项不超过上限", async () => {
+    const seed = 12;
+    const start = defaultStart(seed);
+    const view = setupView(start.setup);
+    const budget = startPreview(start.setup, start.talents, ZERO_POINTS).pointBudget;
+    await mount(createMemoryStorage());
+    await openSeed(seed);
+    await pickTalents();
+    const seen = new Set<string>();
+    for (let i = 0; i < 12; i++) {
+      await click("random-allocate");
+      const values = pointValues();
+      expect(pointsLeft()).toBe(0);
+      expect(POINT_KEYS.reduce((sum, key) => sum + values[key], 0)).toBe(budget);
+      for (const key of POINT_KEYS) {
+        expect(values[key]).toBeGreaterThanOrEqual(0);
+        expect(values[key]).toBeLessThanOrEqual(view.pointMax);
+      }
+      expect(button("begin-life").disabled).toBe(false);
+      seen.add(JSON.stringify(values));
+    }
+    // 确实是随机的：十二次里不会次次一样。
+    expect(seen.size).toBeGreaterThan(1);
+    await click("begin-life");
+    expect(phase()).toBe("TIMELINE");
   });
 
-  it("不合法的种子不会开新局", async () => {
-    await mount(seededStorage(5));
-    fireEvent.change(screen.getByTestId("seed-input"), { target: { value: "4294967296" } });
-    await click("seed-apply");
-    expect(screen.getByRole("alert").textContent).toContain("0 到 4294967295");
-    expect(app().getAttribute("data-seed")).toBe("5");
+  it("可以返回重选天赋，回来时保留刚才选的三张", async () => {
+    await mount(createMemoryStorage());
+    await openSeed(12);
+    const chosen = await pickTalents();
+    await click("back-to-talents");
+    expect(phase()).toBe("TALENTS");
+    for (const id of talentIds()) {
+      expect(screen.getByTestId(`talent-${id}`).getAttribute("aria-pressed")).toBe(String(chosen.includes(id)));
+    }
+    expect(button("to-allocate").disabled).toBe(false);
   });
 
-  it("天赋池里的稀有度都有对应的样式类", () => {
-    expect(TALENTS.length).toBeGreaterThanOrEqual(10);
-    expect(new Set(TALENTS.map((talent) => talent.rarity))).toEqual(new Set(["N", "R", "SR", "SSR"]));
+  it("抽出来的家庭期待与愿望显示在分点屏", async () => {
+    await mount(createMemoryStorage());
+    await openSeed(12);
+    await pickTalents();
+    const text = screen.getByTestId("start-preview").textContent ?? "";
+    expect(text).toContain("家里：");
+    expect(text).toContain("愿望：");
   });
 });
 
-describe("资金不足", () => {
-  // 专挑花钱选项的打法下，途中至少出现一次“选项因资金不足不可选”的第一个种子。
-  const sawUnavailable = (state: RunState): boolean => {
-    if (state.phase === "FOCUS") return focusView(state)?.options.some((option) => !option.available) ?? false;
-    if (state.phase === "CORE_EVENT" || state.phase === "ARC_EVENT") {
-      return currentEvent(state)?.choices.some((item) => !item.available) ?? false;
-    }
-    return false;
-  };
-  const brokeSeed = () =>
-    findSeed((candidate) => {
-      let seen = false;
-      simulate(candidate, brokePolicy, (state) => {
-        seen = seen || sawUnavailable(state);
-        return state.phase === "GRAD_PREVIEW";
-      });
-      return seen;
-    });
+describe("图册", () => {
+  it("三块：结局、成就、天赋；顶部是总进度", async () => {
+    const storage = createMemoryStorage();
+    const view = await mount(storage);
+    await click("open-gallery");
+    expect(screen.getByTestId("screen-gallery")).toBeTruthy();
+    expect(screen.getByTestId("stage-title").textContent).toBe("图册");
+    const locked = TALENTS.filter((talent) => talent.locked);
+    const endingTotal = ENDING_CARDS.tiers.length + ENDING_CARDS.hidden.length + EARLY_ENDINGS.length + ENDING_FLAVORS.length;
+    expect(screen.getByTestId("gallery-progress").textContent).toContain(
+      `成就 0 / ${ACHIEVEMENTS.length} · 天赋 ${TALENTS.length - locked.length} / ${TALENTS.length} · 结局 0 / ${endingTotal}`,
+    );
 
-  it("不可选的选项被禁用并写明差额；每一屏始终有能点的选项；资金见底也能走到毕业", async () => {
-    const storage = seededStorage(brokeSeed());
-    await mount(storage);
-    let checked = 0;
-    let shortfallSeen = false;
-    await advanceUntil(storage, brokePolicy, newTrail(), () => phase() === "GRAD_PREVIEW", (state) => {
-      if (state.phase === "SETUP") return;
-      const buttons = Array.from(
-        app().querySelectorAll<HTMLButtonElement>("button[data-testid^='plan-'], button[data-testid^='choice-']"),
-      );
-      if (buttons.length > 0) expect(buttons.some((button) => !button.disabled)).toBe(true);
-      for (const button of buttons.filter((item) => item.disabled)) {
-        const id = (button.getAttribute("data-testid") ?? "").replace(/^(plan|choice)-/, "");
-        const match = /^资金不足：需要 (\d+)，当前 (\d+)$/.exec(screen.getByTestId(`short-${id}`).textContent ?? "");
-        expect(match).toBeTruthy();
-        expect(Number(match?.[2])).toBe(stats().money);
-        expect(Number(match?.[1])).toBeGreaterThan(stats().money);
-        checked += 1;
+    // 结局：未解锁的主线等级显示名称但不显示吐槽；隐藏、中途、去向结局不露名字，只给提示。
+    for (const tier of ENDING_CARDS.tiers) {
+      const item = screen.getByTestId(`gallery-tier-${tier.id}`);
+      expect(item.getAttribute("data-unlocked")).toBe("false");
+      expect(item.textContent).toContain(tier.name);
+      expect(item.textContent).not.toContain(tier.roast);
+    }
+    for (const list of [
+      { prefix: "gallery-hidden-", items: ENDING_CARDS.hidden },
+      { prefix: "gallery-early-", items: EARLY_ENDINGS },
+      { prefix: "gallery-flavor-", items: ENDING_FLAVORS },
+    ]) {
+      for (const entry of list.items) {
+        const item = screen.getByTestId(`${list.prefix}${entry.id}`);
+        expect(item.getAttribute("data-unlocked")).toBe("false");
+        expect(item.textContent).toContain("？？？");
+        expect(item.textContent).toContain(entry.hint);
+        expect(item.textContent).not.toContain(entry.name);
       }
-      // 上学期出现过短缺时，结算那一行会多一句说明。
-      const ledger = termLedger(state);
-      if (state.phase === "FOCUS" && ledger && ledger.shortfall > 0) {
-        expect(screen.getByTestId("term-settlement").textContent).toContain(
-          `资金短缺 ${ledger.shortfall}，身心多扣 ${ledger.stress}。`,
-        );
-        shortfallSeen = true;
+    }
+    // 成就是公开目标：没达成也显示名称与说明。
+    for (const achievement of ACHIEVEMENTS) {
+      const item = screen.getByTestId(`gallery-achievement-${achievement.id}`);
+      expect(item.getAttribute("data-unlocked")).toBe("false");
+      expect(item.textContent).toContain(achievement.name);
+      expect(item.textContent).toContain(achievement.text);
+      expect(item.textContent).toContain("未达成");
+    }
+    // 天赋：全部列出；锁定且未解锁的只显示稀有度与“未解锁”。
+    expect(app().querySelectorAll("[data-testid^='gallery-talent-']").length).toBe(TALENTS.length);
+    for (const talent of TALENTS) {
+      const item = screen.getByTestId(`gallery-talent-${talent.id}`);
+      expect(item.querySelector(".rarity")?.textContent).toBe(talent.rarity);
+      if (talent.locked) {
+        expect(item.textContent).toContain("未解锁");
+        expect(item.textContent).not.toContain(talent.text);
+      } else {
+        expect(item.textContent).toContain(talent.name);
+        expect(item.textContent).toContain(talent.text);
       }
-    });
-    expect(checked).toBeGreaterThan(0);
-    expect(shortfallSeen).toBe(true);
-    expect(phase()).toBe("GRAD_PREVIEW");
+    }
+    await click("close-gallery");
+    expect(phase()).toBe("HOME");
+
+    // 玩一局之后：对应的等级与结局解锁，进度数字跟着变。
+    await playToSummary(5);
+    const card = savedEnding(storage).ending?.card;
+    await click("open-gallery");
+    const tierItem = screen.getByTestId(`gallery-tier-${card?.tier}`);
+    expect(tierItem.getAttribute("data-unlocked")).toBe("true");
+    expect(tierItem.textContent).toContain("1 次 · 首次种子 5");
+    for (const hidden of card?.hidden ?? []) {
+      expect(screen.getByTestId(`gallery-hidden-${hidden.id}`).textContent).toContain(hidden.name);
+    }
+    if (card?.flavor) expect(screen.getByTestId(`gallery-flavor-${card.flavor.id}`).textContent).toContain(card.flavor.name);
+    if (card?.early) expect(screen.getByTestId(`gallery-early-${card.early}`).getAttribute("data-unlocked")).toBe("true");
+    expect(screen.getByTestId("gallery-progress").textContent).not.toContain("结局 0 /");
+    expect(screen.getByTestId("gallery-progress").textContent).not.toContain("成就 0 /");
+    await click("close-gallery");
+    expect(phase()).toBe("SUMMARY");
+    view.unmount();
   });
 });
 
-describe("目录与重新开始", () => {
+describe("首页、目录与种子", () => {
   it("样本目录有明显提示", async () => {
     await mount(createMemoryStorage());
     expect(screen.getByTestId("sample-banner").textContent).toBe("样本目录（开发用，非正式学校数据）");
@@ -182,85 +199,34 @@ describe("目录与重新开始", () => {
     const problem = screen.getByTestId("catalog-problem");
     expect(problem.textContent).toContain("学校数据暂不可用");
     expect(problem.textContent).toContain("D 档 2");
-    expect(screen.queryByTestId("screen-setup")).toBeNull();
+    expect(screen.queryByTestId("screen-home")).toBeNull();
   });
 
-  it("游戏进行中重新开始需要一次确认", async () => {
-    const storage = seededStorage(5);
-    await mount(storage);
-    await step(storage, steadyPolicy, newTrail());
-    const runId = app().getAttribute("data-run-id");
-    await click("restart");
-    expect(screen.getByTestId("restart-confirm")).toBeTruthy();
-    expect(phase()).toBe("HIGH_SCHOOL_EVENT");
-    await click("restart-no");
-    expect(screen.queryByTestId("restart-confirm")).toBeNull();
-    expect(app().getAttribute("data-run-id")).toBe(runId);
-
-    await click("restart");
-    await click("restart-yes");
-    expect(phase()).toBe("SETUP");
-    expect(app().getAttribute("data-run-id")).not.toBe(runId);
-  });
-});
-
-describe("留学人生图鉴", () => {
-  it("结局后记录对应等级；刷新不重复计数；未解锁的隐藏结局不露名字", async () => {
-    const storage = seededStorage(13);
-    let view = await mount(storage);
-
-    // 开局就能打开图鉴，此时全部未解锁。
-    await click("open-gallery");
-    expect(screen.getByTestId("screen-gallery")).toBeTruthy();
-    for (const tier of ENDING_CARDS.tiers) {
-      const item = screen.getByTestId(`gallery-tier-${tier.id}`);
-      expect(item.getAttribute("data-unlocked")).toBe("false");
-      expect(item.textContent).toContain(tier.name);
-      expect(item.textContent).not.toContain(tier.roast);
-    }
-    for (const hidden of ENDING_CARDS.hidden) {
-      const item = screen.getByTestId(`gallery-hidden-${hidden.id}`);
-      expect(item.textContent).toContain("？？？");
-      expect(item.textContent).not.toContain(hidden.name);
-    }
-    await click("close-gallery");
-    expect(phase()).toBe("SETUP");
-
-    await advanceUntil(storage, steadyPolicy, newTrail(), () => phase() === "ENDING");
-    await flush();
-    const tierId = screen.getByTestId("ending-card").getAttribute("data-tier") ?? "";
-    const hiddenIds = Array.from(screen.getByTestId("ending-card").querySelectorAll("[data-testid^='card-hidden-']")).map(
-      (node) => (node.getAttribute("data-testid") ?? "").replace("card-hidden-", ""),
-    );
-
-    const check = async (times: number) => {
-      await click("open-gallery");
-      const item = screen.getByTestId(`gallery-tier-${tierId}`);
-      expect(item.getAttribute("data-unlocked")).toBe("true");
-      expect(item.textContent).toContain(`解锁 ${times} 次 · 首次种子 13`);
-      for (const id of hiddenIds) {
-        expect(screen.getByTestId(`gallery-hidden-${id}`).getAttribute("data-unlocked")).toBe("true");
-      }
-      const unlocked = ENDING_CARDS.tiers.filter(
-        (tier) => screen.getByTestId(`gallery-tier-${tier.id}`).getAttribute("data-unlocked") === "true",
-      );
-      expect(unlocked.map((tier) => tier.id)).toEqual([tierId]);
-      await click("close-gallery");
+  it("同一个种子得到相同的十张天赋；不合法的种子不会开局", async () => {
+    const read = async () => {
+      const view = await mount(createMemoryStorage());
+      await openSeed(42);
+      const ids = talentIds();
+      view.unmount();
+      return ids;
     };
-    await check(1);
+    expect(await read()).toEqual(await read());
 
-    view.unmount();
-    view = await mount(storage);
-    expect(phase()).toBe("ENDING");
-    await check(1);
+    await mount(createMemoryStorage());
+    fireEvent.change(screen.getByTestId("seed-input"), { target: { value: "4294967296" } });
+    await click("seed-apply");
+    expect(screen.getByRole("alert").textContent).toContain("0 到 4294967295");
+    expect(phase()).toBe("HOME");
+  });
 
-    // 同一个种子再玩一局（新的 runId）到同一个结局，次数才会加一。
-    await click("replay-seed");
-    expect(phase()).toBe("SETUP");
-    await advanceUntil(storage, steadyPolicy, newTrail(), () => phase() === "ENDING");
-    await flush();
-    expect(screen.getByTestId("ending-card").getAttribute("data-tier")).toBe(tierId);
-    await check(2);
-    view.unmount();
+  it("立即重开每次都是新的一局", async () => {
+    await mount(createMemoryStorage());
+    await click("start-run");
+    const first = app().getAttribute("data-run-id");
+    expect(phase()).toBe("TALENTS");
+    await click("go-home");
+    expect(screen.getByTestId("continue-run")).toBeTruthy();
+    await click("start-run");
+    expect(app().getAttribute("data-run-id")).not.toBe(first);
   });
 });

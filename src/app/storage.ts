@@ -6,10 +6,14 @@ export interface SaveStorage {
   remove(key: string): Promise<void>;
 }
 
-/** 进行中的存档（serializeSave 的结果）。 */
+/** 当前这一局（serializeSave 的结果）。 */
 export const SAVE_KEY = "liuxue.save.v1";
-/** 留学人生图鉴，跨局累计，不随重开清空。 */
-export const GALLERY_KEY = "liuxue.gallery.v1";
+/** 当前这一局已经显示到哪里（人生轨迹的段数、是否看过总结）。 */
+export const REVEAL_KEY = "liuxue.reveal.v1";
+/** 跨局进度：结局图鉴、成就、已解锁的天赋、继承的天赋。 */
+export const PROGRESS_KEY = "liuxue.progress.v2";
+/** 旧版图鉴，只在首次读取跨局进度时并入。 */
+export const LEGACY_GALLERY_KEY = "liuxue.gallery.v1";
 
 export function createLocalStorage(): SaveStorage {
   return {

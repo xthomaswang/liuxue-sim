@@ -1,5 +1,5 @@
-/* 留学人生模拟器：纯文字界面。每一屏：几行状态小字 → 一小段描述 → 选项按钮。
-   手机优先的单栏排版，深浅色跟随系统，不加载任何外部资源。 */
+/* 留学人生模拟器：纯文字界面（第三版）。居中的单栏，按钮大而简单；玩家只选天赋和分点，其余分段输出。
+   深浅色跟随系统，不加载任何外部资源。 */
 
 :root {
   color-scheme: light dark;
@@ -14,19 +14,23 @@
   --accent-soft: #f1e3da;
   --chip: #efe8da;
   --pos: #2c6a4b;
-  --neg: #a03d2c;
   --warn: #8c5a12;
   --warn-soft: #f6ecd6;
 
-  --rarity-n: #6f695e;
-  --rarity-r: #2b5fa8;
-  --rarity-sr: #7a3fa8;
-  --rarity-ssr: #946200;
+  /* 稀有度：字母的颜色与整行的底色。 */
+  --rarity-n: #5f5a50;
+  --rarity-r: #1f56a3;
+  --rarity-sr: #6f33a3;
+  --rarity-ssr: #a34d00;
+  --row-n: #ebe7df;
+  --row-r: #d9e6f8;
+  --row-sr: #e8dcf6;
+  --row-ssr: #fbdfb8;
 
   --serif: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
   --sans: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
 
-  --column: 640px;
+  --column: 30rem;
   --radius: 10px;
 }
 
@@ -42,14 +46,17 @@
     --accent-soft: #33261f;
     --chip: #2b2930;
     --pos: #86c9a3;
-    --neg: #e69582;
     --warn: #e2b566;
     --warn-soft: #33290f;
 
-    --rarity-n: #a39d91;
-    --rarity-r: #84b4f2;
-    --rarity-sr: #c9a0f2;
-    --rarity-ssr: #f0c456;
+    --rarity-n: #b3ada1;
+    --rarity-r: #8dbaf5;
+    --rarity-sr: #cfa8f5;
+    --rarity-ssr: #f7b566;
+    --row-n: #2a292e;
+    --row-r: #1c2f4a;
+    --row-sr: #33234a;
+    --row-ssr: #4a3010;
   }
 }
 
@@ -109,18 +116,13 @@ button {
   flex-direction: column;
 }
 
-/* 没有顶栏的独立提示页（存档问题、目录不可用、出错兜底）：自己给刘海留白。 */
-.app.standalone .content {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
-}
-
 .topbar {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
-  padding: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 16px) 10px
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) calc(env(safe-area-inset-right, 0px) + 16px) 8px
     calc(env(safe-area-inset-left, 0px) + 16px);
 }
 
@@ -137,30 +139,15 @@ button {
   gap: 12px;
 }
 
-.stage {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  min-width: 0;
-}
-
 .stage-title {
   font-size: 17px;
   font-weight: 600;
-}
-
-.stage-step {
-  font-size: 13px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .topbar-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0;
 }
 
 .save-status {
@@ -178,16 +165,18 @@ button {
   width: 100%;
   max-width: calc(var(--column) + 32px);
   margin: 0 auto;
-  padding: 14px calc(env(safe-area-inset-right, 0px) + 16px) 24px calc(env(safe-area-inset-left, 0px) + 16px);
+  padding: 14px calc(env(safe-area-inset-right, 0px) + 16px) calc(env(safe-area-inset-bottom, 0px) + 20px)
+    calc(env(safe-area-inset-left, 0px) + 16px);
 }
 
 .content:focus {
   outline: none;
 }
 
-.footer {
-  text-align: center;
-  padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+/* 没有顶栏的屏（首页，以及存档问题、目录不可用、出错兜底这些独立提示页）：自己给刘海留白。 */
+.app.standalone .content,
+.app[data-phase="HOME"] .content {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
 }
 
 .screen {
@@ -203,13 +192,19 @@ button {
   gap: 8px;
 }
 
-/* ---------- 顶栏属性 ---------- */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- 四属性 ---------- */
 
 .stat-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .stat {
@@ -233,7 +228,7 @@ button {
 
 .stat-bar {
   height: 3px;
-  margin-top: 4px;
+  margin-top: 3px;
   background: var(--line);
   border-radius: 2px;
   overflow: hidden;
@@ -245,40 +240,16 @@ button {
   background: var(--accent);
 }
 
-/* ---------- 状态行：各占一行小字 ---------- */
-
-.status {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.status:empty {
-  display: none;
-}
-
-.status-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 6px;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.status-label {
-  flex-shrink: 0;
-  margin-right: 4px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
 /* ---------- 文字 ---------- */
 
 .prose {
   font-family: var(--serif);
   font-size: 17px;
   line-height: 1.75;
+}
+
+.center {
+  text-align: center;
 }
 
 .title {
@@ -288,25 +259,40 @@ button {
   line-height: 1.4;
 }
 
-.section-heading {
+.hero-title {
+  margin-top: 12vh;
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.lead,
+.section-heading,
+.block-heading {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 15px;
   font-weight: 600;
+}
+
+.section-heading {
+  font-size: 15px;
+}
+
+.block-heading {
+  margin-top: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  font-size: 18px;
 }
 
 .eyebrow {
   font-size: 12px;
   letter-spacing: 0.06em;
   color: var(--muted);
-}
-
-.aside {
-  color: var(--muted);
-  border-left: 2px solid var(--line);
-  padding-left: 12px;
 }
 
 .muted {
@@ -323,6 +309,7 @@ button {
 }
 
 .label {
+  margin-right: 8px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -334,7 +321,21 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- 面板（只用于出身、结局卡与问题页） ---------- */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--chip);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+}
 
 .panel {
   display: flex;
@@ -343,13 +344,16 @@ button {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px 16px;
 }
 
-/* ---------- 按钮与选项 ---------- */
+.facts {
+  font-size: 14px;
+}
+
+/* ---------- 按钮 ---------- */
 
 .button,
-.choice,
 .ghost-button {
   min-height: 44px;
   border: 1px solid var(--line);
@@ -363,25 +367,23 @@ button {
   font-weight: 600;
 }
 
+.button.big {
+  width: 100%;
+  min-height: 52px;
+  font-size: 18px;
+}
+
 .button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
 }
 
-.button.danger {
-  border-color: var(--neg);
-  color: var(--neg);
-}
-
-.button.wide {
-  width: 100%;
-}
-
 .ghost-button {
   min-height: 36px;
   padding: 4px 12px;
   font-size: 13px;
+  font-weight: 400;
   background: transparent;
 }
 
@@ -392,45 +394,14 @@ button {
   background: none;
   color: var(--accent);
   font-size: 14px;
-  text-align: left;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
 }
 
-.choice-list,
-.gallery-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.choice {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-  width: 100%;
-  padding: 12px 16px;
-  text-align: left;
-}
-
-.choice-label {
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.45;
-}
-
-.plan-kind {
-  margin-right: 8px;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-}
-
-.choice:active:not(:disabled),
 .button:active:not(:disabled),
-.ghost-button:active {
+.ghost-button:active:not(:disabled),
+.point-button:active:not(:disabled) {
   background: var(--accent-soft);
 }
 
@@ -441,7 +412,7 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 button:focus-visible,
@@ -452,30 +423,45 @@ input:focus-visible {
 
 .actions {
   display: flex;
-  flex-wrap: wrap;
   gap: 10px;
 }
 
 .actions .button {
-  flex: 1 1 140px;
+  flex: 1;
 }
 
-.screen > section.secondary {
-  flex-direction: row;
+.actions .button.primary {
+  flex: 2;
+}
+
+.secondary {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 4px 20px;
 }
 
 .secondary > p {
   flex-basis: 100%;
+  text-align: center;
+}
+
+.home .save-status {
+  text-align: center;
 }
 
 .seed-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  flex-basis: 100%;
+}
+
+.seed-row .label {
+  margin-right: 0;
 }
 
 .seed-row input {
@@ -489,73 +475,7 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- 数值变化与小标签 ---------- */
-
-.delta,
-.chips,
-.odds,
-.tags {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.chips > .delta {
-  display: contents;
-}
-
-.chip,
-.tag,
-.odds-item {
-  display: inline-block;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--chip);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.chip.pos {
-  color: var(--pos);
-}
-
-.chip.neg {
-  color: var(--neg);
-}
-
-.chip.zero,
-.chip-note {
-  color: var(--muted);
-}
-
-.tag.warn {
-  background: var(--warn-soft);
-}
-
-/* ---------- 天赋 ---------- */
-
-.talent-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
-}
-
-.talent {
-  border-left-width: 4px;
-}
-
-.talent-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
-}
-
-.talent.selected {
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
+/* ---------- 稀有度：整行着色 + 字母 ---------- */
 
 .rarity {
   font-size: 12px;
@@ -579,36 +499,220 @@ input:focus-visible {
   color: var(--rarity-ssr);
 }
 
-.rarity-border-N {
-  border-left-color: var(--rarity-n);
+.rarity-row-N {
+  background: var(--row-n);
+  border-color: var(--row-n);
 }
 
-.rarity-border-R {
-  border-left-color: var(--rarity-r);
+.rarity-row-R {
+  background: var(--row-r);
+  border-color: var(--row-r);
 }
 
-.rarity-border-SR {
-  border-left-color: var(--rarity-sr);
+.rarity-row-SR {
+  background: var(--row-sr);
+  border-color: var(--row-sr);
 }
 
-.rarity-border-SSR {
-  border-left-color: var(--rarity-ssr);
+.rarity-row-SSR {
+  background: var(--row-ssr);
+  border-color: var(--row-ssr);
+}
+
+/* ---------- 天赋 ---------- */
+
+.talent-list,
+.gallery-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.talent-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  min-height: 52px;
+  padding: 9px 14px;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: var(--radius);
+  text-align: left;
+  cursor: pointer;
+}
+
+.talent-row.compact {
+  min-height: 44px;
+}
+
+.talent-row.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.talent-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.talent-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.talent-check {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.talent-text {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---------- 分点 ---------- */
+
+.point-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.point-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.point-name {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.point-button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.point-value {
+  width: 2em;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 人生轨迹 ---------- */
+
+.timeline {
+  min-height: 40vh;
+  cursor: pointer;
+}
+
+.tl-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.tl-entry {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tl-entry.latest {
+  border-bottom-color: transparent;
+}
+
+.tl-label {
+  flex: 0 0 4.2em;
+  padding-top: 1px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.tl-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tl-line {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.tl-delta {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-line.kind-happening,
+.tl-line.kind-plan {
+  color: var(--muted);
+}
+
+.tl-line.kind-shortfall {
+  color: var(--warn);
+}
+
+.tl-line.kind-route,
+.tl-line.kind-masters,
+.tl-line.kind-school,
+.tl-line.kind-early_end {
+  font-weight: 600;
+}
+
+.timeline-controls {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 8px;
+  padding: 10px 0 calc(env(safe-area-inset-bottom, 0px) + 10px);
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+
+.timeline-controls .button {
+  flex: 1;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.timeline-controls .button.primary {
+  flex: 1.4;
 }
 
 /* ---------- 提示条 ---------- */
 
 .notice {
   margin-bottom: 12px;
-  padding: 10px 14px;
+  padding: 8px 14px;
   border-radius: var(--radius);
-  border: 1px solid var(--line);
   font-size: 13px;
-}
-
-.notice.sample,
-.notice.warn {
   background: var(--warn-soft);
-  border-color: transparent;
   color: var(--warn);
 }
 
@@ -617,36 +721,36 @@ input:focus-visible {
   text-align: center;
 }
 
-.notice.confirm {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--surface);
-  border-color: var(--neg);
-  font-size: 15px;
+/* ---------- 总结 ---------- */
+
+.flavor {
+  align-items: center;
+  text-align: center;
+  padding: 6px 0 2px;
 }
 
-/* ---------- 毕业机会：一路一行 ---------- */
+.flavor-name {
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--accent);
+}
 
 .opportunity-list {
   display: flex;
   flex-direction: column;
+  margin-top: 4px;
   border-top: 1px solid var(--line);
 }
 
 .opportunity {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.opportunity-head {
-  display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .opportunity-name {
@@ -654,37 +758,14 @@ input:focus-visible {
   font-weight: 600;
 }
 
-.opportunity-odds {
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-
 .opportunity-outcome {
-  font-weight: 700;
-}
-
-.opportunity.offered .opportunity-outcome {
-  color: var(--pos);
-}
-
-.opportunity.not_offered .opportunity-outcome,
-.opportunity.ineligible .opportunity-outcome {
+  font-weight: 600;
   color: var(--muted);
 }
 
-.check-list li {
-  font-size: 13px;
-}
-
-.check-list .met {
+.opportunity-outcome.offered {
   color: var(--pos);
 }
-
-.check-list .unmet {
-  color: var(--muted);
-}
-
-/* ---------- 结局卡与图鉴 ---------- */
 
 .ending-card {
   border-color: var(--accent);
@@ -741,55 +822,68 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
-.gallery-item {
+.reward-talent {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 17px;
+}
+
+.reward-achievement {
+  font-size: 15px;
+}
+
+/* ---------- 图册 ---------- */
+
+/* 跳转到某一块时，别被吸顶的标题栏挡住。 */
+.screen > section[id] {
+  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 56px);
+}
+
+.gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
 
+/* 条目很多的栏（隐藏、中途、去向结局）：名字和说明排在一行里，放不下再折行。 */
+.gallery-item.compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 10px;
+  padding: 6px 12px;
+}
+
 .gallery-item.locked {
   background: transparent;
   border-style: dashed;
+  border-color: var(--line);
 }
 
 .gallery-item.locked .tier-label,
-.gallery-item.locked .hidden-id {
+.gallery-item.locked .hidden-id,
+.gallery-item.locked .gallery-name {
   color: var(--muted);
 }
 
+.gallery-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
 .gallery-item .tier-label {
-  font-size: 18px;
+  font-size: 17px;
 }
 
-.gallery-item .card-name {
-  font-size: 16px;
-}
-
-/* ---------- 回看这次经历 ---------- */
-
-.review-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-left: 2px solid var(--line);
-  padding-left: 14px;
-}
-
-.review-list li {
-  display: flex;
-  flex-direction: column;
-}
-
-.review-title {
+.gallery-name {
   font-weight: 600;
-}
-
-@media (min-width: 720px) {
-  .content {
-    padding-top: 20px;
-  }
 }

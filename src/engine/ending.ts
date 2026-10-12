@@ -28,7 +28,14 @@ export function moneyBand(money: number): MoneyBand {
   return "NARROW";
 }
 
-function variantKey(ending: EndingRecord): RouteVariantKey {
+/** 走到毕业并确定去向的结局（中途结局的 route 为 null）。 */
+export type GraduationEnding = EndingRecord & { route: FinalRoute };
+
+export function isGraduationEnding(ending: EndingRecord | null): ending is GraduationEnding {
+  return ending !== null && ending.kind === "GRADUATION" && ending.route !== null;
+}
+
+export function variantKey(ending: GraduationEnding): RouteVariantKey {
   if (ending.route === "PHD") return ending.degree === "UG" ? "PHD/undergrad_direct" : "PHD/masters_entry";
   if (ending.route === "TRANSITION") {
     return ending.transitionMode === "SELF_CHOSEN" ? "TRANSITION/SELF_CHOSEN" : "TRANSITION/NO_OFFER";
@@ -36,7 +43,7 @@ function variantKey(ending: EndingRecord): RouteVariantKey {
   return ending.route;
 }
 
-function shortKey(ending: EndingRecord): ShortEndingKey {
+export function shortKey(ending: GraduationEnding): ShortEndingKey {
   if (ending.route === "PHD") return "PHD/ANY";
   if (ending.route === "TRANSITION") {
     return ending.transitionMode === "SELF_CHOSEN" ? "TRANSITION/SELF_CHOSEN" : "TRANSITION/NO_OFFER";
@@ -111,7 +118,7 @@ function reviewEntries(run: ActiveRun): ReviewEntry[] {
 }
 
 /** 关键经历：优先已完成的 MASTER_04，否则实际最后发生的支线第 3 幕，否则本科第 8 学期主线槽的事件。 */
-function keyExperience(run: ActiveRun): string {
+export function keyExperience(run: ActiveRun): string {
   const candidates: string[] = [];
   if (run.mastersYears !== null) candidates.push("MASTER_04");
   if (run.arcs.B) candidates.push(`ARC_${run.arcs.B}_3`); // 槽 B 第三幕在 S7，晚于槽 A 的 S6
@@ -128,31 +135,35 @@ function keyExperience(run: ActiveRun): string {
   return `你记得「${title}」里的决定：${label}。`;
 }
 
-/** ENDING 阶段的完整结局视图（docs/07 + docs/14）；其它阶段为 null。 */
+/** 学历/去向标签（docs/07 §2.1）。 */
+export function endingLabel(run: ActiveRun, ending: GraduationEnding): { label: string; labelExtra: string | null } {
+  const yearsLabel = run.mastersYears === 1 ? "一年制硕士" : "两年制硕士";
+  if (ending.route === "PHD") {
+    return ending.degree === "UG"
+      ? { label: "本科直博 · 即将入学", labelExtra: null }
+      : { label: "硕士后申博 · 即将入学", labelExtra: yearsLabel };
+  }
+  return { label: ending.degree === "UG" ? "本科毕业" : `${yearsLabel}毕业`, labelExtra: null };
+}
+
+/**
+ * ENDING 阶段、毕业结局的完整结局视图（docs/07 + docs/14）；其它阶段为 null。
+ * 中途结局（docs/22 §4）没有毕业快照，docs/07 的文案不适用，也返回 null——它的内容见 summaryView。
+ */
 export function endingView(state: RunState): EndingView | null {
   if (state.phase !== "ENDING") return null;
   const run = state;
   const ending = run.ending;
   const school = run.school;
   if (!ending || !school) throw new Error("ENDING_STATE_INCOMPLETE");
+  if (!isGraduationEnding(ending)) return null;
   const checkpoint = run.graduations[ending.degree];
   if (!checkpoint) throw new Error("ENDING_CHECKPOINT_MISSING");
   const a = run.admission;
   if (a.readiness === null || a.strategy === null) throw new Error("ENDING_ADMISSION_MISSING");
 
   const educationPath: EducationPath = run.mastersYears === null ? "UG" : run.mastersYears === 1 ? "MS_1Y" : "MS_2Y";
-  const yearsLabel = run.mastersYears === 1 ? "一年制硕士" : "两年制硕士";
-  let label: string;
-  let labelExtra: string | null = null;
-  if (ending.route === "PHD") {
-    if (ending.degree === "UG") label = "本科直博 · 即将入学";
-    else {
-      label = "硕士后申博 · 即将入学";
-      labelExtra = yearsLabel;
-    }
-  } else {
-    label = ending.degree === "UG" ? "本科毕业" : `${yearsLabel}毕业`;
-  }
+  const { label, labelExtra } = endingLabel(run, ending);
 
   const wb = wellbeingBand(checkpoint.frozenStats.wellbeing);
   const money = moneyBand(checkpoint.frozenStats.money);

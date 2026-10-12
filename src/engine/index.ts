@@ -31,4 +31,8 @@ export {
   termLedger,
 } from "./views";
 export { endingView } from "./ending";
+// 第三版（docs/22）：整局自动模拟、人生轨迹、人生总结、成就与天赋解锁。
+export { autoAction, simulate, startPreview } from "./auto";
+export { summaryView, timeline } from "./timeline";
+export { evaluateRun } from "./progress";
 export { loadSave, replay, serializeSave } from "./save";

@@ -1,0 +1,230 @@
+[
+  {
+    "id": "A_FIRST",
+    "name": "落地",
+    "grade": "N",
+    "text": "完成任意一局。"
+  },
+  {
+    "id": "A_PHD",
+    "name": "继续读",
+    "grade": "N",
+    "text": "以博士入学结束一局。"
+  },
+  {
+    "id": "A_LOCAL",
+    "name": "留下来",
+    "grade": "N",
+    "text": "接受留美工作。"
+  },
+  {
+    "id": "A_HOME",
+    "name": "回家",
+    "grade": "N",
+    "text": "接受回国工作。"
+  },
+  {
+    "id": "A_GAP",
+    "name": "留白",
+    "grade": "N",
+    "text": "以过渡期结束一局。"
+  },
+  {
+    "id": "A_MASTERS",
+    "name": "再读一轮",
+    "grade": "R",
+    "text": "读完硕士再迎来结局。"
+  },
+  {
+    "id": "A_EARLY",
+    "name": "提前离场",
+    "grade": "N",
+    "text": "触发任意一个中途结局。"
+  },
+  {
+    "id": "A_ALL_OFFERS",
+    "name": "全都要",
+    "grade": "SR",
+    "text": "毕业时三路机会全部取得。"
+  },
+  {
+    "id": "A_ALL_MISSED",
+    "name": "全军覆没",
+    "grade": "R",
+    "text": "至少两路有资格，却一个机会也没取得。"
+  },
+  {
+    "id": "A_ACADEMICS_100",
+    "name": "学业拉满",
+    "grade": "R",
+    "text": "结局时学业积累 100。"
+  },
+  {
+    "id": "A_CAREER_100",
+    "name": "职业拉满",
+    "grade": "R",
+    "text": "结局时职业积累 100。"
+  },
+  {
+    "id": "A_RICH",
+    "name": "钱包鼓鼓",
+    "grade": "R",
+    "text": "毕业时可动用资金 70 以上。"
+  },
+  {
+    "id": "A_BROKE_GRAD",
+    "name": "月光毕业",
+    "grade": "N",
+    "text": "毕业时可动用资金为 0。"
+  },
+  {
+    "id": "A_FULL_BATTERY",
+    "name": "满电毕业",
+    "grade": "R",
+    "text": "毕业时身心状态 90 以上。"
+  },
+  {
+    "id": "A_EMPTY_BATTERY",
+    "name": "电量 0%",
+    "grade": "N",
+    "text": "毕业时身心状态为 0。"
+  },
+  {
+    "id": "A_NO_WORK",
+    "name": "从不打工",
+    "grade": "R",
+    "text": "一次打工类安排都没选，并且毕业了。"
+  },
+  {
+    "id": "A_WORKER",
+    "name": "打工皇帝",
+    "grade": "R",
+    "text": "一局里选了 4 次以上打工类安排。"
+  },
+  {
+    "id": "A_GRINDER",
+    "name": "卷到底",
+    "grade": "R",
+    "text": "一局里选了 5 次以上学习类安排。"
+  },
+  {
+    "id": "A_SLACKER",
+    "name": "躺平大师",
+    "grade": "R",
+    "text": "一局里选了 3 次以上休息类安排。"
+  },
+  {
+    "id": "A_S_TIER",
+    "name": "梦校",
+    "grade": "SR",
+    "text": "被 S 档学校录取。"
+  },
+  {
+    "id": "A_U_TIER",
+    "name": "艺术人生",
+    "grade": "R",
+    "text": "去了未分档的专门院校。"
+  },
+  {
+    "id": "A_MORTAL",
+    "name": "凡人之躯",
+    "grade": "SR",
+    "text": "三张天赋全是 N，却拿到 SR 以上的结局。"
+  },
+  {
+    "id": "A_LUCKY_DRAW",
+    "name": "欧皇",
+    "grade": "SR",
+    "text": "十连抽里出现 SSR 天赋。"
+  },
+  {
+    "id": "A_ALL_IN",
+    "name": "偏科",
+    "grade": "N",
+    "text": "把某一项点数加到 10。"
+  },
+  {
+    "id": "A_DUMP_STAT",
+    "name": "放弃治疗",
+    "grade": "R",
+    "text": "某一项点数为 0，并且毕业了。"
+  },
+  {
+    "id": "A_EVEN",
+    "name": "端水大师",
+    "grade": "N",
+    "text": "四项点数分得一样多。"
+  },
+  {
+    "id": "A_BUSY_LIFE",
+    "name": "事儿真多",
+    "grade": "R",
+    "text": "一局里遇到 7 条以上突发小事。"
+  },
+  {
+    "id": "A_TOP_TIER",
+    "name": "见过大场面",
+    "grade": "SSR",
+    "text": "拿到 EX、UR 或 SSR 结局。"
+  },
+  {
+    "id": "A_BAD_END",
+    "name": "翻车现场",
+    "grade": "N",
+    "text": "拿到 BE 结局。"
+  },
+  {
+    "id": "A_DREAM",
+    "name": "闹钟响了",
+    "grade": "SSR",
+    "text": "遇到梦醒结局。"
+  },
+  {
+    "id": "A_JACKPOT",
+    "name": "欧皇本皇",
+    "grade": "SSR",
+    "text": "中了头奖。"
+  },
+  {
+    "id": "A_RUNS_10",
+    "name": "重开十次",
+    "grade": "N",
+    "text": "累计完成 10 局。"
+  },
+  {
+    "id": "A_RUNS_50",
+    "name": "轮回之人",
+    "grade": "SR",
+    "text": "累计完成 50 局。"
+  },
+  {
+    "id": "A_TIERS_5",
+    "name": "见多识广",
+    "grade": "R",
+    "text": "解锁 5 种主线等级。"
+  },
+  {
+    "id": "A_TIERS_ALL",
+    "name": "十档全收",
+    "grade": "SSR",
+    "text": "解锁全部 10 种主线等级。"
+  },
+  {
+    "id": "A_HIDDEN_6",
+    "name": "隐藏收集者",
+    "grade": "SR",
+    "text": "解锁 6 种隐藏结局。"
+  },
+  {
+    "id": "A_EARLY_4",
+    "name": "花式退场",
+    "grade": "SR",
+    "text": "解锁 4 种中途结局。"
+  },
+  {
+    "id": "A_TALENTS_ALL",
+    "name": "天赋全开",
+    "grade": "SSR",
+    "text": "解锁全部锁定的稀有天赋。"
+  }
+]

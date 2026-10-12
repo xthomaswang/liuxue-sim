@@ -3,6 +3,7 @@
 
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { TALENTS } from "../../content";
 import { makeSampleCatalog } from "../../../tests/helpers/sampleCatalog";
 import { CONTENT_VERSION, RULES_VERSION } from "../constants";
 import { loadSave, replay, serializeSave, setupView } from "../index";
@@ -37,7 +38,18 @@ function trail(from: RunState, p: Policy = policy): Step[] {
   return steps;
 }
 
-const steps = trail(start(13));
+/** 正式玩法里一局可能中途结束；找一个按这套策略能走到毕业的 seed，和一个中途结束的 seed。 */
+function seedWhere(predicate: (steps: Step[]) => boolean): number {
+  for (let seed = 1; seed < 500; seed++) if (predicate(trail(start(seed)))) return seed;
+  throw new Error("找不到满足条件的 seed");
+}
+const endingKind = (list: Step[]) => {
+  const state = list[list.length - 1].state;
+  return state.phase === "ENDING" ? state.ending?.kind : undefined;
+};
+const SEED = seedWhere((list) => endingKind(list) === "GRADUATION");
+const EARLY_SEED = seedWhere((list) => endingKind(list) === "EARLY" && list.some(({ state }) => state.phase === "FOCUS" && state.termIndex >= 2));
+const steps = trail(start(SEED));
 const last = steps[steps.length - 1];
 const find = (predicate: (state: RunState) => boolean): Step => {
   const step = steps.find((item) => predicate(item.state));
@@ -79,18 +91,21 @@ describe("序列化与读回", () => {
     expect(envelope.format).toBe("liuxue-sim-save");
     expect(envelope.schemaVersion).toBe(1);
     expect(envelope.log).toHaveLength(sample.state.revision);
-    expect(envelope.state).toMatchObject({ seed: 13, mode: "standard", rulesVersion: RULES_VERSION, contentVersion: CONTENT_VERSION });
-    expect(RULES_VERSION).toBe("2.0.0");
-    expect(CONTENT_VERSION).toBe("2.0.0");
+    expect(envelope.state).toMatchObject({ seed: SEED, mode: "standard", rulesVersion: RULES_VERSION, contentVersion: CONTENT_VERSION });
+    expect(RULES_VERSION).toBe("3.0.0");
+    expect(CONTENT_VERSION).toBe("3.0.0");
+    // 开局的输入随存档保存：分点、已解锁的天赋、继承的天赋
+    expect(asActive(envelope.state).profile.points).toEqual(asActive(sample.state).profile.points);
+    expect(envelope.state).toMatchObject({ unlockedTalents: [], inheritedTalent: null });
     expect(envelope.state.catalogSha256).toBe(ctx.catalog.catalogSha256);
     // 出身、十张天赋、每学期的安排、主线槽事件和突发小事都不存进状态，读档后由 seed 重新推出
     expect(Object.keys(envelope.state)).not.toEqual(expect.arrayContaining(["draw", "slate", "origin"]));
   });
 
   it("重放：同 seed 同操作得到完全相同的状态（出身、安排、事件、突发小事、学校、支线、毕业 roll 都不变）", () => {
-    const again = replay({ seed: 13, runId: last.state.runId, log: last.log }, ctx);
+    const again = replay({ seed: SEED, runId: last.state.runId, log: last.log }, ctx);
     expect(again).toEqual(last.state);
-    expect(replay({ seed: 13, runId: midway.state.runId, log: midway.log }, ctx)).toEqual(midway.state);
+    expect(replay({ seed: SEED, runId: midway.state.runId, log: midway.log }, ctx)).toEqual(midway.state);
     // 读档后继续走，与不读档直接走的结果一致（刷新不会重发资助、重扣费用、重抽安排或突发小事）
     const loaded = loadSave(serializeSave(midway.state, midway.log), ctx);
     if (!loaded.ok) throw new Error("读档失败");
@@ -101,7 +116,58 @@ describe("序列化与读回", () => {
 
   it("重放遇到非法操作会抛错", () => {
     const bad: Action[] = [{ type: "CHOOSE_PLAN", planId: "REST" }];
-    expect(() => replay({ seed: 13, runId: "x", log: bad }, ctx)).toThrow("REPLAY_REJECTED");
+    expect(() => replay({ seed: SEED, runId: "x", log: bad }, ctx)).toThrow("REPLAY_REJECTED");
+  });
+
+  it("中途结束的局也能逐步读回；结局之后没有毕业快照", () => {
+    const early = trail(start(EARLY_SEED));
+    const end = early[early.length - 1];
+    expect(asActive(end.state).ending).toMatchObject({ kind: "EARLY", route: null });
+    for (const { state, log } of early) {
+      const loaded = loadSave(serializeSave(state, log), ctx);
+      expect(loaded.ok, `${state.phase} revision ${state.revision}`).toBe(true);
+      if (loaded.ok) expect(loaded.state).toEqual(JSON.parse(JSON.stringify(state)));
+    }
+    expect(replay({ seed: EARLY_SEED, runId: end.state.runId, log: end.log }, ctx)).toEqual(end.state);
+    // 改掉中途结局的 id、把它改成毕业结局、或者抹掉结局记录，都会被发现
+    const text = serializeSave(end.state, end.log);
+    for (const edit of [
+      (e: SaveEnvelope) => { const record = asActive(e.state).ending; if (record) record.early = "E_NOT_AN_ENDING"; },
+      (e: SaveEnvelope) => { const record = asActive(e.state).ending; if (record) record.kind = "GRADUATION"; },
+      (e: SaveEnvelope) => { const record = asActive(e.state).ending; if (record) record.card.tier = record.card.tier === "EX" ? "N" : "EX"; },
+      (e: SaveEnvelope) => { const record = asActive(e.state).ending; if (record) record.card.flavor = { id: "F_X", name: "x", roast: "y", text: "z" }; },
+      (e: SaveEnvelope) => { (asActive(e.state) as { phase: string }).phase = "FOCUS"; },
+    ]) {
+      const result = loadSave(tamper(text, edit), ctx);
+      expect(result.ok ? "OK" : result.reason).toBe("CORRUPT");
+    }
+  });
+
+  it("已解锁的天赋与继承的天赋是开局的输入：随存档保存，读档重放时原样带回", () => {
+    const locked = TALENTS.filter((talent) => talent.locked).map((talent) => talent.id);
+    expect(locked.length).toBeGreaterThan(0);
+    const setup = start(SEED, ctx, { unlockedTalents: locked, inheritedTalent: locked[0] });
+    expect(setupView(setup).draw[0].id).toBe(locked[0]);
+    const withInputs = trail(setup, { ...policy, talents: (view) => view.draw.slice(0, 3).map((talent) => talent.id) });
+    const end = withInputs[withInputs.length - 1];
+    expect(asActive(end.state).profile.talents).toContain(locked[0]);
+    for (const { state, log } of withInputs) {
+      expect(state).toMatchObject({ unlockedTalents: locked, inheritedTalent: locked[0] });
+      const loaded = loadSave(serializeSave(state, log), ctx);
+      expect(loaded.ok, `${state.phase} revision ${state.revision}`).toBe(true);
+    }
+    // 把这两样输入改掉：十连抽对不上了（选中的天赋不在抽取结果里），或者列表本身不合规
+    const text = serializeSave(end.state, end.log);
+    for (const edit of [
+      (e: SaveEnvelope) => { e.state.inheritedTalent = null; },
+      (e: SaveEnvelope) => { e.state.unlockedTalents = []; },
+      (e: SaveEnvelope) => { e.state.unlockedTalents = [...locked].reverse(); },
+      (e: SaveEnvelope) => { e.state.unlockedTalents = [TALENTS.find((talent) => !talent.locked)?.id ?? ""]; },
+      (e: SaveEnvelope) => { e.state.inheritedTalent = "T_NOT_A_TALENT"; },
+    ]) {
+      const result = loadSave(tamper(text, edit), ctx);
+      expect(result.ok ? "OK" : result.reason).toBe("CORRUPT");
+    }
   });
 
   it("经典模式的局也能逐步读回（重放时带上模式与经济档）", () => {
@@ -114,7 +180,11 @@ describe("序列化与读回", () => {
     }
     const end = classic[classic.length - 1];
     expect(replay({ seed: 7, runId: end.state.runId, log: end.log, mode: "classic", classicEconomy: "LOW" }, ctx)).toEqual(end.state);
-    // 用 standard 模式重放经典模式的操作记录会被拒绝（天赋不在十连抽里，或安排不在名单里）
+    // 经典模式没有分点、解锁与继承，也没有中途结局
+    expect(end.state).toMatchObject({ unlockedTalents: [], inheritedTalent: null });
+    expect(asActive(end.state).profile.points).toBeNull();
+    expect(asActive(end.state).ending?.kind).toBe("GRADUATION");
+    // 用 standard 模式重放经典模式的操作记录会被拒绝（开局没有分点）
     expect(() => replay({ seed: 7, runId: end.state.runId, log: end.log }, ctx)).toThrow("REPLAY_REJECTED");
   });
 });
@@ -147,6 +217,10 @@ describe("损坏的存档明确报错，不拼接历史", () => {
       (e) => { asActive(e.state).profile.talents[0] = unpicked; },
       (e) => { asActive(e.state).profile.talents.reverse(); },
       (e) => { const r = asActive(e.state); r.profile.economy = r.profile.economy === "HIGH" ? "LOW" : "HIGH"; },
+      // 分点：挪一点、改成非法值、或者去掉
+      (e) => { const points = asActive(e.state).profile.points; if (points) { const give = points.academics > 0 ? "academics" : "career"; const take = points.wellbeing < 10 ? "wellbeing" : "family"; points[give] -= 1; points[take] += 1; } },
+      (e) => { const points = asActive(e.state).profile.points; if (points) points.career = 11; },
+      (e) => { asActive(e.state).profile.points = null; },
       (e) => { const r = asActive(e.state); r.profile.aspiration = r.profile.aspiration === "DISCOVERY" ? "BELONGING" : "DISCOVERY"; },
       (e) => { const r = asActive(e.state); r.arcs.A = r.arcs.A === "FAMILY" ? "CREATIVE" : "FAMILY"; },
       (e) => { const r = asActive(e.state); r.school = (r.offers ?? []).find((offer) => offer.unitid !== r.school?.unitid) ?? null; },
@@ -228,7 +302,7 @@ describe("版本不兼容", () => {
 
   it("学校目录已更新：offer 已冻结的局可以继续，学校与机会不变", () => {
     const later = steps.filter(({ state }) => state.phase !== "SETUP" && state.phase !== "HIGH_SCHOOL_EVENT");
-    expect(later.length).toBeGreaterThan(20);
+    expect(later.length).toBeGreaterThan(20); // 这一局走到了毕业
     for (const step of later) {
       const result = loadSave(serializeSave(step.state, step.log), newCtx);
       expect(result.ok, `${step.state.phase}`).toBe(true);
@@ -258,6 +332,9 @@ describe("版本不兼容", () => {
       (e) => { asActive(e.state).profile.talents.pop(); },
       (e) => { asActive(e.state).profile.talents[0] = "T_NOT_A_TALENT"; },
       (e) => { (e.state as { mode: string }).mode = "easy"; },
+      (e) => { const points = asActive(e.state).profile.points; if (points) points.family = -1; },
+      (e) => { const r = asActive(e.state); r.profile.economy = r.profile.economy === "HIGH" ? "LOW" : "HIGH"; },
+      (e) => { e.state.unlockedTalents = ["T_NOT_A_TALENT"]; },
       (e) => { e.log.pop(); },
     ];
     edits.forEach((edit, index) => {
@@ -268,14 +345,14 @@ describe("版本不兼容", () => {
 
   it("目录不变时重开同一个 seed，抽到的三所学校相同", () => {
     const a = find((state) => state.phase === "SCHOOL_OFFERS");
-    const b = trail(start(13)).find(({ state }) => state.phase === "SCHOOL_OFFERS");
+    const b = trail(start(SEED)).find(({ state }) => state.phase === "SCHOOL_OFFERS");
     expect(asActive(a.state).offers).toEqual(asActive(b?.state ?? start(0)).offers);
   });
 });
 
 describe("不变量检查覆盖一局中的每个合法状态", () => {
   it("真实走出来的状态全部通过（两种模式）", () => {
-    for (const seed of [1, 2, 3, 13, 99]) {
+    for (const seed of [1, 2, 3, 13, 99, SEED, EARLY_SEED]) {
       for (const { state } of trail(start(seed))) {
         expect(invariantProblem(JSON.parse(JSON.stringify(state))), `standard seed ${seed} ${state.phase}`).toBeNull();
       }
@@ -292,6 +369,12 @@ describe("不变量检查覆盖一局中的每个合法状态", () => {
     expect(invariantProblem({ ...start(5), classicEconomy: "LOW" })).not.toBeNull();
     const { classicEconomy: _dropped, ...withoutEconomy } = startClassic(5, "LOW");
     expect(invariantProblem(withoutEconomy)).not.toBeNull();
+    // 两样跨局输入必须在；经典模式不能带
+    const { unlockedTalents: _u, ...withoutUnlocked } = start(5);
+    expect(invariantProblem(withoutUnlocked)).not.toBeNull();
+    const locked = TALENTS.filter((talent) => talent.locked).map((talent) => talent.id);
+    expect(invariantProblem({ ...startClassic(5, "LOW"), unlockedTalents: locked.slice(0, 1) })).not.toBeNull();
+    expect(invariantProblem({ ...start(5), inheritedTalent: locked[0] })).not.toBeNull(); // 还没解锁的天赋不能继承
   });
 });
 

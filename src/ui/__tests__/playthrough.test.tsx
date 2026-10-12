@@ -1,339 +1,371 @@
 // @vitest-environment jsdom
-// 用真实按钮从开局点到结局，并在关键节点“刷新”（卸载再挂载）验证存档恢复。
+// 整套流程：首页 → 选三张天赋 → 分点 → 人生轨迹逐段显示 → 人生总结。玩家只在开局两步做选择。
 
-import { cleanup, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import { ENDING_CARDS, EVENT_BY_ID } from "../../content";
-import { focusView, mastersOptions, routeOptions } from "../../engine";
-import type { Action, RunState } from "../../engine";
+import { act, cleanup, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ENDING_CARDS } from "../../content";
+import { setupView, startPreview, timeline } from "../../engine";
 import {
-  acceptFirstOffer,
-  advanceUntil,
+  allocateEvenly,
   app,
-  atUndergradResults,
   click,
   counters,
+  createMemoryStorage,
+  defaultStart,
   findSeed,
-  makePolicy,
-  mainText,
+  flush,
+  headless,
   mount,
-  newTrail,
+  openSeed,
   phase,
-  revision,
-  savedState,
-  scholarPolicy,
-  seededStorage,
-  simulate,
+  pickTalents,
+  playToSummary,
+  playToTimeline,
+  pointsLeft,
+  savedEnding,
+  savedProgress,
+  savedReveal,
+  shownEntries,
   stats,
-  steadyPolicy,
-  step,
-  thrifty,
+  talentIds,
 } from "./harness";
 
-afterEach(() => cleanup());
+afterEach(() => {
+  vi.useRealTimers();
+  cleanup();
+});
 
-const planButtons = () => Array.from(app().querySelectorAll<HTMLButtonElement>("button[data-testid^='plan-']"));
-const count = (actions: Action[], type: Action["type"]) => actions.filter((action) => action.type === type).length;
+const CHOICE_CONTROLS =
+  "[data-testid^='choice-'], [data-testid^='plan-'], [data-testid^='offer-'], [data-testid^='route-'], [data-testid^='masters-'], [aria-expanded], select";
 
-/** 每一屏都要满足的约定：没有展开按钮；事件只出摘要，不出长正文。 */
-function everyScreen(state: RunState) {
-  expect(app().querySelectorAll("[aria-expanded]").length).toBe(0);
-  if (state.phase === "HIGH_SCHOOL_EVENT" || state.phase === "CORE_EVENT" || state.phase === "ARC_EVENT") {
-    const id = screen.getByTestId("screen-event").getAttribute("data-event-id") ?? "";
-    const event = EVENT_BY_ID[id];
-    expect(screen.getByTestId("event-summary").textContent).toBe(event.summary);
-    // 新写的随机事件与变体本来就只有一段短文（body 与 summary 相同）；有长正文的事件不显示长正文。
-    if (event.body !== event.summary) expect(mainText()).not.toContain(event.body);
-  }
-  if (state.phase === "FOCUS") {
-    const view = focusView(state);
-    expect(planButtons().length).toBe(view?.options.length);
-    if (view?.happening) expect(screen.getByTestId("happening").textContent).toContain(view.happening.text);
-    else expect(screen.queryByTestId("happening")).toBeNull();
-  }
+/** 人生轨迹这一屏除了“继续 / 自动播放 / 直接看结局 / 人生总结”之外没有别的控件。 */
+function expectOnlyTimelineControls() {
+  expect(app().querySelectorAll(CHOICE_CONTROLS).length).toBe(0);
+  const ids = Array.from(app().querySelectorAll("main button, main input")).map((node) => node.getAttribute("data-testid"));
+  for (const id of ids) expect(["reveal-next", "auto-play", "skip-to-end", "to-summary"]).toContain(id);
 }
 
-describe("完整一局：本科直接结束", () => {
-  it("从开局点到结局，每一屏都是“描述 + 选项”，该有的要素都在", async () => {
-    const storage = seededStorage(20261011);
+describe("整套流程", () => {
+  it("首页 → 选三张 → 分点 → 轨迹逐段显示 → 总结", async () => {
+    const seed = 7;
+    const storage = createMemoryStorage();
     await mount(storage);
-    const trail = newTrail();
-    const go = () => step(storage, steadyPolicy, trail, everyScreen);
+    const expected = defaultStart(seed);
+    const view = setupView(expected.setup);
 
-    // 开局：出身是抽的，十张天赋选三张
-    expect(phase()).toBe("SETUP");
+    // 首页
+    expect(phase()).toBe("HOME");
+    expect(screen.getByTestId("screen-home")).toBeTruthy();
+    expect(screen.getByTestId("stage-title").textContent).toBe("留学人生模拟器");
+    expect(screen.getByTestId("start-run").textContent).toBe("立即重开");
+    expect(screen.queryByTestId("continue-run")).toBeNull();
     expect(screen.getByTestId("sample-banner")).toBeTruthy();
-    expect(screen.getByTestId("origin-card").textContent).toContain("抽出来的，不能选");
-    expect(screen.getByTestId("base-readiness").textContent).toMatch(/^申请准备度 \d+$/);
-    expect(app().querySelectorAll("button[data-testid^='talent-']").length).toBe(10);
-    expect((screen.getByTestId("start") as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.queryByTestId("stat-money")).toBeNull();
-    await go();
+    counters.clicks = 0;
+    await openSeed(seed);
 
-    // 高中两张事件
-    expect(phase()).toBe("HIGH_SCHOOL_EVENT");
-    expect(screen.getByTestId("screen-event").getAttribute("data-event-id")).toBe("HS_01");
-    expect(screen.queryByTestId("scene-intro")).toBeNull();
-    expect(screen.getByTestId("choice-A").textContent).toContain("申请准备 +10");
-    expect(screen.getByTestId("choice-B").textContent).toContain("申请准备 +6");
-    await go();
-    expect(screen.getByTestId("screen-event").getAttribute("data-event-id")).toBe("HS_02");
-    const hs01 = EVENT_BY_ID.HS_01.choices[0];
-    expect(screen.getByTestId("last-outcome").textContent).toContain(hs01.shortResult);
-    expect(mainText()).not.toContain(hs01.result);
-    expect(screen.getByTestId("choice-A").textContent).toContain("未分档");
-    await go();
-
-    // 申请结果与三校
-    expect(phase()).toBe("SCHOOL_OFFERS");
-    expect(screen.getByTestId("tier-drawn").textContent).toMatch(/^申请准备度 \d+ = 基础 \d+ \+ 天赋 -?\d+ \+ 高中准备 \d+ · .+方案 · 抽中 /);
-    const offerIds = [0, 1, 2].map((index) => screen.getByTestId(`offer-${index}`).getAttribute("data-unitid"));
-    expect(new Set(offerIds).size).toBe(3);
-    expect(screen.queryByTestId("offer-3")).toBeNull();
-    expect(screen.queryByRole("searchbox")).toBeNull();
-    await go();
-
-    // 本科第 1 学期：入学短旁白、资助、四个安排
-    expect(phase()).toBe("FOCUS");
-    expect(screen.getByTestId("scene-intro")).toBeTruthy();
-    expect(screen.getByTestId("term-account").textContent).toMatch(/资助 \+\d+.* · 期末必要开销 \d+/);
-    expect(screen.queryByTestId("term-settlement")).toBeNull();
-    expect(planButtons().length).toBe(4);
-    expect(new Set(planButtons().map((button) => button.getAttribute("data-focus"))).size).toBe(4);
-    await go();
-    expect(phase()).toBe("CORE_EVENT");
-    expect(screen.getByTestId("last-outcome")).toBeTruthy();
-    await go();
-
-    // 没有学期小结这一步：直接进入下一学期，上学期的结算是一行小字
-    await advanceUntil(storage, steadyPolicy, trail, () => phase() === "FOCUS", everyScreen);
-    expect(screen.getByTestId("term-settlement").textContent).toMatch(/^上学期结算/);
-    expect(screen.queryByTestId("scene-intro")).toBeNull();
-    expect(screen.queryByTestId("next-term")).toBeNull();
-
-    // 走完本科
-    await advanceUntil(storage, steadyPolicy, trail, () => phase() === "GRAD_PREVIEW", everyScreen);
-    expect(count(trail.actions, "CHOOSE_PLAN")).toBe(8);
-    expect(count(trail.actions, "CHOOSE_EVENT")).toBe(2 + 8 + 6);
-    expect(screen.getByTestId("term-settlement").textContent).toMatch(/^最后一学期结算/);
-    for (const id of ["PHD", "LOCAL_JOB", "HOME_JOB"]) {
-      expect(screen.getByTestId(`opportunity-${id}`).textContent).toMatch(/概率 \d+%|准备尚不足/);
-      expect(screen.queryByTestId(`outcome-${id}`)).toBeNull();
+    // 天赋：十张各占一行，选满三张才能下一步
+    expect(screen.getByTestId("screen-talents")).toBeTruthy();
+    expect(talentIds()).toEqual(view.draw.map((talent) => talent.id));
+    expect(talentIds().length).toBe(10);
+    for (const talent of view.draw) {
+      const row = screen.getByTestId(`talent-${talent.id}`);
+      expect(row.textContent).toContain(talent.name);
+      expect(row.textContent).toContain(talent.text);
+      expect(row.querySelector(".rarity")?.textContent).toBe(talent.rarity);
+      expect(row.className).toContain(`rarity-row-${talent.rarity}`);
+      expect(row.getAttribute("aria-pressed")).toBe("false");
     }
-    await go();
+    const next = () => screen.getByTestId("to-allocate") as HTMLButtonElement;
+    const ids = talentIds();
+    expect(screen.getByTestId("talent-count").textContent).toBe("已选 0 / 3");
+    expect(next().disabled).toBe(true);
+    await click(`talent-${ids[0]}`);
+    await click(`talent-${ids[1]}`);
+    expect(screen.getByTestId("talent-count").textContent).toBe("已选 2 / 3");
+    expect(next().disabled).toBe(true);
+    await click(`talent-${ids[2]}`);
+    expect(screen.getByTestId(`talent-${ids[2]}`).getAttribute("aria-pressed")).toBe("true");
+    expect(next().disabled).toBe(false);
+    // 第四张点了也不算。
+    await click(`talent-${ids[3]}`);
+    expect(screen.getByTestId(`talent-${ids[3]}`).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByTestId("talent-count").textContent).toBe("已选 3 / 3");
+    // 取消一张就不能前进，再选回来。
+    await click(`talent-${ids[2]}`);
+    expect(next().disabled).toBe(true);
+    await click(`talent-${ids[2]}`);
+    await click("to-allocate");
 
-    // 结果与去向
-    expect(phase()).toBe("GRAD_RESULTS");
-    for (const id of ["PHD", "LOCAL_JOB", "HOME_JOB"]) {
-      const outcome = screen.getByTestId(`outcome-${id}`).textContent;
-      expect(outcome).toMatch(/^(取得机会|这次没有取得|准备尚不足)$/);
-      // 去向按钮只在取得机会时出现。
-      expect(screen.queryByTestId(`route-${id}`) !== null).toBe(outcome === "取得机会");
+    // 分点：点数没分完不能开始
+    expect(phase()).toBe("ALLOCATE");
+    const begin = () => screen.getByTestId("begin-life") as HTMLButtonElement;
+    const budget = startPreview(expected.setup, expected.talents, { family: 0, academics: 0, career: 0, wellbeing: 0 }).pointBudget;
+    expect(pointsLeft()).toBe(budget);
+    expect(begin().disabled).toBe(true);
+    for (const key of ["family", "academics", "career", "wellbeing"]) {
+      expect((screen.getByTestId(`point-minus-${key}`) as HTMLButtonElement).disabled).toBe(true);
     }
-    expect(screen.queryByTestId("term-settlement")).toBeNull();
-    expect((screen.getByTestId("route-TRANSITION") as HTMLButtonElement).disabled).toBe(false);
-    expect(screen.getByTestId("masters-section")).toBeTruthy();
-    expect(screen.getByTestId("masters-MS_1Y")).toBeTruthy();
-    expect(screen.getByTestId("masters-MS_2Y")).toBeTruthy();
-    await go();
-
-    // 结局
-    expect(phase()).toBe("ENDING");
-    expect(screen.getByTestId("ending-label").textContent).toBe("本科毕业");
-    expect(screen.getByTestId("ending-short").textContent?.length).toBeGreaterThan(20);
-    expect(screen.getByTestId("ending-epilogue").textContent).toMatch(/^五年后/);
-    const card = screen.getByTestId("ending-card");
-    const tier = ENDING_CARDS.tiers.find((item) => item.id === card.getAttribute("data-tier"));
-    expect(tier).toBeTruthy();
-    expect(screen.getByTestId("card-tier").textContent).toBe(tier?.label);
-    expect(screen.getByTestId("card-combo").textContent).toContain(tier?.label ?? "?");
-    expect(card.textContent).toContain(ENDING_CARDS.disclaimer);
-    expect(screen.getByTestId("card-facts").querySelectorAll("li").length).toBeGreaterThan(0);
-    for (const id of ["PHD", "LOCAL_JOB", "HOME_JOB"]) expect(screen.getAllByTestId(`outcome-${id}`).length).toBe(1);
-    expect(screen.getByTestId("ending-talents").querySelectorAll(".rarity").length).toBe(3);
-
-    // 唯一的展开：回看这次经历，只列标题与当时的选择
-    const expanders = Array.from(app().querySelectorAll("[aria-expanded]"));
-    expect(expanders.map((node) => node.getAttribute("data-testid"))).toEqual(["look-back"]);
-    expect(screen.queryByTestId("full-review")).toBeNull();
-    await click("look-back");
-    const review = screen.getByTestId("full-review");
-    expect(review.querySelectorAll("[data-testid^='review-']").length).toBe(7);
-    expect(screen.getByTestId("review-HS_01").textContent).toContain("你选择了：");
-    for (const action of trail.actions) {
-      if (action.type !== "CHOOSE_EVENT") continue;
-      const chosen = EVENT_BY_ID[action.eventId].choices.find((choice) => choice.id === action.choiceId);
-      expect(review.textContent).not.toContain(chosen?.result ?? "?");
+    const points = await allocateEvenly();
+    expect(points).toEqual(expected.points);
+    expect(pointsLeft()).toBe(0);
+    expect(begin().disabled).toBe(false);
+    for (const key of ["family", "academics", "career", "wellbeing"]) {
+      expect((screen.getByTestId(`point-plus-${key}`) as HTMLButtonElement).disabled).toBe(true);
     }
+    // 实时预览与引擎算的一致。
+    const preview = startPreview(expected.setup, expected.talents, expected.points);
+    expect(screen.getByTestId("preview-money").textContent).toBe(`资金 ${preview.stats.money}`);
+    expect(screen.getByTestId("preview-wellbeing").textContent).toBe(`身心 ${preview.stats.wellbeing}`);
+    expect(screen.getByTestId("start-preview").textContent).toContain(`每学期资助 ${preview.stipend}`);
+    expect(screen.getByTestId("start-preview").textContent).toContain(`申请准备度 ${preview.readiness}`);
+    // 少分一点就不能开始。
+    await click("point-minus-family");
+    expect(pointsLeft()).toBe(1);
+    expect(begin().disabled).toBe(true);
+    await click("point-plus-family");
+    await click("begin-life");
 
-    // 结局后重开不需要确认
+    // 人生轨迹：整局已经算完，和不经过界面直接算的是同一局
+    expect(phase()).toBe("TIMELINE");
+    const ending = savedEnding(storage);
+    expect(ending.ending?.card.combo).toBe(headless(seed).state.ending?.card.combo);
+    const entries = timeline(ending);
+    expect(entries.length).toBeGreaterThan(3);
+    expect(screen.getByTestId("timeline").getAttribute("data-shown")).toBe("0");
+    expect(shownEntries()).toEqual([]);
+    expect(stats()).toEqual(preview.stats);
+    expectOnlyTimelineControls();
+    for (let index = 0; index < entries.length; index++) {
+      expect(screen.queryByTestId("to-summary")).toBeNull();
+      await click("reveal-next");
+      const entry = entries[index];
+      expect(shownEntries()).toEqual(entries.slice(0, index + 1).map((item) => item.id));
+      const node = screen.getByTestId(`timeline-entry-${entry.id}`);
+      expect(node.textContent).toContain(entry.label);
+      for (const line of entry.lines) expect(node.textContent).toContain(line.text);
+      expect(stats()).toEqual(entry.statsAfter);
+      expect(savedReveal(storage).shown).toBe(index + 1);
+      expectOnlyTimelineControls();
+    }
+    expect(screen.queryByTestId("reveal-next")).toBeNull();
+    expect(screen.queryByTestId("auto-play")).toBeNull();
+    expect(savedProgress(storage).runs).toBe(0);
+    await click("to-summary");
+    const pathClicks = counters.clicks;
+
+    // 人生总结
+    expect(phase()).toBe("SUMMARY");
+    const card = ending.ending?.card;
+    expect(screen.getByTestId("ending-title").textContent?.length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ending-label").textContent?.length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ending-card").getAttribute("data-tier")).toBe(card?.tier);
+    expect(screen.getByTestId("card-combo").textContent).toBe(card?.combo);
+    expect(screen.getByTestId("ending-card").textContent).toContain(ENDING_CARDS.disclaimer);
+    expect(screen.getByTestId("ending-epilogue").textContent?.length).toBeGreaterThan(5);
+    expect(screen.getByTestId("final-money").textContent).toContain(String(ending.stats.money));
+    expect(screen.getByTestId("summary-talents").querySelectorAll(".rarity").length).toBe(3);
+    if (card?.flavor) expect(screen.getByTestId("ending-flavor").textContent).toBe(card.flavor.name);
+    if (card?.early) expect(screen.getByTestId("ending-early").textContent).toBe(card.name);
+    expect(app().querySelectorAll(CHOICE_CONTROLS).length).toBe(0);
+    // 本局收获与直接用引擎判定的一致。
+    const rewards = headless(seed).rewards;
+    expect(rewards.achievements.length).toBeGreaterThan(0);
+    for (const id of rewards.achievements) expect(screen.getByTestId(`reward-achievement-${id}`)).toBeTruthy();
+    expect(screen.getByTestId("rewards").querySelectorAll("[data-testid^='reward-achievement-']").length).toBe(rewards.achievements.length);
+    expect(screen.queryByTestId("reward-talent") !== null).toBe(rewards.unlockedTalent !== null);
+    expect(savedProgress(storage).runs).toBe(1);
+
+    // 种子 1 次 + 天赋 3 次（外加上面多点的 3 次）+ 下一步 + 分点 + 开始 + 每段一次“继续” + 人生总结。
+    console.info(
+      `一局的点击次数（seed ${seed}，逐段点继续）：${pathClicks}；其中分点 ${budget + 2} 次、轨迹 ${entries.length} 段。` +
+        `最少路径（随机分配 + 直接看结局）：1 + 3 + 1 + 1 + 1 + 1 + 1 = 9 次。`,
+    );
+
+    // 再次重开：直接进入新一局的天赋屏。
     await click("play-again");
-    expect(phase()).toBe("SETUP");
+    expect(phase()).toBe("TALENTS");
+    expect(app().getAttribute("data-run-id")).not.toBe(ending.runId);
   });
 
-  it("手里有机会时接受它：博士显示本科直博，工作显示本科毕业", async () => {
-    const policy = makePolicy({ planOrder: ["STUDY", "CAREER", "CAMPUS", "WORK", "REST"], choice: thrifty, atResults: acceptFirstOffer });
-    const seed = findSeed((candidate) => {
-      const state = simulate(candidate, policy, atUndergradResults);
-      return routeOptions(state).some((option) => option.available && option.route !== "TRANSITION");
-    });
-    const storage = seededStorage(seed);
+  it("最少路径：随机分配 + 直接看结局，一共 9 次点击", async () => {
+    const storage = createMemoryStorage();
     await mount(storage);
-    const trail = newTrail();
-    await advanceUntil(storage, policy, trail, () => phase() === "ENDING");
-    const last = trail.actions[trail.actions.length - 1];
-    expect(last.type).toBe("CHOOSE_ROUTE");
-    const route = last.type === "CHOOSE_ROUTE" ? last.route : "TRANSITION";
-    expect(route).not.toBe("TRANSITION");
-    expect(screen.getByTestId("ending-label").textContent).toBe(route === "PHD" ? "本科直博 · 即将入学" : "本科毕业");
+    counters.clicks = 0;
+    await click("start-run");
+    for (const id of talentIds().slice(0, 3)) await click(`talent-${id}`);
+    await click("to-allocate");
+    await click("random-allocate");
+    expect(pointsLeft()).toBe(0);
+    await click("begin-life");
+    await click("skip-to-end");
+    await click("to-summary");
+    expect(phase()).toBe("SUMMARY");
+    expect(counters.clicks).toBe(9);
   });
 });
 
-describe("完整一局：硕士路线", () => {
-  // 偏学习、省钱的打法下，本科结束时两个硕士方案都可选的第一个种子。
-  const mastersSeed = () =>
-    findSeed((candidate) => {
-      const options = mastersOptions(simulate(candidate, scholarPolicy, atUndergradResults));
-      return options.length === 2 && options.every((option) => option.eligible);
-    });
-
-  it("两年硕士（最长路线）能走到结局；统计默认路径的点击次数与要读的字数", async () => {
-    const seed = mastersSeed();
-    const storage = seededStorage(seed);
+describe("人生轨迹的三种看法", () => {
+  it("直接看结局：一次显示全部，出现“人生总结”", async () => {
+    const storage = createMemoryStorage();
     await mount(storage);
-    counters.clicks = 0;
-    const trail = newTrail();
-    await advanceUntil(storage, scholarPolicy, trail, () => phase() === "GRAD_RESULTS", everyScreen);
-    expect((screen.getByTestId("masters-MS_1Y") as HTMLButtonElement).disabled).toBe(false);
-    expect((screen.getByTestId("masters-MS_2Y") as HTMLButtonElement).disabled).toBe(false);
-    // 两种工作都没取得才会开放硕士：去向里只列能选的，所以没有这两个按钮。
-    expect(screen.queryByTestId("route-LOCAL_JOB")).toBeNull();
-    expect(screen.queryByTestId("route-HOME_JOB")).toBeNull();
-    expect(screen.getByTestId("route-TRANSITION")).toBeTruthy();
-
-    await step(storage, scholarPolicy, trail, everyScreen);
-    expect(trail.actions[trail.actions.length - 1]).toEqual({ type: "ENTER_MASTERS", program: "MS_2Y" });
-    expect(phase()).toBe("FOCUS");
-    expect(screen.getByTestId("stage-title").textContent).toContain("硕士");
-    expect(screen.getByTestId("last-outcome").textContent).toContain("资金 -12");
-
-    await advanceUntil(storage, scholarPolicy, trail, () => phase() === "GRAD_RESULTS", everyScreen);
-    expect(count(trail.actions, "CHOOSE_PLAN")).toBe(12);
-    expect(trail.actions.filter((action) => action.type === "CHOOSE_EVENT").slice(-4).map((action) => (action.type === "CHOOSE_EVENT" ? action.eventId : ""))).toEqual([
-      "MASTER_01",
-      "MASTER_02",
-      "MASTER_03",
-      "MASTER_04",
-    ]);
-    // 硕士检查点不再出现续读硕士。
-    expect(screen.queryByTestId("masters-section")).toBeNull();
-    await step(storage, scholarPolicy, trail, everyScreen);
-
-    expect(phase()).toBe("ENDING");
-    expect(screen.getByTestId("ending-label").textContent).toBe("两年制硕士毕业");
-    trail.screenChars.push(mainText().length);
-    await click("look-back");
-    expect(screen.getByTestId("review-MASTER_04")).toBeTruthy();
-    expect(screen.getByTestId("full-review").querySelectorAll("[data-testid^='review-']").length).toBe(8);
-
-    // 4（三张天赋 + 开始）+ 2 高中 + 1 选校 + 本科 8×(安排 + 主线) + 6 支线 + 揭晓 + 选硕士
-    // + 硕士 4×(安排 + 事件) + 揭晓 + 去向 = 41；最后那次“回看”不计入通关路径。
-    const pathClicks = counters.clicks - 1;
-    const chars = trail.screenChars.reduce((sum, value) => sum + value, 0);
-    console.info(`最长路线（两年硕士，seed ${seed}）：${pathClicks} 次点击，${trail.screenChars.length} 屏，默认界面共 ${chars} 字`);
-    expect(pathClicks).toBe(41);
+    await playToTimeline(11);
+    const entries = timeline(savedEnding(storage));
+    await click("reveal-next");
+    expect(shownEntries().length).toBe(1);
+    await click("skip-to-end");
+    expect(shownEntries()).toEqual(entries.map((entry) => entry.id));
+    expect(stats()).toEqual(entries[entries.length - 1].statsAfter);
+    expect(screen.getByTestId("to-summary")).toBeTruthy();
+    expect(screen.queryByTestId("skip-to-end")).toBeNull();
+    expect(savedReveal(storage).shown).toBe(entries.length);
   });
 
-  it("一年硕士：入学费只扣一次，走 MASTER_01 → MASTER_04", async () => {
-    const seed = mastersSeed();
-    const oneYear = makePolicy({
-      planOrder: ["STUDY", "REST", "WORK", "CAMPUS", "CAREER"],
-      choice: thrifty,
-      atResults: (state) =>
-        state.phase !== "SETUP" && state.stage === "UG"
-          ? { type: "ENTER_MASTERS", program: "MS_1Y" }
-          : { type: "CHOOSE_ROUTE", route: "TRANSITION" },
-    });
-    const storage = seededStorage(seed);
+  it("点列表区域也能显示下一段", async () => {
+    const storage = createMemoryStorage();
     await mount(storage);
-    const trail = newTrail();
-    await advanceUntil(storage, oneYear, trail, () => phase() === "ENDING");
-    expect(count(trail.actions, "CHOOSE_PLAN")).toBe(10);
-    expect(trail.actions.filter((action) => action.type === "CHOOSE_EVENT").slice(-2).map((action) => (action.type === "CHOOSE_EVENT" ? action.eventId : ""))).toEqual([
-      "MASTER_01",
-      "MASTER_04",
-    ]);
-    expect(screen.getByTestId("ending-label").textContent).toBe("一年制硕士毕业");
-    const state = savedState(storage);
-    expect(state.phase !== "SETUP" && state.history.filter((entry) => entry.kind === "MASTERS_FEE").length).toBe(1);
+    await playToTimeline(11);
+    await click("timeline");
+    await click("timeline");
+    expect(shownEntries().length).toBe(2);
   });
 
-  it("刷新恢复：在高中、选校、支线、本科结果、进入硕士后、硕士结果、结局分别卸载再挂载，状态与抽取结果不变", async () => {
-    const storage = seededStorage(mastersSeed());
-    let view = await mount(storage);
-    const trail = newTrail();
-
-    const fingerprint = () => ({
-      phase: phase(),
-      revision: revision(),
-      runId: app().getAttribute("data-run-id"),
-      stats: screen.queryByTestId("stat-money") ? stats() : null,
-      screen: mainText(),
-    });
-    const refresh = async () => {
-      const before = fingerprint();
-      const saved = storage.dump();
-      view.unmount();
-      view = await mount(storage);
-      expect(fingerprint()).toEqual(before);
-      // 读档不产生新的结算，也不改写存档。
-      expect(storage.dump()).toEqual(saved);
+  it("自动播放：每隔一会儿显示下一段，可以暂停，到结尾自己停下", async () => {
+    const storage = createMemoryStorage();
+    await mount(storage);
+    await playToTimeline(11);
+    const total = timeline(savedEnding(storage)).length;
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const tick = async (ms: number) => {
+      await act(async () => {
+        vi.advanceTimersByTime(ms);
+      });
+      await flush();
     };
-    const until = (target: () => boolean) => advanceUntil(storage, scholarPolicy, trail, target);
 
-    // 开局：出身与十张天赋不因刷新而重抽
-    await refresh();
+    await click("auto-play");
+    expect(screen.getByTestId("auto-play").textContent).toBe("暂停");
+    expect(shownEntries().length).toBe(0);
+    await tick(800);
+    expect(shownEntries().length).toBe(1);
+    await tick(800);
+    expect(shownEntries().length).toBe(2);
 
-    // 高中：选完 HS_01 之后
-    await step(storage, scholarPolicy, trail);
-    await step(storage, scholarPolicy, trail);
-    expect(screen.getByTestId("screen-event").getAttribute("data-event-id")).toBe("HS_02");
-    await refresh();
+    // 暂停后不再前进。
+    await click("auto-play");
+    expect(screen.getByTestId("auto-play").textContent).toBe("自动播放");
+    await tick(5000);
+    expect(shownEntries().length).toBe(2);
 
-    // 选校：三所 offer 不重抽
-    await until(() => phase() === "SCHOOL_OFFERS");
-    const offers = [0, 1, 2].map((index) => screen.getByTestId(`offer-${index}`).getAttribute("data-unitid"));
-    await refresh();
-    expect([0, 1, 2].map((index) => screen.getByTestId(`offer-${index}`).getAttribute("data-unitid"))).toEqual(offers);
+    // 继续播放直到结尾。
+    await click("auto-play");
+    for (let i = 0; i < total; i++) await tick(800);
+    expect(shownEntries().length).toBe(total);
+    expect(screen.getByTestId("to-summary")).toBeTruthy();
+    await tick(5000);
+    expect(shownEntries().length).toBe(total);
+  });
+});
 
-    // 进入本科第 1 学期：资助与突发小事只结算一次
-    await until(() => phase() === "FOCUS");
-    await refresh();
+describe("刷新后回到同一局、同一进度", () => {
+  it("在轨迹中途刷新：同样的几段、同样的属性，不重新模拟", async () => {
+    const storage = createMemoryStorage();
+    let view = await mount(storage);
+    await playToTimeline(21);
+    await click("reveal-next");
+    await click("reveal-next");
+    await click("reveal-next");
+    const before = { phase: phase(), runId: app().getAttribute("data-run-id"), entries: shownEntries(), stats: stats(), text: app().querySelector("main")?.textContent };
+    const saved = storage.dump();
+    view.unmount();
+    view = await mount(storage);
+    expect({ phase: phase(), runId: app().getAttribute("data-run-id"), entries: shownEntries(), stats: stats(), text: app().querySelector("main")?.textContent }).toEqual(before);
+    expect(phase()).toBe("TIMELINE");
+    expect(shownEntries().length).toBe(3);
+    expect(storage.dump()).toEqual(saved);
+    // 还没看总结：不结算。
+    expect(savedProgress(storage).runs).toBe(0);
+    await click("reveal-next");
+    expect(shownEntries().length).toBe(4);
+    view.unmount();
+  });
 
-    // 支线事件中
-    await until(() => phase() === "ARC_EVENT");
-    await refresh();
+  it("在总结页刷新：同一张结局卡、同样的本局收获，不重复结算", async () => {
+    const storage = createMemoryStorage();
+    let view = await mount(storage);
+    await playToSummary(21);
+    const read = () => ({
+      phase: phase(),
+      runId: app().getAttribute("data-run-id"),
+      combo: screen.getByTestId("card-combo").textContent,
+      rewards: screen.getByTestId("rewards").textContent,
+      text: app().querySelector("main")?.textContent,
+    });
+    const before = read();
+    const progress = savedProgress(storage);
+    expect(progress.runs).toBe(1);
+    const saved = storage.dump();
 
-    // 本科结果揭晓后：机会结果不重抽
-    await until(() => phase() === "GRAD_RESULTS");
-    const outcomes = ["PHD", "LOCAL_JOB", "HOME_JOB"].map((id) => screen.getByTestId(`outcome-${id}`).textContent);
-    await refresh();
-    expect(["PHD", "LOCAL_JOB", "HOME_JOB"].map((id) => screen.getByTestId(`outcome-${id}`).textContent)).toEqual(outcomes);
+    view.unmount();
+    view = await mount(storage);
+    expect(read()).toEqual(before);
+    expect(storage.dump()).toEqual(saved);
 
-    // 扣过硕士入学费之后：不重复扣费，也不重复发资助
-    await step(storage, scholarPolicy, trail);
-    expect(screen.getByTestId("stage-title").textContent).toContain("硕士");
-    await refresh();
+    // 回首页再回来看，也不会再算一次。
+    await click("go-home");
+    expect(phase()).toBe("HOME");
+    expect(screen.queryByTestId("continue-run")).toBeNull();
+    await click("view-last");
+    expect(read()).toEqual(before);
+    expect(savedProgress(storage)).toEqual(progress);
+    view.unmount();
+  });
 
-    // 硕士结果揭晓后
-    await until(() => phase() === "GRAD_RESULTS");
-    await refresh();
+  it("停在天赋或分点时刷新：回到首页，“继续上次”还是同一局的十张", async () => {
+    const storage = createMemoryStorage();
+    let view = await mount(storage);
+    await openSeed(33);
+    const ids = talentIds();
+    await pickTalents();
+    view.unmount();
+    view = await mount(storage);
+    expect(phase()).toBe("HOME");
+    await click("continue-run");
+    expect(phase()).toBe("TALENTS");
+    expect(app().getAttribute("data-seed")).toBe("33");
+    expect(talentIds()).toEqual(ids);
+    view.unmount();
+  });
+});
 
-    // 结局：卡片不重算
-    await step(storage, scholarPolicy, trail);
-    expect(phase()).toBe("ENDING");
-    const combo = screen.getByTestId("card-combo").textContent;
-    await refresh();
-    expect(screen.getByTestId("card-combo").textContent).toBe(combo);
+describe("两类结局的总结页", () => {
+  it("毕业结局：去向结局是最醒目的一行，下面有三路机会；中途结局：用它自己的名称，没有机会列表", async () => {
+    const graduation = findSeed((seed) => headless(seed).state.ending?.card.early === null);
+    const early = findSeed((seed) => headless(seed).state.ending?.card.early !== null, 1, 3000);
+
+    const storage = createMemoryStorage();
+    const view = await mount(storage);
+    await playToSummary(graduation);
+    const card = savedEnding(storage).ending?.card;
+    expect(card?.flavor).toBeTruthy();
+    expect(screen.getByTestId("ending-flavor").textContent).toBe(card?.flavor?.name);
+    expect(app().textContent).toContain(card?.flavor?.roast ?? "?");
+    expect(screen.getByTestId("ending-card").hasAttribute("data-early")).toBe(false);
+    for (const id of ["PHD", "LOCAL_JOB", "HOME_JOB"]) expect(screen.getByTestId(`opportunity-${id}`)).toBeTruthy();
+    expect(savedProgress(storage).flavors[card?.flavor?.id ?? ""]?.count).toBe(1);
+
+    await click("go-home");
+    await playToSummary(early);
+    const earlyCard = savedEnding(storage).ending?.card;
+    expect(earlyCard?.early).toBeTruthy();
+    expect(screen.getByTestId("ending-early").textContent).toBe(earlyCard?.name);
+    expect(screen.queryByTestId("ending-flavor")).toBeNull();
+    expect(screen.getByTestId("ending-card").getAttribute("data-early")).toBe(earlyCard?.early);
+    expect(screen.queryByTestId("opportunity-PHD")).toBeNull();
+    // 中途结局记入“中途结局”一栏，同时也算解锁了对应的主线等级。
+    const progress = savedProgress(storage);
+    expect(progress.early[earlyCard?.early ?? ""]?.count).toBe(1);
+    expect(progress.tiers[earlyCard?.tier ?? ""]?.count).toBeGreaterThanOrEqual(1);
+    expect(progress.runs).toBe(2);
+    view.unmount();
   });
 });

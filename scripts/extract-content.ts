@@ -404,6 +404,7 @@ interface RawTalent {
   rarity: string;
   text: string;
   effects: Record<string, unknown>;
+  locked?: boolean;
 }
 
 function extractTalents(root: string): RawTalent[] {
@@ -424,6 +425,7 @@ function extractTalents(root: string): RawTalent[] {
       if (key === "initial") checkStatMap(value, 15, at, true);
       else if (key === "growth") checkStatMap(value, 1, at, true);
       else if (key === "stipend") { if (!isInt(value) || Math.abs(value) > 3) throw new Error(`${at} 超出 ±3`); }
+      else if (key === "points") { if (!isInt(value) || Math.abs(value) > 6) throw new Error(`${at} 超出 ±6`); }
       else if (key === "upkeep") { if (!isInt(value) || Math.abs(value) > 2) throw new Error(`${at} 超出 ±2`); }
       else if (key === "focusWellbeingRelief") { if (!isInt(value) || value < 1 || value > 3) throw new Error(`${at} 应为 1–3`); }
       else if (key === "readiness") { if (!isInt(value) || value < -10 || value > 12) throw new Error(`${at} 应为 -10–12`); }
@@ -451,7 +453,21 @@ function extractTalents(root: string): RawTalent[] {
       if (canonical(talent.effects) !== canonical(expected)) throw new Error(`固定天赋 ${id} 的效果必须与 docs/03 的特质相同`);
     }
   }
-  return talents.map((talent) => ({ id: talent.id, name: talent.name, rarity: talent.rarity, text: talent.text, effects: talent.effects ?? {} }));
+  if (talents.length > 0) {
+    // 六张固定天赋必须一开始就可用；未锁定的天赋要够十连抽。
+    for (const id of Object.keys(CLASSIC_TALENTS)) {
+      if (talents.find((entry) => entry.id === id)?.locked) throw new Error(`固定天赋 ${id} 不能是锁定的`);
+    }
+    if (talents.filter((talent) => !talent.locked).length < 12) throw new Error("未锁定的天赋不足 12 张，不够十连抽");
+  }
+  return talents.map((talent) => ({
+    id: talent.id,
+    name: talent.name,
+    rarity: talent.rarity,
+    text: talent.text,
+    effects: talent.effects ?? {},
+    ...(talent.locked ? { locked: true } : {}),
+  }));
 }
 
 interface RawPlan {

@@ -1,15 +1,15 @@
 // 全部数值常量集中在这里。数值规则以 docs/03 为准，申请以 docs/13 为准，结局卡以 docs/14 为准，
-// 第二版玩法（出身、天赋、学期安排、主线槽、突发小事）以 docs/16 为准。
+// 第二版玩法（天赋、学期安排、主线槽、突发小事）以 docs/16 为准，第三版（分点、自动决定、中途结局、成就）以 docs/22、23 为准。
 // 版本号：规则或内容有会改变结果的修改时必须提升，旧存档据此判为不兼容。
-// 2.0.0 = docs/16 第二版玩法。
+// 3.0.0 = docs/22 第三版玩法（只选天赋和分点，其余自动模拟；中途结局；成就与天赋解锁）。
 
 import type {
   ArcId, Aspiration, Economy, EndingTierId, Expectation, Focus, MastersProgram, Opportunity, OfferTier, Stats,
   StatKey, Strategy, TalentRarity,
 } from "./types";
 
-export const RULES_VERSION = "2.0.0";
-export const CONTENT_VERSION = "2.0.0";
+export const RULES_VERSION = "3.0.0";
+export const CONTENT_VERSION = "3.0.0";
 export const SAVE_FORMAT = "liuxue-sim-save";
 
 // ---------- 固定顺序 ----------
@@ -111,9 +111,6 @@ export const MIN_POOL_SIZE = 3;
 
 // ---------- 16：出身、天赋、主线槽、突发小事 ----------
 
-/** origin:economy 的分界：r < 0.30 → LOW；r < 0.75 → MID；否则 HIGH。 */
-export const ORIGIN_LOW_BELOW = 0.3;
-export const ORIGIN_MID_BELOW = 0.75;
 export const TALENT_WEIGHTS: Readonly<Record<TalentRarity, number>> = { N: 100, R: 45, SR: 15, SSR: 4 };
 export const TALENT_DRAW_COUNT = 10;
 export const TALENT_PICK_STANDARD = 3;
@@ -172,3 +169,63 @@ export const EPILOGUE = {
   SUBSCRIPTION: { key: "epilogue:subscription", label: "订阅制创作", percent: 25 },
   SCAM: { key: "epilogue:scam", label: "被骗", percent: 6 },
 } as const;
+
+// ---------- 22 §2：分配点数 ----------
+
+export const POINT_BASE_BUDGET = 20;
+export const POINT_MAX = 10;
+export const POINT_KEYS = ["family", "academics", "career", "wellbeing"] as const;
+/** 开局数值 = 基数 + 系数 × 点数（再加天赋的 initial，截断到 0–100）。 */
+export const START_MONEY_BASE = 20;
+export const START_MONEY_PER_POINT = 4;
+export const START_ACADEMICS_BASE = 8;
+export const START_ACADEMICS_PER_POINT = 2;
+export const START_CAREER_BASE = 2;
+export const START_CAREER_PER_POINT = 2;
+export const START_WELLBEING_BASE = 40;
+export const START_WELLBEING_PER_POINT = 6;
+/** 每学期资助 = 5 + 家境点数（再加天赋的 stipend）。 */
+export const STIPEND_POINT_BASE = 5;
+/** 家境点数 ≤ 3 为 LOW，4–7 为 MID，≥ 8 为 HIGH。 */
+export const FAMILY_MID_FROM = 4;
+export const FAMILY_HIGH_FROM = 8;
+
+// ---------- 22 §3：自动决定 ----------
+
+export const AUTO = {
+  /** 两个选项都能选时取“更合意的那一项”的概率。 */
+  PREFERRED_PROBABILITY: 0.7,
+  BROKE_MONEY_BOOST: 3,
+  LOW_WELLBEING_BELOW: 30,
+  LOW_WELLBEING_BOOST: 3,
+  PLAN_WORK_TIGHT_BONUS: 10,
+  /** 资金连这学期的必要开销都不够时，打工再加的权重。 */
+  PLAN_WORK_BROKE_BONUS: 10,
+  PLAN_REST_EXHAUSTED_BELOW: 25,
+  PLAN_REST_EXHAUSTED_BONUS: 8,
+  PLAN_REST_TIRED_BELOW: 45,
+  PLAN_REST_TIRED_BONUS: 3,
+  /** 手里有机会却主动留白的概率。 */
+  SELF_TRANSITION_PROBABILITY: 0.06,
+  /** 一个机会都没有时读硕士的意愿。 */
+  MASTERS_PROBABILITY: 0.75,
+  /** 有机会、但按愿望排的首选那一路没取得时，再读一轮的意愿。 */
+  MASTERS_RETRY_PROBABILITY: 0.35,
+  MASTERS_ONE_YEAR_PROBABILITY: 0.5,
+} as const;
+
+// ---------- 22 §5.2：属性评价；§7.2：天赋解锁 ----------
+
+/** 按最终值分档：下限从高到低。 */
+export const STAT_RATINGS: ReadonlyArray<{ from: number; label: string }> = [
+  { from: 95, label: "拉满" },
+  { from: 80, label: "出色" },
+  { from: 60, label: "不错" },
+  { from: 40, label: "普通" },
+  { from: 20, label: "吃紧" },
+  { from: 0, label: "见底" },
+];
+export const UG_TERM_LABELS: readonly string[] = ["大一上", "大一下", "大二上", "大二下", "大三上", "大三下", "大四上", "大四下"];
+export const MS_TERM_LABELS: readonly string[] = ["硕一上", "硕一下", "硕二上", "硕二下"];
+export const UNLOCK_BASE_PERCENT = 20;
+export const UNLOCK_PERCENT_PER_ACHIEVEMENT = 20;

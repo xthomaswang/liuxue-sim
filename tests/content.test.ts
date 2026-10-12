@@ -7,8 +7,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { buildContent } from "../scripts/extract-content.ts";
 import {
-  ALL_EVENTS, CORE_VARIANTS, ENDING_CARDS, EVENT_BY_ID, HAPPENINGS, ORIGINAL_EVENTS, PLANS, RANDOM_EVENTS, TALENTS, TEXTS,
+  ACHIEVEMENTS, ALL_EVENTS, CORE_VARIANTS, EARLY_ENDINGS, ENDING_CARDS, ENDING_FLAVORS, EVENT_BY_ID, HAPPENINGS,
+  ORIGINAL_EVENTS, PLANS, RANDOM_EVENTS, TALENTS, TEXTS,
 } from "../src/content";
+import type { EndingCondition } from "../src/engine/types";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -56,7 +58,8 @@ describe("第二版内容（docs/16–21）", () => {
   });
 
   it("天赋池足够十连抽，四种稀有度都有，六张固定天赋在池里", () => {
-    expect(TALENTS.length).toBeGreaterThanOrEqual(20);
+    expect(TALENTS.filter((t) => !t.locked).length).toBeGreaterThanOrEqual(20);
+    expect(TALENTS.filter((t) => t.locked).length).toBeGreaterThanOrEqual(5);
     expect(new Set(TALENTS.map((t) => t.rarity))).toEqual(new Set(["N", "R", "SR", "SSR"]));
     for (const id of ["T_FOCUSED", "T_PRACTICAL", "T_OUTGOING", "T_FRUGAL", "T_RESILIENT", "T_REFLECTIVE"]) {
       expect(TALENTS.some((t) => t.id === id), id).toBe(true);
@@ -103,3 +106,105 @@ describe("结局卡数据（docs/14）", () => {
     expect(ENDING_CARDS.disclaimer).toContain("不是按人的价值排名");
   });
 });
+
+// ---------- 第三版：中途结局、去向结局、成就（docs/22、docs/23） ----------
+
+const TIER_IDS = ["EX", "UR", "SSR", "SR_PLUS", "SR", "R_PLUS", "R", "N", "D", "BE"];
+const STATS = ["money", "academics", "career", "wellbeing"];
+const FOCUSES = ["STUDY", "CAREER", "CAMPUS", "WORK", "REST"];
+const POINT_KEYS = ["family", "academics", "career", "wellbeing"];
+const WHEN_KEYS = [
+  "stage", "termMin", "termMax", "statMin", "statMax", "countMin", "countMax", "pointsMin", "pointsMax", "flagsAll",
+  "talentsAny", "shortfallStreak", "zeroWellbeingStreak", "schoolStates", "schoolTiers", "aspirations", "transitionMode", "tiers",
+];
+const chars = (text: string) => [...text].length;
+
+function checkWhen(when: EndingCondition, what: string, allowed: string[]) {
+  const flags = new Set(ALL_EVENTS.flatMap((e) => e.choices.flatMap((c) => c.setFlags)));
+  const talentIds = new Set(TALENTS.map((t) => t.id));
+  for (const key of Object.keys(when)) expect(allowed, `${what}.when.${key}`).toContain(key);
+  const range = (map: Record<string, number> | undefined, keys: string[], min: number, max: number, label: string) => {
+    for (const [key, value] of Object.entries(map ?? {})) {
+      expect(keys, `${what}.${label}.${key}`).toContain(key);
+      expect(Number.isInteger(value) && value >= min && value <= max, `${what}.${label}.${key}=${value}`).toBe(true);
+    }
+  };
+  range(when.statMin, STATS, 0, 100, "statMin");
+  range(when.statMax, STATS, 0, 100, "statMax");
+  range(when.countMin, FOCUSES, 0, 12, "countMin");
+  range(when.countMax, FOCUSES, 0, 12, "countMax");
+  range(when.pointsMin, POINT_KEYS, 0, 10, "pointsMin");
+  range(when.pointsMax, POINT_KEYS, 0, 10, "pointsMax");
+  for (const flag of when.flagsAll ?? []) expect(flags.has(flag), `${what} 的标记 ${flag}`).toBe(true);
+  for (const id of when.talentsAny ?? []) expect(talentIds.has(id), `${what} 的天赋 ${id}`).toBe(true);
+  for (const state of when.schoolStates ?? []) expect(state, `${what} 的州 ${state}`).toMatch(/^[A-Z]{2}$/);
+  for (const tier of when.tiers ?? []) expect(TIER_IDS, `${what} 的等级 ${tier}`).toContain(tier);
+  if (when.termMin !== undefined && when.termMax !== undefined) expect(when.termMin).toBeLessThanOrEqual(when.termMax);
+}
+
+describe("中途结局（docs/22 §4）", () => {
+  it("id 唯一，字段齐全，长度在约定内，条件只用允许的键", () => {
+    expect(new Set(EARLY_ENDINGS.map((e) => e.id)).size).toBe(EARLY_ENDINGS.length);
+    const allowed = WHEN_KEYS.filter((key) => key !== "transitionMode" && key !== "tiers");
+    for (const ending of EARLY_ENDINGS) {
+      expect(ending.id).toMatch(/^E_[A-Z0-9_]+$/);
+      expect(TIER_IDS, ending.id).toContain(ending.tier);
+      expect(["HE", "TBC", "OPEN", "TE"], ending.id).toContain(ending.status);
+      expect(chars(ending.name), `${ending.id}.name`).toBeGreaterThan(0);
+      expect(chars(ending.name), `${ending.id}.name`).toBeLessThanOrEqual(8);
+      expect(chars(ending.roast), `${ending.id}.roast`).toBeLessThanOrEqual(32);
+      expect(chars(ending.title), `${ending.id}.title`).toBeLessThanOrEqual(12);
+      expect(chars(ending.text), `${ending.id}.text`).toBeLessThanOrEqual(90);
+      expect(chars(ending.epilogue), `${ending.id}.epilogue`).toBeLessThanOrEqual(80);
+      for (const field of [ending.roast, ending.title, ending.text, ending.epilogue, ending.condition, ending.hint]) {
+        expect(field.length, ending.id).toBeGreaterThan(0);
+      }
+      expect(Number.isInteger(ending.chancePermille) && ending.chancePermille >= 1 && ending.chancePermille <= 1000, ending.id).toBe(true);
+      checkWhen(ending.when, ending.id, allowed);
+    }
+  });
+
+  it("最初的七个中途结局都还在", () => {
+    for (const id of ["E_LOTTERY", "E_BROKE", "E_BURNOUT", "E_PROBATION", "E_HEIR", "E_STARTUP", "E_INFLUENCER"]) {
+      expect(EARLY_ENDINGS.some((e) => e.id === id), id).toBe(true);
+    }
+  });
+});
+
+describe("去向结局（docs/22 §5.2）", () => {
+  it("id 唯一，字段齐全，每个去向恰好一条无条件的兜底", () => {
+    expect(new Set(ENDING_FLAVORS.map((f) => f.id)).size).toBe(ENDING_FLAVORS.length);
+    for (const flavor of ENDING_FLAVORS) {
+      expect(flavor.id).toMatch(/^F_[A-Z0-9_]+$/);
+      expect(["PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION"], flavor.id).toContain(flavor.route);
+      expect(chars(flavor.name), `${flavor.id}.name`).toBeGreaterThan(0);
+      expect(chars(flavor.name), `${flavor.id}.name`).toBeLessThanOrEqual(8);
+      expect(chars(flavor.roast), `${flavor.id}.roast`).toBeLessThanOrEqual(32);
+      expect(chars(flavor.text), `${flavor.id}.text`).toBeLessThanOrEqual(80);
+      for (const field of [flavor.roast, flavor.text, flavor.hint]) expect(field.length, flavor.id).toBeGreaterThan(0);
+      expect(Number.isInteger(flavor.weight) && flavor.weight >= 1 && flavor.weight <= 10, flavor.id).toBe(true);
+      checkWhen(flavor.when, flavor.id, WHEN_KEYS.filter((key) => !["termMin", "termMax", "shortfallStreak", "zeroWellbeingStreak"].includes(key)));
+    }
+    for (const route of ["PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION"]) {
+      const fallbacks = ENDING_FLAVORS.filter((f) => f.route === route && f.fallback);
+      expect(fallbacks, route).toHaveLength(1);
+      expect(Object.keys(fallbacks[0].when), route).toHaveLength(0);
+    }
+    for (const flavor of ENDING_FLAVORS.filter((f) => !f.fallback)) {
+      expect(Object.keys(flavor.when).length, `${flavor.id} 需要至少一个条件`).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("成就清单（docs/23）", () => {
+  it("id 唯一，字段齐全，档次合法", () => {
+    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(ACHIEVEMENTS.length);
+    for (const achievement of ACHIEVEMENTS) {
+      expect(achievement.id).toMatch(/^A_[A-Z0-9_]+$/);
+      expect(["N", "R", "SR", "SSR"], achievement.id).toContain(achievement.grade);
+      expect(achievement.name.length, achievement.id).toBeGreaterThan(0);
+      expect(achievement.text.length, achievement.id).toBeGreaterThan(0);
+    }
+  });
+});
+

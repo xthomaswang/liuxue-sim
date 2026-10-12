@@ -452,18 +452,22 @@ export function routeOptions(state: RunState): RouteOption[] {
   return options;
 }
 
-/** 本科 GRAD_RESULTS 阶段的两个硕士方案（含不可选原因）；其它情况为空数组。预算用天赋生效后的资助与开销。 */
+/**
+ * 本科 GRAD_RESULTS 阶段的两个硕士方案（含不可选原因）；其它情况为空数组。预算用天赋生效后的资助与开销。
+ * HAS_JOB_OFFER 这条阻碍只在经典模式出现。
+ */
 export function mastersOptions(state: RunState): MastersOption[] {
   const run = active(state);
   const graduation = run ? resultsCheckpoint(run) : null;
   if (!run || !graduation || run.stage !== "UG" || run.mastersYears !== null) return [];
   const money = run.stats.money;
   const totals = talentTotalsOf(run);
-  const stipend = effectiveStipend(run.profile.economy, totals);
+  const stipend = effectiveStipend(run.profile, totals);
   const cost = effectiveUpkeep(totals);
   return MASTERS_PROGRAM_ORDER.map((program) => {
     const budget = mastersBudget(program, money, stipend, cost);
-    const codes = mastersBlockers(program, graduation, money, stipend, cost);
+    // 正式玩法不再要求“两种工作都没有取得”（docs/22 §3.4）；经典模式仍按第一版的规则。
+    const codes = mastersBlockers(program, graduation, money, stipend, cost, run.mode === "classic");
     const blockers: MastersOption["blockers"] = codes.map((code) => {
       if (code === "HAS_JOB_OFFER") return { code, text: "已取得工作机会，首版不开放硕士（即使不打算接受这份工作）。" };
       if (code === "ACADEMICS_BELOW_55") {

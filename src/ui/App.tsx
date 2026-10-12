@@ -1,20 +1,20 @@
-// 根组件：单页、无路由，按 state.phase 切换界面。
+// 根组件：单页、无路由。屏只有五个——首页、天赋、分点、人生轨迹、人生总结——外加图册与几个提示页。
 
-import { Component, useEffect, useRef, useState } from "react";
+import { Component, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { GameProvider, useGame } from "../app/store";
+import type { Screen } from "../app/store";
 import type { SaveStorage } from "../app/storage";
-import { stageInfo } from "../engine";
-import type { RunState, RuntimeCatalog } from "../engine";
+import { timeline } from "../engine";
+import type { RuntimeCatalog, Stats } from "../engine";
 import { StatStrip } from "./components";
-import { EndingScreen } from "./screens/EndingScreen";
-import { EventScreen } from "./screens/EventScreen";
-import { FocusScreen } from "./screens/FocusScreen";
+import { AllocateScreen } from "./screens/AllocateScreen";
 import { GalleryScreen } from "./screens/GalleryScreen";
-import { GradScreen } from "./screens/GradScreen";
-import { OffersScreen } from "./screens/OffersScreen";
-import { SetupScreen } from "./screens/SetupScreen";
-import { APP_TITLE, S, TIER_NAME, TIER_ORDER } from "./strings";
+import { HomeScreen } from "./screens/HomeScreen";
+import { SummaryScreen } from "./screens/SummaryScreen";
+import { TalentScreen } from "./screens/TalentScreen";
+import { TimelineScreen } from "./screens/TimelineScreen";
+import { S, SCREEN_TITLE, TIER_NAME, TIER_ORDER } from "./strings";
 
 export function App(props: { catalog?: RuntimeCatalog; storage?: SaveStorage }) {
   return (
@@ -26,7 +26,7 @@ export function App(props: { catalog?: RuntimeCatalog; storage?: SaveStorage }) 
 
 function Shell() {
   const store = useGame();
-  const { boot, state } = store;
+  const { boot } = store;
 
   if (boot.kind === "loading") {
     return (
@@ -44,13 +44,13 @@ function Shell() {
         <section className="panel" data-testid="catalog-problem" role="alert">
           <h1 className="title">{S.catalogProblemTitle}</h1>
           <p className="prose">{S.catalogProblemLead}</p>
-          <ul className="inline-list">
+          <p className="inline-list">
             {TIER_ORDER.map((tier) => (
-              <li key={tier}>
+              <span key={tier}>
                 {TIER_NAME[tier]} {boot.counts[tier]}
-              </li>
+              </span>
             ))}
-          </ul>
+          </p>
           <p className="muted small">{boot.message}</p>
           <p className="muted small">{S.catalogProblemNote}</p>
         </section>
@@ -61,30 +61,30 @@ function Shell() {
   if (boot.kind === "save-problem") {
     return (
       <Frame>
-        <section className="panel" data-testid="save-problem" role="alert">
+        <section className="panel" data-testid="save-problem" data-reason={boot.reason} role="alert">
+          {/* 版本不符只是游戏更新了，不是存档坏了：两种情况用不同的说法。 */}
           <h1 className="title">{boot.reason === "CORRUPT" ? S.saveProblemTitle : S.saveOutdatedTitle}</h1>
           <p className="prose">{boot.reason === "CORRUPT" ? S.saveProblemCorrupt : S.saveProblemVersion}</p>
           <p className="prose">{boot.reason === "CORRUPT" ? S.saveProblemNote : S.saveOutdatedNote}</p>
           <p className="muted small">{boot.detail}</p>
-          <button type="button" className="button primary" data-testid="save-problem-restart" onClick={() => store.restart()}>
-            {S.restart}
+          <button type="button" className="button primary" data-testid="save-problem-restart" onClick={store.discardSave}>
+            {boot.reason === "CORRUPT" ? S.saveProblemDiscard : S.saveOutdatedConfirm}
           </button>
         </section>
       </Frame>
     );
   }
 
-  if (boot.kind === "fatal" || !state) {
-    return <FatalScreen message={boot.kind === "fatal" ? boot.message : ""} onRestart={() => store.restart()} />;
-  }
+  if (boot.kind === "fatal") return <FatalScreen message={boot.message} onHome={store.recover} />;
 
   return (
-    <ScreenBoundary resetKey={state.runId} onRestart={() => store.restart()}>
-      <Game state={state} />
+    <ScreenBoundary resetKey={`${store.screen}:${store.run?.runId ?? ""}`} onHome={store.recover}>
+      <Game />
     </ScreenBoundary>
   );
 }
 
+/** 没有顶栏的独立提示页。 */
 function Frame(props: { children: ReactNode }) {
   return (
     <div className="app standalone" data-testid="app">
@@ -93,80 +93,85 @@ function Frame(props: { children: ReactNode }) {
   );
 }
 
-function FatalScreen(props: { message: string; onRestart: () => void }) {
+function FatalScreen(props: { message: string; onHome: () => void }) {
   return (
     <Frame>
       <section className="panel" data-testid="fatal" role="alert">
         <h1 className="title">{S.fatalTitle}</h1>
         <p className="prose">{S.fatalLead}</p>
         {props.message ? <p className="muted small">{props.message}</p> : null}
-        <button type="button" className="button primary" data-testid="fatal-restart" onClick={props.onRestart}>
-          {S.restart}
+        <button type="button" className="button primary" data-testid="fatal-restart" onClick={props.onHome}>
+          {S.home}
         </button>
       </section>
     </Frame>
   );
 }
 
-function Game(props: { state: RunState }) {
-  const { state } = props;
+function Game() {
   const store = useGame();
-  const [view, setView] = useState<"game" | "gallery">("game");
-  const [confirming, setConfirming] = useState(false);
-  const info = stageInfo(state);
+  const { run } = store;
+  const [gallery, setGallery] = useState(false);
   const mainRef = useRef<HTMLElement | null>(null);
 
-  // 每走一步（或切换图鉴）都从新界面的顶部开始读，键盘焦点也回到内容区，不留在已经消失的按钮上。
+  // 屏与存档对不上时（例如还没有一局却要显示轨迹）退回首页。
+  const screen: Screen =
+    (store.screen === "TALENTS" || store.screen === "ALLOCATE") && run?.phase !== "SETUP"
+      ? "HOME"
+      : (store.screen === "TIMELINE" || store.screen === "SUMMARY") && (run === null || run.phase === "SETUP")
+        ? "HOME"
+        : store.screen;
+
+  const ended = run !== null && run.phase !== "SETUP" ? run : null;
+  const entries = useMemo(() => (ended && screen === "TIMELINE" ? timeline(ended) : []), [ended, screen]);
+  const shown = Math.min(store.reveal?.shown ?? 0, entries.length);
+  // 人生轨迹顶部的四属性：显示到当前这一段为止；还没开始时是开局的数值。
+  const stripStats: Stats | null =
+    ended && screen === "TIMELINE" && entries.length > 0
+      ? shown > 0
+        ? entries[shown - 1].statsAfter
+        : (ended.history[0]?.beforeStats ?? entries[0].statsAfter)
+      : null;
+
+  // 换屏时从顶部开始读，键盘焦点回到内容区。人生轨迹自己管滚动（新的一段出现就滚到底）。
   useEffect(() => {
-    const scroller = document.scrollingElement ?? document.documentElement;
-    scroller.scrollTop = 0;
+    if (screen !== "TIMELINE" || gallery) {
+      const scroller = document.scrollingElement ?? document.documentElement;
+      scroller.scrollTop = 0;
+    }
     mainRef.current?.focus({ preventScroll: true });
-  }, [state.runId, state.revision, view]);
+  }, [screen, gallery, run?.runId]);
 
-  const needsConfirm = state.phase !== "SETUP" && state.phase !== "ENDING";
-  const doRestart = () => {
-    setConfirming(false);
-    setView("game");
-    store.restart();
+  const showTopbar = gallery || screen !== "HOME";
+  const goHome = () => {
+    setGallery(false);
+    store.goHome();
   };
-  const onRestartClick = () => {
-    if (needsConfirm) setConfirming(true);
-    else doRestart();
-  };
-
-  // 被拒绝的操作里，过期/重复的那种不打扰玩家；其它原因给一行说明。
-  const rejected = store.rejected && store.rejected.code !== "STALE_REVISION" ? store.rejected : null;
 
   return (
-    <div
-      className="app"
-      data-testid="app"
-      data-phase={state.phase}
-      data-revision={state.revision}
-      data-seed={state.seed}
-      data-run-id={state.runId}
-    >
-      <header className="topbar">
-        <div className="topbar-row">
-          <div className="stage">
+    <div className="app" data-testid="app" data-phase={screen} data-seed={run?.seed} data-run-id={run?.runId}>
+      {showTopbar ? (
+        <header className="topbar">
+          <div className="topbar-row">
             <h1 className="stage-title" data-testid="stage-title">
-              {info.stage === "SETUP" ? APP_TITLE : info.title}
+              {gallery ? SCREEN_TITLE.GALLERY : SCREEN_TITLE[screen]}
             </h1>
-            {info.step ? <span className="stage-step">{info.step}</span> : null}
+            <div className="topbar-actions">
+              <span className={`save-status ${store.saveStatus}`} role="status" data-testid="save-status">
+                {store.saveStatus === "saved" ? S.saved : S.unsaved}
+              </span>
+              {screen !== "HOME" ? (
+                <button type="button" className="ghost-button" data-testid="go-home" onClick={goHome}>
+                  {S.home}
+                </button>
+              ) : null}
+            </div>
           </div>
-          <div className="topbar-actions">
-            <span className={`save-status ${store.saveStatus}`} role="status" data-testid="save-status">
-              {store.saveStatus === "saved" ? S.saved : S.unsaved}
-            </span>
-            <button type="button" className="ghost-button" data-testid="restart" onClick={onRestartClick}>
-              {state.phase === "SETUP" ? S.reroll : S.restart}
-            </button>
-          </div>
-        </div>
-        {state.phase !== "SETUP" ? <StatStrip stats={state.stats} /> : null}
-      </header>
+          {stripStats && !gallery ? <StatStrip stats={stripStats} /> : null}
+        </header>
+      ) : null}
 
-      <main className="content" key={`${state.runId}:${state.revision}:${view}`} ref={mainRef} tabIndex={-1}>
+      <main className="content" key={`${screen}:${gallery}:${run?.runId ?? ""}`} ref={mainRef} tabIndex={-1}>
         {store.catalog.mode === "SAMPLE" ? (
           <p className="notice sample" data-testid="sample-banner">
             {S.sampleBanner}
@@ -177,66 +182,28 @@ function Game(props: { state: RunState }) {
             {S.unsavedHint}
           </p>
         ) : null}
-        {confirming ? (
-          <div className="notice confirm" role="alertdialog" aria-label={S.restart} data-testid="restart-confirm">
-            <p>{S.restartConfirmText}</p>
-            <div className="actions">
-              <button type="button" className="button" data-testid="restart-no" onClick={() => setConfirming(false)}>
-                {S.restartConfirmNo}
-              </button>
-              <button type="button" className="button danger" data-testid="restart-yes" onClick={doRestart}>
-                {S.restartConfirmYes}
-              </button>
-            </div>
-          </div>
-        ) : null}
-        {rejected ? (
-          <p className="notice warn" role="alert" data-testid="rejected">
-            {S.rejectedPrefix}
-            {rejected.message}
-          </p>
-        ) : null}
 
-        {view === "gallery" ? (
-          <GalleryScreen onClose={() => setView("game")} />
-        ) : (
-          <PhaseScreen state={state} onOpenGallery={() => setView("gallery")} />
-        )}
+        {gallery ? (
+          <GalleryScreen onClose={() => setGallery(false)} />
+        ) : screen === "HOME" ? (
+          <HomeScreen onOpenGallery={() => setGallery(true)} />
+        ) : screen === "TALENTS" && run?.phase === "SETUP" ? (
+          <TalentScreen state={run} />
+        ) : screen === "ALLOCATE" && run?.phase === "SETUP" ? (
+          <AllocateScreen state={run} />
+        ) : screen === "TIMELINE" && ended ? (
+          <TimelineScreen entries={entries} shown={shown} />
+        ) : screen === "SUMMARY" && ended ? (
+          <SummaryScreen state={ended} onOpenGallery={() => setGallery(true)} />
+        ) : null}
       </main>
-
-      {state.phase !== "ENDING" ? (
-        <footer className="footer">
-          <span className="muted small">{S.seedLine(state.seed)}</span>
-        </footer>
-      ) : null}
     </div>
   );
 }
 
-function PhaseScreen(props: { state: RunState; onOpenGallery: () => void }) {
-  const { state } = props;
-  switch (state.phase) {
-    case "SETUP":
-      return <SetupScreen state={state} onOpenGallery={props.onOpenGallery} />;
-    case "HIGH_SCHOOL_EVENT":
-    case "CORE_EVENT":
-    case "ARC_EVENT":
-      return <EventScreen state={state} />;
-    case "SCHOOL_OFFERS":
-      return <OffersScreen state={state} />;
-    case "FOCUS":
-      return <FocusScreen state={state} />;
-    case "GRAD_PREVIEW":
-    case "GRAD_RESULTS":
-      return <GradScreen state={state} />;
-    case "ENDING":
-      return <EndingScreen state={state} onOpenGallery={props.onOpenGallery} />;
-  }
-}
-
-/** 某个界面渲染出错时不让整页变白：给出说明与重新开始。新开一局（runId 变化）后自动恢复。 */
+/** 某一屏渲染出错时不让整页变白：给出说明与回首页。换屏或换一局后自动恢复。 */
 class ScreenBoundary extends Component<
-  { resetKey: string; onRestart: () => void; children: ReactNode },
+  { resetKey: string; onHome: () => void; children: ReactNode },
   { message: string | null; failedKey: string | null }
 > {
   override state: { message: string | null; failedKey: string | null } = { message: null, failedKey: null };
@@ -256,9 +223,7 @@ class ScreenBoundary extends Component<
   }
 
   override render(): ReactNode {
-    if (this.state.message !== null) {
-      return <FatalScreen message={this.state.message} onRestart={this.props.onRestart} />;
-    }
+    if (this.state.message !== null) return <FatalScreen message={this.state.message} onHome={this.props.onHome} />;
     return this.props.children;
   }
 }

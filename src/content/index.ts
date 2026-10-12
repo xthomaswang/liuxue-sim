@@ -2,7 +2,10 @@
 // 和 scripts/schools（学校目录）生成，endingCards.json 为手写（见 docs/14）。运行时不解析 Markdown。
 
 import type {
+  Achievement,
   Aspiration,
+  EarlyEnding,
+  EndingFlavor,
   Economy,
   EducationPath,
   EndingStatusId,
@@ -22,7 +25,10 @@ import type {
   Trait,
   WellbeingBand,
 } from "../engine/types";
+import achievementsJson from "./achievements.json";
+import earlyEndingsJson from "./earlyEndings.json";
 import endingCardsJson from "./endingCards.json";
+import endingFlavorsJson from "./endingFlavors.json";
 import arcsJson from "./events/arcs.json";
 import coreJson from "./events/core.json";
 import highschoolJson from "./events/highschool.json";
@@ -128,6 +134,12 @@ export const HAPPENINGS = happeningsJson as unknown as Happening[];
 
 export const TEXTS = textsJson as unknown as Texts;
 export const ENDING_CARDS = endingCardsJson as unknown as EndingCardsContent;
+/** 中途结局（docs/22 §4），数组顺序即检查顺序。 */
+export const EARLY_ENDINGS = earlyEndingsJson as unknown as EarlyEnding[];
+/** 去向结局（docs/22 §5.3），数组顺序即候选顺序。 */
+export const ENDING_FLAVORS = endingFlavorsJson as unknown as EndingFlavor[];
+/** 成就清单（docs/23），数组顺序即图册里的展示顺序。 */
+export const ACHIEVEMENTS = achievementsJson as unknown as Achievement[];
 /** 随构建打包的学校目录快照。引擎函数都把目录作为参数接收，这里只是默认值。 */
 export const CATALOG = catalogJson as unknown as RuntimeCatalog;
 

@@ -1,120 +1,69 @@
-// 整局随机模拟（正式玩法 standard）：seed 驱动的自动选择策略把几千局从开局走到结局，检查全程合法，
-// 并统计：主线槽与安排序列的重复率、突发小事条数、结局卡各等级与隐藏结局的频率、各经济档占比。
-// 第二个用例给出调平衡用的参考表：单张天赋对结局的影响、各安排与突发小事的数值概览。
-// 策略只是几种简单的启发式，不代表真实玩家分布。
+// 第三版整局自动模拟（docs/22 §3–§5、§7、§10）：七种分点方案各跑一批 seed，天赋取十连抽的前三张，
+// 之后全程由引擎自己的 autoAction 决定。
+// 硬性检查：每一局都合法地走到结局；reducer 判出的中途结局与按期末状态独立重算的一致；抽样的局
+// simulate 结果相同、存档能读回、轨迹与总结能生成。
+// 其余都是打印出来给调平衡用的统计，频率不做硬断言（内容随时在加）：
+//   SIM_RUNS=4000 npx vitest run src/engine/__tests__/simulation.test.ts --silent=false
+// 试一组新的触发概率或条件（只改这个测试进程内存里的值，不动内容文件）——数字是 chancePermille，对象可以同时换 when：
+//   SIM_EARLY_OVERRIDES='{"E_STARTUP":50,"E_STRESS":{"chancePermille":400,"when":{"countMin":{"STUDY":3},"statMax":{"wellbeing":15}}}}' \
+//     SIM_RUNS=4000 npx vitest run src/engine/__tests__/simulation.test.ts --silent=false
 
 import { describe, expect, it } from "vitest";
-import { ALL_EVENTS, EVENT_BY_ID, HAPPENINGS, PLANS, TALENTS } from "../../content";
-import { endingView, focusView, loadSave, serializeSave, setupView } from "../index";
-import type {
-  Action, ActiveRun, ChoiceId, Economy, EndingTierId, EventView, Focus, FocusView, MastersOption, RouteOption,
-  RunState, SetupView,
+import { ACHIEVEMENTS, CATALOG, EARLY_ENDINGS, ENDING_FLAVORS, TALENTS } from "../../content";
+import { conditionMet } from "../conditions";
+import { AUTO, FOCUS_ORDER } from "../constants";
+import { checkEarlyEnding } from "../early";
+import {
+  evaluateRun, focusView, loadSave, mastersOptions, serializeSave, setupView, simulate, startPreview, summaryView,
+  timeline,
 } from "../index";
-import { totalFocus } from "../rules";
-import { initialStatsFor, totalsFor } from "../talents";
-import { act, asActive, clone, ctx, nextAction, start, testRandom } from "./helpers";
-import type { Policy } from "./helpers";
+import type {
+  ActiveRun, EndingCondition, EndingTierId, EngineContext, Focus, Points, ProgressSnapshot, RunState,
+} from "../index";
+import { scalePoints, simulateObserved, start, termEndContext } from "./helpers";
 
-const STYLES = ["RANDOM", "RESEARCH", "CAREER", "BALANCED", "SOCIAL", "WORKER", "SLACKER"] as const;
-type Style = (typeof STYLES)[number];
+const REAL: EngineContext = { catalog: CATALOG }; // 真实目录：有真实的州名，去向结局的 schoolStates 条件才有意义
+const RUNS = Math.max(60, Number(process.env.SIM_RUNS ?? 300));
+const PLAYERS = Math.max(20, Number(process.env.SIM_PLAYERS ?? 60));
+const TIMEOUT = 900_000;
+
+const OVERRIDES = JSON.parse(process.env.SIM_EARLY_OVERRIDES ?? "{}") as Record<string, number | { chancePermille?: number; when?: EndingCondition }>;
+for (const [id, override] of Object.entries(OVERRIDES)) {
+  const ending = EARLY_ENDINGS.find((item) => item.id === id);
+  if (!ending) throw new Error(`SIM_EARLY_OVERRIDES: 没有中途结局 ${id}`);
+  const patch = typeof override === "number" ? { chancePermille: override } : override;
+  if (patch.chancePermille !== undefined) ending.chancePermille = patch.chancePermille;
+  if (patch.when !== undefined) ending.when = patch.when;
+}
+
+// 同样地，试一组新的自动决定参数（constants.ts 里 AUTO 的键），也只改内存：
+//   SIM_AUTO_OVERRIDES='{"PLAN_WORK_BROKE_BONUS":20}' SIM_RUNS=3000 npx vitest run …
+const AUTO_OVERRIDES = JSON.parse(process.env.SIM_AUTO_OVERRIDES ?? "{}") as Record<string, number>;
+for (const [key, value] of Object.entries(AUTO_OVERRIDES)) {
+  if (!(key in AUTO)) throw new Error(`SIM_AUTO_OVERRIDES: AUTO 里没有 ${key}`);
+  (AUTO as unknown as Record<string, number>)[key] = value;
+}
+
+const P = (family: number, academics: number, career: number, wellbeing: number): Points => ({ family, academics, career, wellbeing });
+const ZERO = P(0, 0, 0, 0);
+const SCENARIOS = [
+  { name: "均衡", points: P(5, 5, 5, 5) },
+  { name: "偏学业", points: P(2, 10, 4, 4) },
+  { name: "偏职业", points: P(2, 4, 10, 4) },
+  { name: "家境拉满", points: P(10, 4, 3, 3) },
+  { name: "家境见底", points: P(0, 8, 6, 6) },
+  { name: "爱玩", points: P(4, 2, 4, 10) },
+  { name: "身心见底", points: P(6, 7, 7, 0) },
+] as const;
+type Scenario = (typeof SCENARIOS)[number];
+
 const TIER_ORDER: EndingTierId[] = ["EX", "UR", "SSR", "SR_PLUS", "SR", "R_PLUS", "R", "N", "D", "BE"];
-const HIDDEN_IDS = ["H01", "H02", "H03", "H04", "H05", "H06", "H07", "H08", "H09", "H10", "H11", "H12"];
-const ALLOWED_PHASES = ["SETUP", "HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "ENDING"];
+const ROUTES = ["PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION"] as const;
+const ALLOWED_PHASES = ["HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "ENDING"];
+const USER_NAMED = ["E_NITROUS", "E_OVERINDULGE", "E_PLAYBOY", "E_STRESS"];
 
-/** 各策略偏好的类别顺序：本学期名单里缺了第一个就退到下一个。 */
-const PREFERENCE: Record<Exclude<Style, "RANDOM" | "BALANCED">, Focus[]> = {
-  RESEARCH: ["STUDY", "CAMPUS", "CAREER", "REST", "WORK"],
-  CAREER: ["CAREER", "STUDY", "CAMPUS", "WORK", "REST"],
-  SOCIAL: ["CAMPUS", "REST", "CAREER", "STUDY", "WORK"],
-  WORKER: ["WORK", "STUDY", "CAREER", "CAMPUS", "REST"],
-  SLACKER: ["REST", "CAMPUS", "WORK", "CAREER", "STUDY"],
-};
-const BALANCED_ROTATION: Focus[] = ["STUDY", "WORK", "CAREER", "CAMPUS", "STUDY", "REST", "CAREER", "STUDY"];
-
-function pickPlan(style: Style, seed: number, view: FocusView, state: ActiveRun): string {
-  const open = view.options.filter((option) => option.available);
-  const step = totalFocus(state.focusCounts);
-  const byFocus = (focus: Focus) => open.find((option) => option.focus === focus);
-  if (style === "RANDOM") return open[Math.floor(testRandom(seed, `plan:${step}`) * open.length)].plan.id;
-  if (style !== "SLACKER") {
-    if (state.stats.money < view.upkeep && byFocus("WORK")) return (byFocus("WORK") ?? open[0]).plan.id;
-    if (state.stats.wellbeing < 25 && byFocus("REST")) return (byFocus("REST") ?? open[0]).plan.id;
-  }
-  const order = style === "BALANCED" ? [BALANCED_ROTATION[step % 8], "STUDY", "CAREER", "CAMPUS", "WORK", "REST"] as Focus[] : PREFERENCE[style];
-  for (const focus of order) {
-    const option = byFocus(focus);
-    if (option) return option.plan.id;
-  }
-  return open[0].plan.id;
-}
-
-function pickChoice(style: Style, seed: number, view: EventView, state: ActiveRun): ChoiceId {
-  if (style === "RANDOM" || testRandom(seed, `noise:${view.event.id}`) < 0.25) {
-    return testRandom(seed, `choice:${view.event.id}`) < 0.5 ? "A" : "B";
-  }
-  if (style === "SLACKER") {
-    // 尽量不积累学业与职业
-    const gain = (choice: EventView["choices"][number]) => choice.choice.effects.academics + choice.choice.effects.career;
-    return gain(view.choices[0]) <= gain(view.choices[1]) ? "A" : "B";
-  }
-  const weight = {
-    money: state.stats.money < 20 ? 1.8 : 0.3,
-    academics: style === "RESEARCH" ? 1.4 : 0.6,
-    career: style === "CAREER" || style === "WORKER" ? 1.4 : 0.6,
-    wellbeing: state.stats.wellbeing < 30 || style === "SOCIAL" ? 1.8 : 0.4,
-  };
-  const score = (choice: EventView["choices"][number]) =>
-    weight.money * choice.delta.applied.money + weight.academics * choice.delta.applied.academics +
-    weight.career * choice.delta.applied.career + weight.wellbeing * choice.delta.applied.wellbeing;
-  return score(view.choices[0]) >= score(view.choices[1]) ? "A" : "B";
-}
-
-function pickGraduation(seed: number, state: ActiveRun, routes: RouteOption[], masters: MastersOption[]): Action {
-  const mode = testRandom(seed, "grad-mode");
-  const open = routes.filter((option) => option.available && option.route !== "TRANSITION");
-  const programs = masters.filter((option) => option.eligible);
-  const enter = (): Action => ({ type: "ENTER_MASTERS", program: programs[Math.floor(testRandom(seed, "program") * programs.length)].program });
-  if (mode < 0.5) {
-    // 有机会就接受最靠前的；没有机会且能读硕士就读
-    if (open.length > 0) return { type: "CHOOSE_ROUTE", route: open[0].route };
-    if (programs.length > 0) return enter();
-    return { type: "CHOOSE_ROUTE", route: "TRANSITION" };
-  }
-  if (mode < 0.75) {
-    if (programs.length > 0) return enter();
-    if (open.length > 0) return { type: "CHOOSE_ROUTE", route: open[open.length - 1].route };
-    return { type: "CHOOSE_ROUTE", route: "TRANSITION" };
-  }
-  // 在所有可行的选择里随机挑一个（包括主动过渡）
-  const actions: Action[] = [
-    ...open.map((option): Action => ({ type: "CHOOSE_ROUTE", route: option.route })),
-    { type: "CHOOSE_ROUTE", route: "TRANSITION" },
-    ...programs.map((option): Action => ({ type: "ENTER_MASTERS", program: option.program })),
-  ];
-  return actions[Math.floor(testRandom(seed, `grad-pick:${state.stage}`) * actions.length)];
-}
-
-/** 从十张里随机挑三张（由 seed 决定）。 */
-function pickTalents(seed: number, view: SetupView): string[] {
-  const ids = view.draw.map((talent) => talent.id);
-  const picked: string[] = [];
-  for (let i = 0; i < view.pickCount; i++) picked.push(ids.splice(Math.floor(testRandom(seed, `talent:${i}`) * ids.length), 1)[0]);
-  return picked;
-}
-
-function policyFor(seed: number, style: Style = STYLES[seed % STYLES.length]): Policy {
-  return {
-    talents: (view) => pickTalents(seed, view),
-    plan: (view, state) => pickPlan(style, seed, view, state),
-    event: (view, state) => pickChoice(style, seed, view, state),
-    graduate: (state, routes, masters) => pickGraduation(seed, state, routes, masters),
-    school: (state) => (state.offers ?? [])[Math.floor(testRandom(seed, "school") * 3)].unitid,
-  };
-}
-
-function assertLegal(state: RunState, label: string): void {
+function assertLegal(state: ActiveRun, label: string): void {
   if (!ALLOWED_PHASES.includes(state.phase)) throw new Error(`${label}：未知阶段 ${state.phase}`);
-  if (state.phase === "SETUP") return;
   for (const key of ["money", "academics", "career", "wellbeing"] as const) {
     const value = state.stats[key];
     if (!Number.isInteger(value) || value < 0 || value > 100 || Object.is(value, -0)) {
@@ -124,302 +73,372 @@ function assertLegal(state: RunState, label: string): void {
   if (state.phase === "FOCUS") {
     const view = focusView(state);
     const open = view?.options.filter((option) => option.available).length ?? 0;
-    if (view?.options.length !== 4 || open < 2) throw new Error(`${label}：安排 ${view?.options.length} 张、可选 ${open} 张`);
+    if (view?.options.length !== 4 || open < 1) throw new Error(`${label}：安排 ${view?.options.length} 张、可选 ${open} 张`);
   }
 }
 
-/** 相同序列成对出现的比例：Σ C(n,2) / C(N,2)。 */
-function identicalPairShare(sequences: string[]): number {
-  const groups = new Map<string, number>();
-  for (const sequence of sequences) groups.set(sequence, (groups.get(sequence) ?? 0) + 1);
-  let same = 0;
-  for (const n of groups.values()) same += (n * (n - 1)) / 2;
-  return same / ((sequences.length * (sequences.length - 1)) / 2);
+const bump = (map: Map<string, number>, key: string, by = 1): void => void map.set(key, (map.get(key) ?? 0) + by);
+
+interface Tally {
+  runs: number;
+  early: Map<string, number>;
+  /** 条件满足的学期末数（不管抽没抽中、也不管排在前面的有没有先触发）。 */
+  exposure: Map<string, number>;
+  /** 至少有一个学期末满足条件的局数。 */
+  exposedRuns: Map<string, number>;
+  earlyAt: Map<string, number>;
+  flavor: Map<string, number>;
+  route: Map<string, number>;
+  tier: Map<string, number>;
+  gradTier: Map<string, number>;
+  hidden: Map<string, number>;
+  achievement: Map<string, number>;
+  masters: number;
+  graduated: number;
+  /** 走到本科毕业的局；其中三路都没拿到的；其中又有硕士方案可选的。 */
+  ugGraduated: number;
+  ugNoOffer: number;
+  ugNoOfferCanMasters: number;
+  /** 本科毕业时有硕士方案可选（不管手里有没有机会）；其中首选那一路没取得的。 */
+  ugCanMasters: number;
+  /** 本科毕业时三路各自拿到的局数。 */
+  ugOffered: Record<"PHD" | "LOCAL_JOB" | "HOME_JOB", number>;
+  /** 期末出现资金短缺的学期数。 */
+  shortfallTerms: number;
+  focus: Record<Focus, number>;
+  terms: number;
+  newAchievements: number;
+  unlocks: number;
+  budgetChanged: number;
 }
 
-const RUNS = 4200;
-const pct = (count: number, total: number, digits = 1) => `${((100 * count) / Math.max(1, total)).toFixed(digits)}%`;
-
-describe(`整局随机模拟（standard，${RUNS} 局）`, () => {
-  it("全程合法、路径与结局全覆盖，并输出重复率、突发小事与结局卡频率", () => {
-    const tiers = new Map<string, Map<Style | "ALL" | Economy, number>>();
-    const hidden = new Map<string, number>();
-    const statuses = new Map<string, number>();
-    const routes = new Map<string, number>();
-    const paths = new Map<string, number>();
-    const perStyle = new Map<Style, number>();
-    const economies: Record<Economy, number> = { LOW: 0, MID: 0, HIGH: 0 };
-    const flagsSeen = new Set<string>();
-    const arcSlots = new Set<string>();
-    const plansSeen = new Set<string>();
-    const talentsSeen = new Set<string>();
-    const happeningsSeen = new Set<string>();
-    const decisions = new Map<string, Set<number>>();
-    const mainSequences: string[] = [];
-    const slateSequences: string[] = [];
-    let happeningsUndergrad = 0;
-    let happeningsTotal = 0;
-    let termsTotal = 0;
-    const bump = <K>(map: Map<K, number>, key: K) => map.set(key, (map.get(key) ?? 0) + 1);
-
-    for (let seed = 1; seed <= RUNS; seed++) {
-      const style = STYLES[seed % STYLES.length];
-      const policy = policyFor(seed);
-      let state: RunState = start(seed);
-      const log: Action[] = [];
-      const slates: string[] = [];
-      for (let guard = 0; guard < 200; guard++) {
-        if (state.phase === "FOCUS" && state.stage === "UG") {
-          slates.push(focusView(state)?.options.map((option) => option.plan.id).join(",") ?? "");
-        }
-        const action = nextAction(state, policy); // 事件或安排没有可选项时这里会抛错
-        if (!action) break;
-        const next = act(state, action);
-        expect(next.revision).toBe(state.revision + 1);
-        state = next;
-        log.push(action);
-        assertLegal(state, `seed ${seed} 第 ${log.length} 步`);
-      }
-      const run = asActive(state);
-      expect(run.phase, `seed ${seed}`).toBe("ENDING");
-      const ending = run.ending;
-      if (!ending) throw new Error(`seed ${seed} 没有结局记录`);
-
-      // 生活决策数：本科 24、一年硕士 28、两年硕士 32；安排 8/10/12 次
-      const path = run.mastersYears === null ? "UG" : run.mastersYears === 1 ? "MS_1Y" : "MS_2Y";
-      const life = log.filter((action) => action.type === "CHOOSE_PLAN" || action.type === "CHOOSE_EVENT").length;
-      (decisions.get(path) ?? decisions.set(path, new Set()).get(path))?.add(life);
-      expect(totalFocus(run.focusCounts)).toBe(path === "UG" ? 8 : path === "MS_1Y" ? 10 : 12);
-      expect(run.flags).toHaveLength(path === "UG" ? 16 : path === "MS_1Y" ? 18 : 20);
-      expect(new Set(run.flags).size).toBe(run.flags.length);
-      for (const event of ALL_EVENTS) expect(run.flags.includes(`${event.id}_A`) && run.flags.includes(`${event.id}_B`)).toBe(false);
-      expect(run.flags.filter((flag) => flag.startsWith("ARC_"))).toHaveLength(6);
-      expect(run.arcs.A).not.toBe(run.arcs.B);
-      expect(run.profile.talents).toHaveLength(3);
-      if (path !== "UG") {
-        expect(run.flags.includes("MASTER_04_A") !== run.flags.includes("MASTER_04_B")).toBe(true);
-        expect(run.graduations.UG?.resolution).toBe("MASTERS");
-        expect(run.history.filter((entry) => entry.kind === "MASTERS_FEE")).toHaveLength(1);
-        // 进入硕士的前提：本科两种工作都没有取得、学业达到 55
-        expect(run.graduations.UG?.outcomes?.LOCAL_JOB).not.toBe("OFFERED");
-        expect(run.graduations.UG?.outcomes?.HOME_JOB).not.toBe("OFFERED");
-        expect(run.graduations.UG?.frozenStats.academics).toBeGreaterThanOrEqual(55);
-      }
-      // 最终去向必须是当前检查点 OFFERED 的机会，或过渡期
-      const checkpoint = run.graduations[ending.degree];
-      if (ending.route !== "TRANSITION") expect(checkpoint?.outcomes?.[ending.route]).toBe("OFFERED");
-      else {
-        const any = Object.values(checkpoint?.outcomes ?? {}).includes("OFFERED");
-        expect(ending.transitionMode).toBe(any ? "SELF_CHOSEN" : "NO_OFFER");
-      }
-      const view = endingView(run);
-      expect(view?.full.review).toHaveLength(path === "UG" ? 7 : 8);
-      expect(view?.card).toEqual(ending.card);
-      if (seed % 10 === 0) {
-        const loaded = loadSave(serializeSave(run, log), ctx);
-        expect(loaded.ok, `seed ${seed} 读档`).toBe(true);
-        expect(JSON.parse(JSON.stringify(run))).toEqual(run);
-      }
-
-      // 一局内随机事件与突发小事都不重复
-      const mainEvents = run.history.filter((entry) => entry.kind === "EVENT" && entry.stage === "UG" && EVENT_BY_ID[entry.eventId ?? ""]?.kind !== "arc").map((entry) => entry.eventId ?? "");
-      expect(mainEvents).toHaveLength(8);
-      expect(new Set(mainEvents).size).toBe(8);
-      const happenings = run.history.filter((entry) => entry.kind === "HAPPENING");
-      expect(new Set(happenings.map((entry) => entry.happeningId)).size).toBe(happenings.length);
-      for (const entry of happenings) happeningsSeen.add(entry.happeningId ?? "");
-      happeningsUndergrad += happenings.filter((entry) => entry.stage === "UG").length;
-      happeningsTotal += happenings.length;
-      termsTotal += run.history.filter((entry) => entry.kind === "STIPEND").length;
-      mainSequences.push(mainEvents.join(">"));
-      expect(slates).toHaveLength(8);
-      slateSequences.push(slates.join("|"));
-
-      for (const flag of run.flags) flagsSeen.add(flag);
-      for (const entry of run.history) if (entry.planId) plansSeen.add(entry.planId);
-      for (const id of run.profile.talents) talentsSeen.add(id);
-      arcSlots.add(`A:${run.arcs.A}`);
-      arcSlots.add(`B:${run.arcs.B}`);
-      economies[run.profile.economy] += 1;
-      bump(routes, ending.route === "PHD" ? `PHD/${ending.entryMode}` : ending.route === "TRANSITION" ? `TRANSITION/${ending.transitionMode}` : ending.route);
-      bump(paths, path);
-      bump(statuses, ending.card.status);
-      perStyle.set(style, (perStyle.get(style) ?? 0) + 1);
-      const row = tiers.get(ending.card.tier) ?? new Map<Style | "ALL" | Economy, number>();
-      bump(row, style);
-      bump(row, "ALL");
-      bump(row, run.profile.economy);
-      tiers.set(ending.card.tier, row);
-      for (const entry of ending.card.hidden) bump(hidden, entry.id);
-    }
-
-    // ---------- 覆盖 ----------
-    expect([...(decisions.get("UG") ?? [])]).toEqual([24]);
-    expect([...(decisions.get("MS_1Y") ?? [])]).toEqual([28]);
-    expect([...(decisions.get("MS_2Y") ?? [])]).toEqual([32]);
-    for (const key of ["PHD/undergrad_direct", "PHD/masters_entry", "LOCAL_JOB", "HOME_JOB", "TRANSITION/SELF_CHOSEN", "TRANSITION/NO_OFFER"]) {
-      expect(routes.get(key) ?? 0, `去向 ${key}`).toBeGreaterThan(0);
-    }
-    for (const key of ["UG", "MS_1Y", "MS_2Y"]) expect(paths.get(key) ?? 0, `教育路径 ${key}`).toBeGreaterThan(0);
-    // 内容全覆盖：每个事件的每个选项、每张安排、每张天赋、每条突发小事都真实出现过
-    expect(flagsSeen.size).toBe(ALL_EVENTS.length * 2);
-    expect(plansSeen.size).toBe(PLANS.length);
-    expect(talentsSeen.size).toBe(TALENTS.length);
-    expect(happeningsSeen.size).toBe(HAPPENINGS.length);
-    expect(arcSlots.size).toBe(12); // 六条支线在两个槽里都出现过
-
-    // ---------- 每局不一样 ----------
-    const sameMain = identicalPairShare(mainSequences);
-    const sameSlates = identicalPairShare(slateSequences);
-    expect(sameMain).toBeLessThan(0.01);
-    expect(sameSlates).toBeLessThan(0.001);
-    expect(new Set(mainSequences).size).toBeGreaterThan(RUNS * 0.95);
-    // 经济档大致是 30% / 45% / 25%
-    expect(Math.abs(economies.LOW / RUNS - 0.3)).toBeLessThan(0.03);
-    expect(Math.abs(economies.MID / RUNS - 0.45)).toBeLessThan(0.03);
-
-    // ---------- 报告 ----------
-    const lines = [`正式玩法整局模拟（${RUNS} 局，每种策略 ${RUNS / STYLES.length} 局；策略为启发式，不代表真实玩家）`];
-    lines.push(`任取两局：主线槽事件序列完全相同的比例 ${(sameMain * 100).toFixed(4)}%（不同序列 ${new Set(mainSequences).size} 种）；` +
-      `安排序列完全相同的比例 ${(sameSlates * 100).toFixed(4)}%（不同序列 ${new Set(slateSequences).size} 种）`);
-    lines.push(`突发小事：本科阶段每局平均 ${(happeningsUndergrad / RUNS).toFixed(2)} 条；全程每学期出现的比例 ${pct(happeningsTotal, termsTotal)}`);
-    lines.push(`经济档占比：LOW ${pct(economies.LOW, RUNS)}  MID ${pct(economies.MID, RUNS)}  HIGH ${pct(economies.HIGH, RUNS)}`);
-    lines.push(`${"等级".padEnd(8)}${"全部".padStart(7)} ${STYLES.map((style) => style.padStart(9)).join("")}   |${(["LOW", "MID", "HIGH"] as const).map((economy) => economy.padStart(7)).join("")}`);
-    for (const tier of TIER_ORDER) {
-      const row = tiers.get(tier);
-      lines.push(
-        `${tier.padEnd(9)}${pct(row?.get("ALL") ?? 0, RUNS).padStart(7)} ${STYLES.map((style) => pct(row?.get(style) ?? 0, perStyle.get(style) ?? 1).padStart(9)).join("")}   |` +
-          (["LOW", "MID", "HIGH"] as const).map((economy) => pct(row?.get(economy) ?? 0, economies[economy]).padStart(7)).join(""),
-      );
-    }
-    lines.push(`隐藏结局：${HIDDEN_IDS.map((id) => `${id} ${pct(hidden.get(id) ?? 0, RUNS)}`).join("  ")}`);
-    lines.push(`完结状态：${["HE", "TBC", "OPEN", "TE"].map((id) => `${id} ${pct(statuses.get(id) ?? 0, RUNS)}`).join("  ")}`);
-    lines.push(`去向：${[...routes.entries()].sort().map(([key, count]) => `${key} ${pct(count, RUNS)}`).join("  ")}`);
-    lines.push(`教育路径：${[...paths.entries()].sort().map(([key, count]) => `${key} ${pct(count, RUNS)}`).join("  ")}`);
-    console.log(lines.join("\n"));
-
-    // 十档等级在整局模拟里都真实出现过；传奇档不应成为常见结果
-    for (const tier of TIER_ORDER) expect(tiers.get(tier)?.get("ALL") ?? 0, `等级 ${tier}`).toBeGreaterThan(0);
-    const share = (tier: EndingTierId) => (tiers.get(tier)?.get("ALL") ?? 0) / RUNS;
-    expect(share("EX")).toBeLessThan(0.1);
-    expect(share("UR")).toBeLessThan(0.1);
-    expect(share("SSR")).toBeLessThan(0.1);
-  });
+const emptyTally = (): Tally => ({
+  runs: 0, early: new Map(), exposure: new Map(), exposedRuns: new Map(), earlyAt: new Map(), flavor: new Map(),
+  route: new Map(), tier: new Map(), gradTier: new Map(), hidden: new Map(), achievement: new Map(), masters: 0,
+  graduated: 0, ugGraduated: 0, ugNoOffer: 0, ugNoOfferCanMasters: 0, ugCanMasters: 0, ugOffered: { PHD: 0, LOCAL_JOB: 0, HOME_JOB: 0 },
+  shortfallTerms: 0, focus: { STUDY: 0, WORK: 0, CAREER: 0, CAMPUS: 0, REST: 0 }, terms: 0, newAchievements: 0, unlocks: 0,
+  budgetChanged: 0,
 });
 
-// ---------- 调平衡用的参考表 ----------
+const emptyProgress = (): ProgressSnapshot => ({ runs: 0, tiers: {}, hidden: {}, early: {}, flavors: {}, achievements: [], unlockedTalents: [] });
 
-interface Metrics {
-  runs: number;
-  academics: number;
-  career: number;
-  money: number;
-  wellbeing: number;
-  phd: number;
-  local: number;
-  home: number;
-  anyOffer: number;
-  shortfalls: number;
-  tiers: Record<string, number>;
+interface Outcome {
+  state: ActiveRun;
+  log: ReturnType<typeof simulateObserved>["log"];
+  input: { talents: string[]; points: Points };
 }
 
-/**
- * 给定一组天赋（不经过十连抽，直接改档案——只用于对比分析，不代表合法存档），
- * 在同一批 seed 与同一套策略下走到本科毕业并接受最靠前的机会。
- */
-function measure(talents: string[], seeds: number[]): Metrics {
-  const m: Metrics = { runs: 0, academics: 0, career: 0, money: 0, wellbeing: 0, phd: 0, local: 0, home: 0, anyOffer: 0, shortfalls: 0, tiers: {} };
-  for (const seed of seeds) {
-    const style = (["RESEARCH", "CAREER", "BALANCED", "SOCIAL", "WORKER", "RANDOM"] as const)[seed % 6];
-    const policy: Policy = { ...policyFor(seed, style), graduate: undefined };
-    let state: RunState = act(start(seed), { type: "CONFIRM_SETUP", talents: setupView(start(seed)).draw.slice(0, 3).map((talent) => talent.id) });
-    const forced = clone(asActive(state));
-    const totals = totalsFor(talents);
-    forced.profile.talents = [...talents];
-    forced.stats = initialStatsFor(forced.profile.economy, totals);
-    forced.admission.talentBonus = totals.readiness;
-    state = forced;
-    for (let guard = 0; guard < 200; guard++) {
-      const action = nextAction(state, policy);
-      if (!action) break;
-      state = act(state, action);
+/** 跑一局：天赋取十连抽的前三张，点数按方案（预算不是 20 时按比例调整），其余全部自动。 */
+function runOne(
+  seed: number,
+  scenario: Scenario,
+  tally: Tally | null,
+  inputs: { unlockedTalents?: string[]; inheritedTalent?: string | null } = {},
+): Outcome {
+  const label = `${scenario.name} seed ${seed}`;
+  const setup = start(seed, REAL, inputs);
+  const talents = setupView(setup).draw.slice(0, 3).map((talent) => talent.id);
+  const budget = startPreview(setup, talents, ZERO).pointBudget;
+  const points = scalePoints(scenario.points, budget);
+  const exposed = new Set<string>();
+  let revision = 0;
+  const { state, log } = simulateObserved(setup, { talents, points }, REAL, (before, _action, after) => {
+    assertLegal(after, label);
+    revision += 1;
+    if (after.revision !== revision) throw new Error(`${label}：revision ${after.revision}，应为 ${revision}`);
+    if (tally && after.phase === "GRAD_RESULTS" && after.stage === "UG") {
+      tally.ugGraduated += 1;
+      const outcomes = after.graduations.UG?.outcomes;
+      if (mastersOptions(after).some((option) => option.eligible)) tally.ugCanMasters += 1;
+      for (const key of ["PHD", "LOCAL_JOB", "HOME_JOB"] as const) if (outcomes?.[key] === "OFFERED") tally.ugOffered[key] += 1;
+      if (outcomes && Object.values(outcomes).every((outcome) => outcome !== "OFFERED")) {
+        tally.ugNoOffer += 1;
+        if (mastersOptions(after).some((option) => option.eligible)) tally.ugNoOfferCanMasters += 1;
+      }
     }
-    const run = asActive(state);
-    const grad = run.graduations.UG;
-    if (!grad?.outcomes || !run.ending) throw new Error("模拟没有走到结局");
-    m.runs++;
-    m.academics += grad.frozenStats.academics;
-    m.career += grad.frozenStats.career;
-    m.money += grad.frozenStats.money;
-    m.wellbeing += grad.frozenStats.wellbeing;
-    m.phd += grad.outcomes.PHD === "OFFERED" ? 1 : 0;
-    m.local += grad.outcomes.LOCAL_JOB === "OFFERED" ? 1 : 0;
-    m.home += grad.outcomes.HOME_JOB === "OFFERED" ? 1 : 0;
-    m.anyOffer += Object.values(grad.outcomes).includes("OFFERED") ? 1 : 0;
-    m.shortfalls += run.history.filter((entry) => entry.kind === "UPKEEP" && (entry.upkeep?.shortfall ?? 0) > 0).length;
-    m.tiers[run.ending.card.tier] = (m.tiers[run.ending.card.tier] ?? 0) + 1;
+    const context = termEndContext(before, after);
+    if (!context) return;
+    // 接线检查：reducer 判出的中途结局必须与按期末状态独立重算的一致
+    const expected = checkEarlyEnding(seed, context)?.ending.id ?? null;
+    const actual = after.phase === "ENDING" && after.ending?.kind === "EARLY" ? after.ending.early : null;
+    if (expected !== actual) throw new Error(`${label} ${context.stage}:${context.term}：中途结局应为 ${expected}，实际 ${actual}`);
+    if (!tally) return;
+    tally.terms += 1;
+    if ((context.history[context.history.length - 2]?.upkeep?.shortfall ?? 0) > 0) tally.shortfallTerms += 1;
+    for (const ending of EARLY_ENDINGS) {
+      if (!conditionMet(ending.when, context)) continue;
+      bump(tally.exposure, ending.id);
+      exposed.add(ending.id);
+    }
+    if (actual) bump(tally.earlyAt, `${context.stage}:${context.term}`);
+  });
+  const end = state as ActiveRun;
+  if (end.phase !== "ENDING" || !end.ending) throw new Error(`${label}：没有走到结局`);
+  if (tally) {
+    const ending = end.ending;
+    tally.runs += 1;
+    if (budget !== 20) tally.budgetChanged += 1;
+    for (const id of exposed) bump(tally.exposedRuns, id);
+    bump(tally.tier, ending.card.tier);
+    if (end.graduations.UG?.resolution === "MASTERS") tally.masters += 1;
+    for (const focus of FOCUS_ORDER) tally.focus[focus] += end.focusCounts[focus];
+    if (ending.kind === "EARLY") {
+      bump(tally.early, ending.early ?? "?");
+      bump(tally.route, "EARLY");
+    } else {
+      tally.graduated += 1;
+      bump(tally.route, ending.route ?? "?");
+      bump(tally.gradTier, ending.card.tier);
+      bump(tally.flavor, ending.card.flavor?.id ?? "(无)");
+      for (const hidden of ending.card.hidden) bump(tally.hidden, hidden.id);
+    }
+    const rewards = evaluateRun(end, emptyProgress());
+    tally.newAchievements += rewards.achievements.length;
+    for (const id of rewards.achievements) bump(tally.achievement, id);
+    if (rewards.unlockedTalent) tally.unlocks += 1;
   }
-  return m;
+  return { state: end, log, input: { talents, points } };
 }
 
-describe("调平衡用的参考表（只输出，不作为验收门槛）", () => {
-  it("单张天赋相对“没有天赋”的影响；安排与突发小事的数值概览", () => {
-    const seeds = Array.from({ length: 360 }, (_, index) => index + 1);
-    const base = measure([], seeds);
-    const avg = (m: Metrics, key: "academics" | "career" | "money" | "wellbeing" | "shortfalls") => m[key] / m.runs;
-    const rate = (m: Metrics, key: "phd" | "local" | "home" | "anyOffer") => (100 * m[key]) / m.runs;
-    const top = (m: Metrics) => (100 * ((m.tiers.EX ?? 0) + (m.tiers.UR ?? 0) + (m.tiers.SSR ?? 0))) / m.runs;
-    const low = (m: Metrics) => (100 * ((m.tiers.N ?? 0) + (m.tiers.D ?? 0) + (m.tiers.BE ?? 0))) / m.runs;
-    const signed = (value: number, digits = 1) => `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
-    const lines = [
-      `单张天赋的影响（${seeds.length} 个 seed × 六种策略轮换，走到本科毕业并接受最靠前的机会；数值为相对“没有天赋”的差）`,
-      `基线：学业 ${avg(base, "academics").toFixed(1)} 职业 ${avg(base, "career").toFixed(1)} 资金 ${avg(base, "money").toFixed(1)} 身心 ${avg(base, "wellbeing").toFixed(1)}｜` +
-        `博士 ${rate(base, "phd").toFixed(1)}% 留美 ${rate(base, "local").toFixed(1)}% 回国 ${rate(base, "home").toFixed(1)}% 至少一个机会 ${rate(base, "anyOffer").toFixed(1)}%｜` +
-        `EX+UR+SSR ${top(base).toFixed(1)}% N+D+BE ${low(base).toFixed(1)}% 每局短缺学期 ${avg(base, "shortfalls").toFixed(2)}`,
-      `${"天赋".padEnd(18)}${"稀有".padEnd(5)}${["学业", "职业", "资金", "身心", "博士%", "留美%", "回国%", "有机会%", "顶档%", "低档%", "短缺"].map((h) => h.padStart(7)).join("")}`,
-    ];
-    const rows: Array<{ id: string; text: string; impact: number }> = [];
-    for (const talent of TALENTS) {
-      const m = measure([talent.id], seeds);
-      const cells = [
-        signed(avg(m, "academics") - avg(base, "academics")), signed(avg(m, "career") - avg(base, "career")),
-        signed(avg(m, "money") - avg(base, "money")), signed(avg(m, "wellbeing") - avg(base, "wellbeing")),
-        signed(rate(m, "phd") - rate(base, "phd")), signed(rate(m, "local") - rate(base, "local")),
-        signed(rate(m, "home") - rate(base, "home")), signed(rate(m, "anyOffer") - rate(base, "anyOffer")),
-        signed(top(m) - top(base)), signed(low(m) - low(base)), signed(avg(m, "shortfalls") - avg(base, "shortfalls"), 2),
-      ];
-      rows.push({
-        id: talent.id,
-        text: `${talent.id.padEnd(20)}${talent.rarity.padEnd(5)}${cells.map((cell) => cell.padStart(8)).join("")}`,
-        impact: rate(m, "anyOffer") - rate(base, "anyOffer") + (top(m) - top(base)) - (low(m) - low(base)),
-      });
-      // 天赋不改变资格规则：每一局仍然走得完
-      expect(m.runs).toBe(seeds.length);
-    }
-    lines.push(...rows.map((row) => row.text));
+/** 抽样做的重检查：simulate 与逐步走的结果相同；存档读得回；轨迹与总结能生成；成就判定可复现。 */
+function deepChecks(seed: number, scenario: Scenario, outcome: Outcome): void {
+  const label = `${scenario.name} seed ${seed}`;
+  const direct = simulate(start(seed, REAL), outcome.input, REAL);
+  expect(direct.state, label).toEqual(outcome.state);
+  expect(direct.log, label).toEqual(outcome.log);
+  expect(outcome.log).toHaveLength(outcome.state.revision);
+  const loaded = loadSave(serializeSave(outcome.state, outcome.log), REAL);
+  if (!loaded.ok) throw new Error(`${label}：存档读不回（${loaded.detail}）`);
+  expect(loaded.state, label).toEqual(JSON.parse(JSON.stringify(outcome.state)));
+  const segments = timeline(outcome.state);
+  expect(segments.length, label).toBeGreaterThanOrEqual(3);
+  expect(segments[segments.length - 1].statsAfter, label).toEqual(outcome.state.stats);
+  expect(summaryView(outcome.state).card, label).toEqual(outcome.state.ending?.card);
+  expect(evaluateRun(outcome.state, emptyProgress()), label).toEqual(evaluateRun(outcome.state, emptyProgress()));
+}
 
-    lines.push("", "学期安排（池内顺序；净值 = 四项相加，只作粗略比较）");
-    for (const plan of PLANS) {
-      const d = plan.delta;
-      lines.push(`${plan.id.padEnd(16)}${plan.focus.padEnd(8)}资金 ${signed(d.money, 0).padStart(3)} 学业 ${signed(d.academics, 0).padStart(3)} 职业 ${signed(d.career, 0).padStart(3)} 身心 ${signed(d.wellbeing, 0).padStart(3)}  净值 ${signed(d.money + d.academics + d.career + d.wellbeing, 0)}${plan.base ? "  （基础）" : ""}`);
+let cached: Tally[] | null = null;
+function tallies(): Tally[] {
+  if (cached) return cached;
+  cached = SCENARIOS.map((scenario) => {
+    const tally = emptyTally();
+    for (let i = 0; i < RUNS; i++) {
+      const seed = 1 + i;
+      const outcome = runOne(seed, scenario, tally);
+      if (i % 20 === 0) deepChecks(seed, scenario, outcome);
     }
+    return tally;
+  });
+  return cached;
+}
 
-    const sum = { money: 0, academics: 0, career: 0, wellbeing: 0 };
-    let positive = 0;
-    let negative = 0;
-    for (const item of HAPPENINGS) {
-      const net = item.effects.money + item.effects.academics + item.effects.career + item.effects.wellbeing;
-      if (net > 0) positive++;
-      if (net < 0) negative++;
-      for (const key of ["money", "academics", "career", "wellbeing"] as const) sum[key] += item.effects[key];
+// ---------- 打印 ----------
+
+const pct = (n: number, d: number, digits = 1): string => (d === 0 ? "—" : `${((100 * n) / d).toFixed(digits)}%`);
+const row = (cells: Array<string | number>): string => `| ${cells.join(" | ")} |`;
+function table(title: string, header: string[], rows: Array<Array<string | number>>): string {
+  return [`\n### ${title}`, row(header), row(header.map(() => "---")), ...rows.map(row)].join("\n");
+}
+const names = SCENARIOS.map((scenario) => `${scenario.name} ${Object.values(scenario.points).join("/")}`);
+
+describe(`自动模拟：${SCENARIOS.length} 种分点各 ${RUNS} 局（真实学校目录）`, () => {
+  it("每一局都合法地走到结局；中途结局的判定与独立重算一致；抽样的局可重放、可读档", () => {
+    const all = tallies();
+    for (const tally of all) {
+      expect(tally.runs).toBe(RUNS);
+      expect([...tally.route.values()].reduce((sum, n) => sum + n, 0)).toBe(RUNS);
+      expect(tally.graduated + [...tally.early.values()].reduce((sum, n) => sum + n, 0)).toBe(RUNS);
+      // 每局都有“落地”这条成就
+      expect(tally.achievement.get("A_FIRST")).toBe(RUNS);
     }
-    const n = HAPPENINGS.length;
-    lines.push(
-      "",
-      `突发小事：${n} 条，其中净值为正 ${positive} 条、为负 ${negative} 条；单条平均 资金 ${signed(sum.money / n, 2)} 学业 ${signed(sum.academics / n, 2)} 职业 ${signed(sum.career / n, 2)} 身心 ${signed(sum.wellbeing / n, 2)}；` +
-        `本科八学期约出现 4.8 条，合计约 资金 ${signed((4.8 * sum.money) / n, 1)} 学业 ${signed((4.8 * sum.academics) / n, 1)} 职业 ${signed((4.8 * sum.career) / n, 1)} 身心 ${signed((4.8 * sum.wellbeing) / n, 1)}`,
+  }, TIMEOUT);
+
+  it("分点确实改变倾向（22 §10）：学业点高博士机会更多，职业点高工作机会更多，家境低打工更多、更常缺钱，身心点高校园生活更多", () => {
+    const [even, study, career, rich, poor, social, tired] = tallies();
+    // 机会按“走到本科毕业的局里拿到的比例”比，安排与短缺按每学期的平均次数比——这些都不受各方案中途结局多少的影响。
+    // 最终去向的占比还取决于抽到的愿望与中途结局，只打印不断言。
+    const offered = (tally: Tally, key: "PHD" | "LOCAL_JOB" | "HOME_JOB") => tally.ugOffered[key] / tally.ugGraduated;
+    expect(offered(study, "PHD")).toBeGreaterThan(offered(career, "PHD"));
+    expect(offered(career, "LOCAL_JOB")).toBeGreaterThan(offered(study, "LOCAL_JOB"));
+    const perTerm = (tally: Tally, focus: Focus) => tally.focus[focus] / tally.terms;
+    expect(perTerm(poor, "WORK")).toBeGreaterThan(perTerm(rich, "WORK"));
+    expect(perTerm(study, "STUDY")).toBeGreaterThan(perTerm(career, "STUDY"));
+    expect(perTerm(career, "CAREER")).toBeGreaterThan(perTerm(study, "CAREER"));
+    expect(perTerm(social, "CAMPUS")).toBeGreaterThan(perTerm(even, "CAMPUS"));
+    expect(perTerm(even, "CAMPUS")).toBeGreaterThan(perTerm(tired, "CAMPUS"));
+    expect(poor.shortfallTerms / poor.terms).toBeGreaterThan(rich.shortfallTerms / rich.terms);
+  }, TIMEOUT);
+
+  it("统计（只打印，不做硬断言）", () => {
+    const all = tallies();
+    const out: string[] = [];
+    const overrides =
+      (Object.keys(OVERRIDES).length > 0 ? `；试用的中途结局参数 ${JSON.stringify(OVERRIDES)}` : "") +
+      (Object.keys(AUTO_OVERRIDES).length > 0 ? `；试用的自动决定参数 ${JSON.stringify(AUTO_OVERRIDES)}` : "");
+    out.push(`每种分点 ${RUNS} 局（seed 1…${RUNS}，各方案用同一批 seed），内容：中途结局 ${EARLY_ENDINGS.length} 条、去向结局 ${ENDING_FLAVORS.length} 条、成就 ${ACHIEVEMENTS.length} 条、天赋 ${TALENTS.length} 张${overrides}`);
+
+    // 中途结局：按 id × 分点
+    const earlyTotal = (tally: Tally) => [...tally.early.values()].reduce((sum, n) => sum + n, 0);
+    out.push(table("中途结局出现频率（占全部局）", ["id", "‰", ...names], [
+      ...EARLY_ENDINGS.map((ending) => [ending.id, ending.chancePermille, ...all.map((tally) => pct(tally.early.get(ending.id) ?? 0, tally.runs, 2))]),
+      ["合计", "", ...all.map((tally) => pct(earlyTotal(tally), tally.runs, 1))],
+    ]));
+    out.push(table("用户点名的四条", ["id", ...names], USER_NAMED.map((id) => [id, ...all.map((tally) => pct(tally.early.get(id) ?? 0, tally.runs, 2))])));
+    const even = all[0];
+    const ranked = [...EARLY_ENDINGS].sort((a, b) => (even.early.get(b.id) ?? 0) - (even.early.get(a.id) ?? 0));
+    out.push(table(`均衡分点：中途结局从高到低（合计 ${pct(earlyTotal(even), even.runs)}）`, ["id", "名称", "‰", "频率", "条件满足的学期末/局", "曾满足条件的局"], ranked.map((ending) => [
+      ending.id, ending.name, ending.chancePermille, pct(even.early.get(ending.id) ?? 0, even.runs, 2),
+      ((even.exposure.get(ending.id) ?? 0) / even.runs).toFixed(2), pct(even.exposedRuns.get(ending.id) ?? 0, even.runs),
+    ])));
+    out.push(table("条件满足的学期末数（每局平均）", ["id", ...names], EARLY_ENDINGS.map((ending) => [
+      ending.id, ...all.map((tally) => ((tally.exposure.get(ending.id) ?? 0) / tally.runs).toFixed(2)),
+    ])));
+    out.push(table("曾满足条件的局（占全部局）", ["id", ...names], EARLY_ENDINGS.map((ending) => [
+      ending.id, ...all.map((tally) => pct(tally.exposedRuns.get(ending.id) ?? 0, tally.runs)),
+    ])));
+    const slots = [...new Set(all.flatMap((tally) => [...tally.earlyAt.keys()]))].sort((a, b) => (a < b ? -1 : 1));
+    out.push(table("中途结局发生在哪个学期末（占全部局）", ["学期", ...names], slots.map((slot) => [slot, ...all.map((tally) => pct(tally.earlyAt.get(slot) ?? 0, tally.runs))])));
+    const neverEarly = EARLY_ENDINGS.filter((ending) => all.every((tally) => !tally.early.has(ending.id))).map((ending) => ending.id);
+    out.push(`\n各种分点都没出现过的中途结局：${neverEarly.length > 0 ? neverEarly.join("、") : "无"}`);
+
+    // 去向结局
+    out.push(table("去向结局（占全部局）", ["id", "去向", "权重", ...names], ENDING_FLAVORS.map((flavor) => [
+      flavor.id, flavor.route, flavor.weight, ...all.map((tally) => pct(tally.flavor.get(flavor.id) ?? 0, tally.runs, 2)),
+    ])));
+    out.push(table("去向结局（占同一去向的局）", ["id", "去向", "权重", ...names], ENDING_FLAVORS.map((flavor) => [
+      flavor.id, flavor.route, flavor.weight, ...all.map((tally) => pct(tally.flavor.get(flavor.id) ?? 0, tally.route.get(flavor.route) ?? 0)),
+    ])));
+    const topFlavors = [...ENDING_FLAVORS].sort((a, b) => (even.flavor.get(b.id) ?? 0) - (even.flavor.get(a.id) ?? 0)).slice(0, 10);
+    out.push(table("去向结局前十（按均衡分点的频率排；占全部局）", ["id", "名称", "去向", ...names], topFlavors.map((flavor) => [
+      flavor.id, flavor.name, flavor.route, ...all.map((tally) => pct(tally.flavor.get(flavor.id) ?? 0, tally.runs, 2)),
+    ])));
+    const neverFlavor = ENDING_FLAVORS.filter((flavor) => all.every((tally) => !tally.flavor.has(flavor.id))).map((flavor) => flavor.id);
+    const noFlavor = all.reduce((sum, tally) => sum + (tally.flavor.get("(无)") ?? 0), 0);
+    out.push(`\n各种分点都没出现过的去向结局：${neverFlavor.length > 0 ? neverFlavor.join("、") : "无"}；毕业了却没有去向结局的局：${noFlavor}`);
+
+    // 等级、去向、硕士、安排
+    out.push(table("结局卡等级（占全部局，含中途结局的卡面等级）", ["等级", ...names], TIER_ORDER.map((tier) => [tier, ...all.map((tally) => pct(tally.tier.get(tier) ?? 0, tally.runs))])));
+    out.push(table("结局卡等级（只看走到毕业的局）", ["等级", ...names], TIER_ORDER.map((tier) => [tier, ...all.map((tally) => pct(tally.gradTier.get(tier) ?? 0, tally.graduated))])));
+    out.push(table("去向分布（占全部局）", ["去向", ...names], [
+      ...ROUTES.map((route) => [route, ...all.map((tally) => pct(tally.route.get(route) ?? 0, tally.runs))]),
+      ["中途结局", ...all.map((tally) => pct(tally.route.get("EARLY") ?? 0, tally.runs))],
+      ["读了硕士", ...all.map((tally) => pct(tally.masters, tally.runs, 2))],
+    ]));
+    out.push(table("去向分布（只看走到毕业的局）", ["去向", ...names], ROUTES.map((route) => [route, ...all.map((tally) => pct(tally.route.get(route) ?? 0, tally.graduated))])));
+    out.push(table("本科毕业那一刻（占走到本科毕业的局）", ["情形", ...names], [
+      ["走到本科毕业（占全部局）", ...all.map((tally) => pct(tally.ugGraduated, tally.runs))],
+      ["三路都没拿到", ...all.map((tally) => pct(tally.ugNoOffer, tally.ugGraduated, 2))],
+      ["其中有硕士方案可选", ...all.map((tally) => pct(tally.ugNoOfferCanMasters, tally.ugGraduated, 2))],
+      ["有硕士方案可选（学业 ≥55 且预算够）", ...all.map((tally) => pct(tally.ugCanMasters, tally.ugGraduated))],
+      ["读了硕士", ...all.map((tally) => pct(tally.masters, tally.ugGraduated, 2))],
+      ["博士机会到手", ...all.map((tally) => pct(tally.ugOffered.PHD, tally.ugGraduated))],
+      ["留美工作到手", ...all.map((tally) => pct(tally.ugOffered.LOCAL_JOB, tally.ugGraduated))],
+      ["回国工作到手", ...all.map((tally) => pct(tally.ugOffered.HOME_JOB, tally.ugGraduated))],
+    ]));
+    out.push(table("每局各类安排的平均次数", ["类别", ...names], [
+      ...FOCUS_ORDER.map((focus) => [focus, ...all.map((tally) => (tally.focus[focus] / tally.runs).toFixed(2))]),
+      ["学期数", ...all.map((tally) => (tally.terms / tally.runs).toFixed(2))],
+      ["期末资金短缺的学期数", ...all.map((tally) => (tally.shortfallTerms / tally.runs).toFixed(2))],
+    ]));
+    const hiddenIds = [...new Set(all.flatMap((tally) => [...tally.hidden.keys()]))].sort();
+    out.push(table("隐藏结局（占走到毕业的局）", ["id", ...names], hiddenIds.map((id) => [id, ...all.map((tally) => pct(tally.hidden.get(id) ?? 0, tally.graduated))])));
+
+    // 成就
+    out.push(table("从空进度开始，一局的收获", ["项目", ...names], [
+      ["平均新成就数", ...all.map((tally) => (tally.newAchievements / tally.runs).toFixed(2))],
+      ["解锁到天赋的局", ...all.map((tally) => pct(tally.unlocks, tally.runs))],
+      ["预算不是 20 的局", ...all.map((tally) => pct(tally.budgetChanged, tally.runs))],
+    ]));
+    out.push(table("各成就在一局里达成的比例（空进度）", ["id", ...names], ACHIEVEMENTS.map((achievement) => [
+      achievement.id, ...all.map((tally) => pct(tally.achievement.get(achievement.id) ?? 0, tally.runs)),
+    ])));
+    // 调平衡时盯着的几个数（只打印，不断言）
+    const broke = (tally: Tally) => pct(tally.early.get("E_BROKE") ?? 0, tally.runs);
+    out.unshift(
+      `盯着的几个数：均衡分点中途结局合计 ${pct(earlyTotal(even), even.runs)}（单条最高 ${pct(Math.max(0, ...even.early.values()), even.runs, 2)}）；` +
+      `读硕士（占全部局）${all.map((tally, i) => `${SCENARIOS[i].name} ${pct(tally.masters, tally.runs)}`).join("、")}；` +
+      `“钱烧完了” ${all.map((tally, i) => `${SCENARIOS[i].name} ${broke(tally)}`).join("、")}`,
     );
-    console.log(lines.join("\n"));
-    expect(rows).toHaveLength(TALENTS.length);
+    console.log(out.join("\n"));
+    expect(out.length).toBeGreaterThan(10);
+  }, TIMEOUT);
+});
+
+describe(`连续玩 30 局（${PLAYERS} 个玩家，${SCENARIOS.length} 种分点轮着用）`, () => {
+  it("跨局进度一局一局累积：成就不重复计、解锁的天赋进入之后的十连抽；打印典型的成就数与解锁数", () => {
+    const quantile = (sorted: number[], q: number) => sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))];
+    const checkpoints = [1, 3, 5, 10, 20, 30];
+    const achievementsAt = new Map<number, number[]>(checkpoints.map((n) => [n, []]));
+    const unlockedAt = new Map<number, number[]>(checkpoints.map((n) => [n, []]));
+    const earlyKinds: number[] = [];
+    const flavorKinds: number[] = [];
+    const tierKinds: number[] = [];
+    const owned = new Map<string, number>();
+    const lockedTotal = TALENTS.filter((talent) => talent.locked).length;
+    let sawUnlockedInDraw = 0;
+
+    for (let player = 0; player < PLAYERS; player++) {
+      const progress = emptyProgress();
+      for (let n = 1; n <= 30; n++) {
+        const seed = 5_000_000 + player * 100 + n;
+        const scenario = SCENARIOS[(player + n) % SCENARIOS.length];
+        const { state } = runOne(seed, scenario, null, { unlockedTalents: progress.unlockedTalents });
+        const ending = state.ending;
+        if (!ending) throw new Error("没有结局");
+        if (state.profile.talents.some((id) => progress.unlockedTalents.includes(id))) sawUnlockedInDraw += 1;
+        const rewards = evaluateRun(state, progress);
+        // 新成就都是之前没有的；解锁的天赋是之前没解锁的锁定天赋
+        for (const id of rewards.achievements) expect(progress.achievements).not.toContain(id);
+        if (rewards.unlockedTalent) {
+          expect(progress.unlockedTalents).not.toContain(rewards.unlockedTalent);
+          expect(TALENTS.find((talent) => talent.id === rewards.unlockedTalent)?.locked).toBe(true);
+          progress.unlockedTalents.push(rewards.unlockedTalent);
+        }
+        progress.achievements.push(...rewards.achievements);
+        progress.runs += 1;
+        progress.tiers[ending.card.tier] = (progress.tiers[ending.card.tier] ?? 0) + 1;
+        for (const hidden of ending.card.hidden) progress.hidden[hidden.id] = (progress.hidden[hidden.id] ?? 0) + 1;
+        if (ending.early) progress.early[ending.early] = (progress.early[ending.early] ?? 0) + 1;
+        if (ending.card.flavor) progress.flavors[ending.card.flavor.id] = (progress.flavors[ending.card.flavor.id] ?? 0) + 1;
+        if (checkpoints.includes(n)) {
+          achievementsAt.get(n)?.push(progress.achievements.length);
+          unlockedAt.get(n)?.push(progress.unlockedTalents.length);
+        }
+      }
+      expect(new Set(progress.achievements).size).toBe(progress.achievements.length);
+      expect(new Set(progress.unlockedTalents).size).toBe(progress.unlockedTalents.length);
+      earlyKinds.push(Object.keys(progress.early).length);
+      flavorKinds.push(Object.keys(progress.flavors).length);
+      tierKinds.push(Object.keys(progress.tiers).length);
+      for (const id of progress.achievements) bump(owned, id);
+    }
+
+    const spread = (values: number[]): string => {
+      const sorted = [...values].sort((a, b) => a - b);
+      const mean = sorted.reduce((sum, value) => sum + value, 0) / sorted.length;
+      return `${quantile(sorted, 0.1)} / ${quantile(sorted, 0.5)} / ${quantile(sorted, 0.9)}（均值 ${mean.toFixed(1)}）`;
+    };
+    const out: string[] = [];
+    out.push(table(`连续玩 N 局之后（${PLAYERS} 个玩家；P10 / 中位数 / P90）`, ["局数", `成就数（共 ${ACHIEVEMENTS.length}）`, `已解锁的天赋（共 ${lockedTotal}）`], checkpoints.map((n) => [
+      n, spread(achievementsAt.get(n) ?? []), spread(unlockedAt.get(n) ?? []),
+    ])));
+    out.push(`\n30 局之后：见过的中途结局种类 ${spread(earlyKinds)}；去向结局种类 ${spread(flavorKinds)}；主线等级种类 ${spread(tierKinds)}`);
+    out.push(`30 局里选中过已解锁天赋的局：平均每个玩家 ${(sawUnlockedInDraw / PLAYERS).toFixed(1)} 局`);
+    out.push(table("30 局之后各成就的持有率", ["id", "名称", "档次", "持有率"], ACHIEVEMENTS.map((achievement) => [
+      achievement.id, achievement.name, achievement.grade, pct(owned.get(achievement.id) ?? 0, PLAYERS, 0),
+    ])));
+    console.log(out.join("\n"));
+    expect(achievementsAt.get(30)).toHaveLength(PLAYERS);
+  }, TIMEOUT);
+});
+
+/** 给界面与存档的回归：任何一局走到结局后，状态都是可以原样 JSON 往返的普通数据。 */
+describe("自动模拟出来的状态是普通数据", () => {
+  it("JSON 往返不丢东西", () => {
+    for (const scenario of SCENARIOS) {
+      const { state } = runOne(77, scenario, null);
+      const copy: RunState = JSON.parse(JSON.stringify(state));
+      expect(copy).toEqual(state);
+    }
   });
 });

@@ -68,7 +68,7 @@ function card(input: CaseInput): EndingCard {
   const final = graduation(degree, input.stats, input.counts ?? {}, input.flags ?? [], input.outcomes);
   const built: EndingCardInput = {
     seed: input.seed ?? QUIET,
-    profile: { economy: "MID", expectation: "STABILITY", aspiration: "BELONGING", talents: [], ...input.profile },
+    profile: { economy: "MID", expectation: "STABILITY", aspiration: "BELONGING", talents: [], points: null, ...input.profile },
     arcs: input.arcs ?? { A: "FAMILY", B: "FRIENDSHIP" },
     history,
     graduations:

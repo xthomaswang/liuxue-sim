@@ -8,6 +8,8 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    // 单页、离线可用，脚本不拆包；内容数据都打在一起，略超默认的 500 kB 提示线。
+    chunkSizeWarningLimit: 800,
   },
   test: {
     environment: "node",

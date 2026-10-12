@@ -343,7 +343,8 @@
       "chance": {
         "PHD": 5
       }
-    }
+    },
+    "locked": true
   },
   {
     "id": "T_INTERVIEW_ACE",
@@ -357,7 +358,8 @@
       "arcWeight": {
         "INTERNSHIP": 2
       }
-    }
+    },
+    "locked": true
   },
   {
     "id": "T_STEADY",
@@ -368,7 +370,8 @@
       "growth": {
         "academics": 1
       }
-    }
+    },
+    "locked": true
   },
   {
     "id": "T_ZEN",
@@ -381,6 +384,79 @@
       },
       "focusWellbeingRelief": 1
     }
+  },
+  {
+    "id": "T_BONUS_POINTS",
+    "name": "轻度开挂",
+    "rarity": "SR",
+    "text": "可分配点数 +2。",
+    "effects": {
+      "points": 2
+    },
+    "locked": true
+  },
+  {
+    "id": "T_SCHOLAR_FAMILY",
+    "name": "书香门第",
+    "rarity": "SR",
+    "text": "开局学业 +8，申请准备度 +6。",
+    "effects": {
+      "initial": {
+        "academics": 8
+      },
+      "readiness": 6
+    },
+    "locked": true
+  },
+  {
+    "id": "T_SIDE_HUSTLE",
+    "name": "副业脑",
+    "rarity": "SR",
+    "text": "打工类安排资金额外 +3、职业额外 +1。",
+    "effects": {
+      "focus": {
+        "WORK": {
+          "money": 3,
+          "career": 1
+        }
+      }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_NAP_MASTER",
+    "name": "午睡大师",
+    "rarity": "SR",
+    "text": "休息类安排身心额外 +3，每学期身心基础变化 +1。",
+    "effects": {
+      "focus": {
+        "REST": {
+          "wellbeing": 3
+        }
+      },
+      "growth": {
+        "wellbeing": 1
+      }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_NETWORK",
+    "name": "人脉王",
+    "rarity": "SR",
+    "text": "校园类安排职业额外 +3，留美与回国工作机会各 +3 个百分点。",
+    "effects": {
+      "focus": {
+        "CAMPUS": {
+          "career": 3
+        }
+      },
+      "chance": {
+        "LOCAL_JOB": 3,
+        "HOME_JOB": 3
+      }
+    },
+    "locked": true
   },
   {
     "id": "T_GOLD_MINE",
@@ -404,7 +480,8 @@
       "initial": {
         "wellbeing": 10
       }
-    }
+    },
+    "locked": true
   },
   {
     "id": "T_KOI",
@@ -418,6 +495,71 @@
         "HOME_JOB": 5
       },
       "readiness": 8
-    }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_CHOSEN_ONE",
+    "name": "天选之子",
+    "rarity": "SSR",
+    "text": "可分配点数 +5。",
+    "effects": {
+      "points": 5
+    },
+    "locked": true
+  },
+  {
+    "id": "T_FULL_RIDE",
+    "name": "全额奖学金",
+    "rarity": "SSR",
+    "text": "每学期资助 +3，开局学业 +6。",
+    "effects": {
+      "stipend": 3,
+      "initial": {
+        "academics": 6
+      }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_PRODIGY",
+    "name": "过目不忘",
+    "rarity": "SSR",
+    "text": "学习类安排学业额外 +3，每学期学业基础变化 +1。",
+    "effects": {
+      "focus": {
+        "STUDY": {
+          "academics": 3
+        }
+      },
+      "growth": {
+        "academics": 1
+      }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_OFFER_MAGNET",
+    "name": "offer收割机",
+    "rarity": "SSR",
+    "text": "留美与回国工作机会的概率各 +8 个百分点。",
+    "effects": {
+      "chance": {
+        "LOCAL_JOB": 8,
+        "HOME_JOB": 8
+      }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_STILL_WATER",
+    "name": "心如止水",
+    "rarity": "SSR",
+    "text": "身心再低，积累也不打折；学期安排的身心消耗少扣 2。",
+    "effects": {
+      "efficiencyFloor": 10,
+      "focusWellbeingRelief": 2
+    },
+    "locked": true
   }
 ]

@@ -1,12 +1,13 @@
 // 引擎测试共用的驱动工具：全部通过公开的 applyAction 与选择器推进，不绕过状态机。
 
 import { makeSampleCatalog } from "../../../tests/helpers/sampleCatalog";
+import type { ConditionContext } from "../conditions";
 import {
-  applyAction, createRun, currentEvent, focusView, mastersOptions, routeOptions, setupView,
+  applyAction, autoAction, createRun, currentEvent, focusView, mastersOptions, routeOptions, setupView, startPreview,
 } from "../index";
 import type {
   Action, ActionResult, ActiveRun, ChoiceId, Economy, EngineContext, EventView, Focus, FocusView, MastersOption,
-  RouteOption, RunState, SetupRun, SetupView,
+  Points, RouteOption, RunState, SetupRun, SetupView,
 } from "../index";
 import { hash32 } from "../rng";
 
@@ -39,9 +40,113 @@ export function asSetup(state: RunState): SetupRun {
   return state;
 }
 
-/** 正式玩法（standard）的新局。 */
-export function start(seed: number, context: EngineContext = ctx): SetupRun {
-  return createRun({ seed, runId: `test-${seed}`, catalog: context.catalog });
+/** 正式玩法（standard）的新局；可以带上已解锁的天赋与继承的天赋。 */
+export function start(
+  seed: number,
+  context: EngineContext = ctx,
+  inputs: { unlockedTalents?: string[]; inheritedTalent?: string | null } = {},
+): SetupRun {
+  return createRun({ seed, runId: `test-${seed}`, catalog: context.catalog, ...inputs });
+}
+
+/** 把 budget 点尽量平均地分到四项上（每项不超过 10），多出来的按 家境、学业、职业、身心 的顺序各加 1。 */
+export function evenPoints(budget: number): Points {
+  const keys = ["family", "academics", "career", "wellbeing"] as const;
+  const points: Points = { family: 0, academics: 0, career: 0, wellbeing: 0 };
+  let left = budget;
+  while (left > 0) {
+    let placed = false;
+    for (const key of keys) {
+      if (left > 0 && points[key] < 10) {
+        points[key] += 1;
+        left -= 1;
+        placed = true;
+      }
+    }
+    if (!placed) break;
+  }
+  return points;
+}
+
+/** 以 base 为起点把点数调到恰好等于 budget：多了从后往前减，少了从前往后加。 */
+export function fitPoints(base: Points, budget: number): Points {
+  const keys = ["family", "academics", "career", "wellbeing"] as const;
+  const points = { ...base };
+  let diff = budget - keys.reduce((sum, key) => sum + points[key], 0);
+  for (let guard = 0; diff !== 0 && guard < 200; guard++) {
+    const key = keys[diff > 0 ? guard % 4 : 3 - (guard % 4)];
+    if (diff > 0 && points[key] < 10) {
+      points[key] += 1;
+      diff -= 1;
+    } else if (diff < 0 && points[key] > 0) {
+      points[key] -= 1;
+      diff += 1;
+    }
+  }
+  return points;
+}
+
+/**
+ * 把一种分点方案调到恰好等于 budget，同时保住它的特点（0 还是 0、10 还是 10）：
+ * 多出来的点依次加到“已有点数且未满”的最小一项上，不够时从未满的最大一项里减；实在没处放才动 0 和 10。
+ */
+export function scalePoints(base: Points, budget: number): Points {
+  const keys = ["family", "academics", "career", "wellbeing"] as const;
+  const points = { ...base };
+  let diff = budget - keys.reduce((sum, key) => sum + points[key], 0);
+  for (let guard = 0; diff !== 0 && guard < 200; guard++) {
+    if (diff > 0) {
+      const open = keys.filter((key) => points[key] < 10);
+      if (open.length === 0) break;
+      const preferred = open.filter((key) => points[key] > 0);
+      const pool = preferred.length > 0 ? preferred : open;
+      points[pool.reduce((best, key) => (points[key] < points[best] ? key : best))] += 1;
+      diff -= 1;
+    } else {
+      const open = keys.filter((key) => points[key] > 0);
+      if (open.length === 0) break;
+      const preferred = open.filter((key) => points[key] < 10);
+      const pool = preferred.length > 0 ? preferred : open;
+      points[pool.reduce((best, key) => (points[key] > points[best] ? key : best))] -= 1;
+      diff += 1;
+    }
+  }
+  return points;
+}
+
+const AUTO_SHAPES: readonly Points[] = [
+  { family: 5, academics: 5, career: 5, wellbeing: 5 }, { family: 2, academics: 10, career: 4, wellbeing: 4 },
+  { family: 2, academics: 4, career: 10, wellbeing: 4 }, { family: 10, academics: 4, career: 3, wellbeing: 3 },
+  { family: 0, academics: 8, career: 6, wellbeing: 6 }, { family: 6, academics: 7, career: 7, wellbeing: 0 },
+  { family: 4, academics: 3, career: 3, wellbeing: 10 },
+];
+
+/** 把 budget 点随机分到四项上（由 seed 决定，每项不超过 10）。 */
+export function randomPoints(seed: number, budget: number): Points {
+  const keys = ["family", "academics", "career", "wellbeing"] as const;
+  const points: Points = { family: 0, academics: 0, career: 0, wellbeing: 0 };
+  for (let i = 0, left = Math.min(budget, 40); left > 0 && i < 4000; i++) {
+    const key = keys[Math.floor(testRandom(seed, `points:${i}`) * 4)];
+    if (points[key] < 10) {
+      points[key] += 1;
+      left -= 1;
+    }
+  }
+  return points;
+}
+
+/**
+ * 给自动模拟用的一组开局输入（由 seed 决定）：天赋取十张里连着的三张；
+ * 点数一半用固定的几种形状（均衡、各种偏科、见底），一半随机。
+ */
+export function autoInput(seed: number, context: EngineContext = ctx): { setup: SetupRun; input: { talents: string[]; points: Points } } {
+  const setup = start(seed, context);
+  const draw = setupView(setup).draw;
+  const from = seed % 8;
+  const talents = draw.slice(from, from + 3).map((talent) => talent.id);
+  const budget = startPreview(setup, talents, { family: 0, academics: 0, career: 0, wellbeing: 0 }).pointBudget;
+  const points = seed % 2 === 0 ? randomPoints(seed, budget) : scalePoints(AUTO_SHAPES[(seed >> 1) % AUTO_SHAPES.length], budget);
+  return { setup, input: { talents, points } };
 }
 
 /** 经典模式的新局：给定经济档，之后在六张特质天赋里选一张。 */
@@ -52,6 +157,8 @@ export function startClassic(seed: number, economy: Economy, context: EngineCont
 export interface Policy {
   /** 选哪几张天赋；缺省取抽到的前 pickCount 张。 */
   talents?(view: SetupView, state: SetupRun): string[];
+  /** 正式玩法的分点；缺省把可分配的点数平均分到四项。经典模式没有分点。 */
+  points?(budget: number, state: SetupRun): Points;
   event(view: EventView, state: ActiveRun): ChoiceId;
   /** 返回想选的安排 id；不在本学期名单里或买不起时，驱动会改选第一张可选的。 */
   plan(view: FocusView, state: ActiveRun): string;
@@ -69,7 +176,10 @@ export function defaultGraduate(_state: ActiveRun, routes: RouteOption[]): Actio
 export function nextAction(state: RunState, policy: Policy): Action | null {
   if (state.phase === "SETUP") {
     const view = setupView(state);
-    return { type: "CONFIRM_SETUP", talents: policy.talents ? policy.talents(view, state) : view.draw.slice(0, view.pickCount).map((talent) => talent.id) };
+    const talents = policy.talents ? policy.talents(view, state) : view.draw.slice(0, view.pickCount).map((talent) => talent.id);
+    if (state.mode === "classic") return { type: "CONFIRM_SETUP", talents };
+    const budget = startPreview(state, talents, { family: 0, academics: 0, career: 0, wellbeing: 0 }).pointBudget;
+    return { type: "CONFIRM_SETUP", talents, points: policy.points ? policy.points(budget, state) : evenPoints(budget) };
   }
   switch (state.phase) {
     case "HIGH_SCHOOL_EVENT":
@@ -117,6 +227,57 @@ export function play(from: RunState, policy: Policy, stop?: (state: RunState) =>
     log.push(action);
   }
   throw new Error("推进步数超出上限，状态机可能卡住");
+}
+
+/**
+ * 与引擎的 simulate 相同的循环（确认开局之后每一步都取 autoAction），但每走一步都把前后状态交给 onStep：
+ * 统计与接线检查要看每个学期末，而 simulate 只返回最终状态。
+ */
+export function simulateObserved(
+  setup: SetupRun,
+  input: { talents: string[]; points: Points },
+  context: EngineContext = ctx,
+  onStep?: (before: RunState, action: Action, after: ActiveRun) => void,
+): Played {
+  const log: Action[] = [];
+  let state: RunState = setup;
+  let action: Action | null = { type: "CONFIRM_SETUP", talents: [...input.talents], points: { ...input.points } };
+  for (let guard = 0; action !== null; guard++) {
+    if (guard >= 200) throw new Error("推进步数超出上限，状态机可能卡住");
+    const after = asActive(act(state, action, context));
+    log.push(action);
+    onStep?.(state, action, after);
+    state = after;
+    action = autoAction(state, context);
+  }
+  return { state, log };
+}
+
+/**
+ * 刚走完的这一步如果结算了一个学期（记下了新的 GROWTH），重建期末那一刻检查中途结局用的上下文；否则返回 null。
+ * 没有中途结局时引擎会在同一步里接着发下一学期的资助与突发小事，所以属性与历史都要截到 GROWTH 那一条为止；
+ * 安排次数、标记、学校这些在期末之后不会变，直接取这一步之后的。
+ */
+export function termEndContext(before: RunState, after: ActiveRun): ConditionContext | null {
+  const from = before.phase === "SETUP" ? 0 : before.history.length;
+  for (let i = from; i < after.history.length; i++) {
+    const entry = after.history[i];
+    if (entry.kind !== "GROWTH") continue;
+    if (entry.stage !== "UG" && entry.stage !== "MS") throw new Error(`基础成长记在了 ${entry.stage}`);
+    return {
+      stage: entry.stage,
+      term: entry.termIndex,
+      stats: entry.afterStats,
+      counts: after.focusCounts,
+      points: after.profile.points,
+      flags: after.flags,
+      talents: after.profile.talents,
+      history: after.history.slice(0, i + 1),
+      school: after.school,
+      aspiration: after.profile.aspiration,
+    };
+  }
+  return null;
 }
 
 /** 停在某个阶段（可再限定学期）的判定，用来写 play 的 stop。 */

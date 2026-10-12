@@ -20,6 +20,8 @@ const stats = (money: number, academics: number, career: number, wellbeing: numb
 const counts = (partial: Partial<FocusCounts>): FocusCounts => ({ ...zeroFocusCounts(), ...partial });
 const totalsOf = (...effects: TalentEffects[]): TalentTotals => sumTalentEffects(effects.map((item) => ({ effects: item })));
 const NONE = totalsOf();
+/** 经典模式的档案片段：按经济档查资助表。 */
+const classic = (economy: Economy) => ({ economy, points: null });
 /** 第一版的特质 → 对应固定天赋的效果合计。 */
 const trait = (name: string): TalentTotals => totalsOf(CLASSIC_TALENT_EFFECTS[`T_${name}`]);
 /** 基础安排在给定天赋与身心下实际要应用的向量。 */
@@ -157,9 +159,15 @@ describe("天赋效果的其它作用点（16 §1.3）", () => {
   });
 
   it("stipend 与 upkeep：同类相加，结果不低于 0", () => {
-    expect(effectiveStipend("LOW", NONE)).toBe(6);
-    expect(effectiveStipend("LOW", totalsOf({ stipend: 1 }, { stipend: 2 }, { stipend: 3 }))).toBe(12);
-    expect(effectiveStipend("LOW", totalsOf({ stipend: -3 }, { stipend: -3 }, { stipend: -3 }))).toBe(0);
+    expect(effectiveStipend(classic("LOW"), NONE)).toBe(6);
+    expect(effectiveStipend(classic("LOW"), totalsOf({ stipend: 1 }, { stipend: 2 }, { stipend: 3 }))).toBe(12);
+    expect(effectiveStipend(classic("LOW"), totalsOf({ stipend: -3 }, { stipend: -3 }, { stipend: -3 }))).toBe(0);
+    // 正式玩法：5 + 家境点数，再加天赋
+    const withFamily = (family: number) => ({ economy: "MID" as const, points: { family, academics: 5, career: 5, wellbeing: 5 } });
+    expect(effectiveStipend(withFamily(0), NONE)).toBe(5);
+    expect(effectiveStipend(withFamily(5), NONE)).toBe(10);
+    expect(effectiveStipend(withFamily(10), totalsOf({ stipend: 3 }))).toBe(18);
+    expect(effectiveStipend(withFamily(0), totalsOf({ stipend: -3 }, { stipend: -3 }))).toBe(0);
     expect(effectiveUpkeep(totalsOf({ upkeep: 2 }, { upkeep: 1 }, { upkeep: -1 }))).toBe(14);
     expect(effectiveUpkeep(totalsOf({ upkeep: -2 }, { upkeep: -2 }, { upkeep: -2 }))).toBe(6);
   });
@@ -220,7 +228,7 @@ function baseLoop(economy: Economy, totals: TalentTotals, focuses: Focus[], star
   let current = { ...start };
   const tally = zeroFocusCounts();
   for (const focus of focuses) {
-    current = applyDelta(current, stats(effectiveStipend(economy, totals), 0, 0, 0)).after;
+    current = applyDelta(current, stats(effectiveStipend(classic(economy), totals), 0, 0, 0)).after;
     current = applyDelta(current, vector(focus, totals, current.wellbeing).requested).after;
     tally[focus] += 1;
     current = applyDelta(current, upkeep(current.money, effectiveUpkeep(totals)).requested).after;
@@ -382,7 +390,7 @@ describe("资格与概率（03 §6–§7）", () => {
 
 describe("硕士预算（03 §5.1；资助与开销用天赋生效后的值）", () => {
   const need = (economy: Economy, program: "MS_1Y" | "MS_2Y", totals: TalentTotals = NONE) =>
-    mastersBudget(program, 0, effectiveStipend(economy, totals), effectiveUpkeep(totals)).requiredReserve;
+    mastersBudget(program, 0, effectiveStipend(classic(economy), totals), effectiveUpkeep(totals)).requiredReserve;
 
   it("没有相关天赋时的最低预留：LOW 20/36，MID 12/20，HIGH 8/12", () => {
     expect([need("LOW", "MS_1Y"), need("LOW", "MS_2Y")]).toEqual([20, 36]);
@@ -408,7 +416,7 @@ describe("硕士预算（03 §5.1；资助与开销用天赋生效后的值）",
     for (const economy of ["LOW", "MID", "HIGH"] as Economy[]) {
       for (const totals of [NONE, trait("FRUGAL"), totalsOf({ upkeep: 2 }), totalsOf({ stipend: 2 })]) {
         for (const program of ["MS_1Y", "MS_2Y"] as const) {
-          const stipend = effectiveStipend(economy, totals);
+          const stipend = effectiveStipend(classic(economy), totals);
           const cost = effectiveUpkeep(totals);
           const required = mastersBudget(program, 0, stipend, cost).requiredReserve;
           expect(mastersBudget(program, required - 1, stipend, cost).fundingEligible).toBe(false);

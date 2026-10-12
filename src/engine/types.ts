@@ -21,6 +21,13 @@ export type Trait = "FOCUSED" | "PRACTICAL" | "OUTGOING" | "FRUGAL" | "RESILIENT
 export type TalentRarity = "N" | "R" | "SR" | "SSR";
 /** standard：正式玩法（docs/16）。classic：只给测试用，见 docs/16 第 7 节。 */
 export type RunMode = "standard" | "classic";
+/** 开局分配的四项点数（docs/22 §2），每项 0–10。 */
+export interface Points {
+  family: number;
+  academics: number;
+  career: number;
+  wellbeing: number;
+}
 export type Aspiration = "DISCOVERY" | "INDEPENDENCE" | "BELONGING";
 export type Strategy = "REACH" | "STEADY";
 export type OfferTier = "S" | "A" | "B" | "C" | "D" | "U";
@@ -79,6 +86,8 @@ export interface TalentEffects {
   efficiencyFloor?: 8 | 10;
   arcWeight?: Partial<Record<ArcId, number>>;
   growth?: Partial<Stats>;
+  /** 可分配点数的增减（基础 20）。 */
+  points?: number;
 }
 export interface Talent {
   id: string;
@@ -87,6 +96,81 @@ export interface Talent {
   /** 一句话说明效果，带数字。 */
   text: string;
   effects: TalentEffects;
+  /** 一开始不在十连抽的池子里，要靠每局结束时的随机解锁拿到（docs/22 §7.2）。 */
+  locked?: boolean;
+}
+/**
+ * 结局的触发条件（docs/22 §4）。写了的每一项都必须满足；没写的不限制。
+ * 属性取当时的四属性（去向结局取最终检查点的冻结快照），次数取累计的安排次数。
+ */
+export interface EndingCondition {
+  /** 中途结局：当前学段。去向结局：最终检查点。 */
+  stage?: Degree;
+  /** 中途结局：当前学期的范围（含两端）。 */
+  termMin?: number;
+  termMax?: number;
+  statMin?: Partial<Stats>;
+  statMax?: Partial<Stats>;
+  countMin?: Partial<FocusCounts>;
+  countMax?: Partial<FocusCounts>;
+  pointsMin?: Partial<Points>;
+  pointsMax?: Partial<Points>;
+  /** 必须全部拥有的历史标记。 */
+  flagsAll?: string[];
+  /** 拥有其中任意一张天赋。 */
+  talentsAny?: string[];
+  /** 中途结局：到本学期为止，连续 n 个学期期末出现资金短缺。 */
+  shortfallStreak?: number;
+  /** 中途结局：到本学期为止，连续 n 个学期期末身心为 0。 */
+  zeroWellbeingStreak?: number;
+  /** 学校所在州或属地的邮政缩写在列表里。 */
+  schoolStates?: string[];
+  schoolTiers?: OfferTier[];
+  /** 抽到的个人愿望在列表里。 */
+  aspirations?: Aspiration[];
+  /** 去向结局：过渡期的两种情形。 */
+  transitionMode?: TransitionMode;
+  /** 去向结局：结局卡等级在列表里。 */
+  tiers?: EndingTierId[];
+}
+/** 中途结局（docs/22 §4），内容在 src/content/earlyEndings.json，数组顺序即检查顺序。 */
+export interface EarlyEnding {
+  id: string;
+  tier: EndingTierId;
+  status: EndingStatusId;
+  name: string;
+  roast: string;
+  title: string;
+  text: string;
+  epilogue: string;
+  /** 给玩家看的达成条件（图册里显示），必须与 when、chancePermille 一致。 */
+  condition: string;
+  hint: string;
+  when: EndingCondition;
+  /** 条件满足时每个学期期末的触发概率，千分之几；1000 表示必然。 */
+  chancePermille: number;
+}
+/** 去向结局（docs/22 §5.3）：毕业去向之上的一层“你后来成了什么人”，内容在 src/content/endingFlavors.json。 */
+export interface EndingFlavor {
+  id: string;
+  route: FinalRoute;
+  name: string;
+  roast: string;
+  /** 一两句话的结局描述。 */
+  text: string;
+  hint: string;
+  when: EndingCondition;
+  /** 候选之间的相对权重，1–10。 */
+  weight: number;
+  /** 每个去向恰好一张：没有任何条件的兜底。 */
+  fallback?: boolean;
+}
+/** 成就（docs/23），内容在 src/content/achievements.json。 */
+export interface Achievement {
+  id: string;
+  name: string;
+  grade: TalentRarity;
+  text: string;
 }
 export interface PlanCard {
   /** 五张基础安排的 id 就是类别名。 */
@@ -165,11 +249,13 @@ export interface Profile {
   aspiration: Aspiration;
   /** 选中的天赋 id，按天赋池顺序。standard 恰好 3 张；classic 恰好 1 张特质天赋。 */
   talents: string[];
+  /** standard：开局分配的点数；economy 由家境点数推出。classic 为 null。 */
+  points: Points | null;
 }
 
 export interface AdmissionSnapshot {
   baseReadiness: number;
-  /** 天赋带来的准备度加成（开局即确定）。 */
+  /** 开局即确定的准备度加成：学业点数加上天赋的 readiness（classic 没有点数，只有天赋）。 */
   talentBonus: number;
   /** HS_01 选择带来的加成。 */
   readinessBonus: number | null;
@@ -240,6 +326,10 @@ export interface EpilogueDraw {
 }
 
 export interface EndingCard {
+  /** 中途结局的 id；毕业结局为 null。 */
+  early: string | null;
+  /** 去向结局（如“湾区码农”）；中途结局为 null。 */
+  flavor: null | { id: string; name: string; roast: string; text: string };
   tier: EndingTierId;
   /** 如 "SR＋"。 */
   tierLabel: string;
@@ -262,8 +352,13 @@ export interface EndingCard {
 }
 
 export interface EndingRecord {
-  route: FinalRoute;
-  /** 最终选择发生的检查点。 */
+  /** GRADUATION：走到毕业并确定去向。EARLY：中途结局（docs/22 §4）。 */
+  kind: "GRADUATION" | "EARLY";
+  /** 中途结局为 null。 */
+  route: FinalRoute | null;
+  /** 中途结局的 id；毕业结局为 null。 */
+  early: string | null;
+  /** 最终选择发生的检查点；中途结局是当时所在的学段。 */
   degree: Degree;
   transitionMode: TransitionMode | null;
   entryMode: PhdEntryMode | null;
@@ -291,8 +386,12 @@ interface RunCommon {
 /** 开局：只有 seed 与版本。出身、十张天赋和基础准备度都由 seed 推出，不存进状态。 */
 export interface SetupRun extends RunCommon {
   phase: "SETUP";
-  /** 仅 classic 模式：由调用方指定的经济档（不走出身抽取）。 */
+  /** 仅 classic 模式：由调用方指定的经济档。 */
   classicEconomy?: Economy;
+  /** standard：开局时已解锁的锁定天赋 id（天赋池顺序）。它决定十连抽的池子。 */
+  unlockedTalents: string[];
+  /** standard：上一局选择继承的天赋；十连抽的第一张固定是它。 */
+  inheritedTalent: string | null;
 }
 
 export interface ActiveRun extends RunCommon {
@@ -315,6 +414,9 @@ export interface ActiveRun extends RunCommon {
   history: HistoryEntry[];
   graduations: { UG: Graduation | null; MS: Graduation | null };
   ending: EndingRecord | null;
+  /** 开局时的输入，原样带着走：读档重放与成就判定要用它重新推出这一局的十连抽。 */
+  unlockedTalents?: string[];
+  inheritedTalent?: string | null;
 }
 
 export type RunState = SetupRun | ActiveRun;
@@ -322,7 +424,7 @@ export type RunState = SetupRun | ActiveRun;
 // ---------- 操作 ----------
 
 export type Action =
-  | { type: "CONFIRM_SETUP"; talents: string[] }
+  | { type: "CONFIRM_SETUP"; talents: string[]; points?: Points }
   | { type: "CHOOSE_EVENT"; eventId: string; choiceId: ChoiceId }
   | { type: "CHOOSE_SCHOOL"; unitid: string }
   | { type: "CHOOSE_PLAN"; planId: string }
@@ -380,21 +482,99 @@ export interface Delta {
   applied: Stats;
 }
 
-/** 开局一屏需要的全部信息：抽出来的出身、十张天赋、基础准备度。 */
+/** 开局需要的信息：抽出来的家庭期待与愿望、十张天赋、基础准备度。 */
 export interface SetupView {
   origin: {
-    economy: Economy;
     expectation: Expectation;
     aspiration: Aspiration;
-    /** 经济档的初始四属性（未计天赋）。 */
-    initialStats: Stats;
-    stipend: number;
-    upkeep: number;
   };
-  /** 十连抽的结果，按抽出顺序。 */
+  /** 十连抽的结果，按抽出顺序；有继承天赋时第一张是它。 */
   draw: Talent[];
   pickCount: number;
+  /** 每项点数的上限。 */
+  pointMax: number;
   baseReadiness: number;
+  inherited: string | null;
+}
+
+/** 分点一屏的实时预览：按选中的天赋与当前点数，开局会是什么样。 */
+export interface StartPreview {
+  /** 可分配的总点数（20 加上天赋的 points）。 */
+  pointBudget: number;
+  /** 已分配的点数之和。 */
+  pointsUsed: number;
+  /** 点数合法（每项 0–pointMax 且总和等于 pointBudget）时为 true。 */
+  valid: boolean;
+  economy: Economy;
+  stats: Stats;
+  stipend: number;
+  upkeep: number;
+  /** 基础准备度 + 学业点数 + 天赋加成（不含高中事件的加成）。 */
+  readiness: number;
+}
+
+/** 人生轨迹里的一行。 */
+export interface TimelineLine {
+  kind:
+    | "EVENT" | "PLAN" | "HAPPENING" | "SHORTFALL" | "ADMISSION" | "SCHOOL"
+    | "OPPORTUNITY" | "ROUTE" | "MASTERS" | "EARLY_END" | "FLAVOR";
+  text: string;
+  /** 这一行实际造成的四属性变化；没有数值变化为 null。 */
+  delta: Stats | null;
+}
+/** 人生轨迹里的一段（高三、申请季、每个学期、毕业、中途结局）。 */
+export interface TimelineEntry {
+  /** 稳定的键，如 "HS"、"ADMISSION"、"UG:3"、"GRAD:UG"、"MS:1"、"EARLY"。 */
+  id: string;
+  /** 左侧的时间标签，如 “高三”“申请季”“大二上”“本科毕业”。 */
+  label: string;
+  lines: TimelineLine[];
+  /** 这一段结束时的四属性。 */
+  statsAfter: Stats;
+}
+
+/** 人生总结（docs/22 §5.2）。 */
+export interface SummaryView {
+  seed: number;
+  kind: "GRADUATION" | "EARLY";
+  title: string;
+  /** 学历/去向标签；中途结局是停下的时间点，如 “大三上 · 中途”。 */
+  label: string;
+  /** 毕业结局用 docs/07 的短结局；中途结局用它自己的正文。 */
+  text: string;
+  /** 毕业结局的关键经历一句；中途结局为 null。 */
+  keyExperience: string | null;
+  epilogue: string;
+  school: RuntimeSchool | null;
+  stats: Array<{ key: StatKey; name: string; value: number; rating: string }>;
+  focusSummary: Array<{ focus: Focus; name: string; count: number }>;
+  talents: Talent[];
+  points: Points | null;
+  /** 最终检查点的三路机会；中途结局为空数组。 */
+  opportunities: OpportunityView[];
+  card: EndingCard;
+}
+
+/** 跨局进度的快照（由界面保存，判定成就与解锁时传给引擎）。 */
+export interface ProgressSnapshot {
+  /** 已完成的局数（不含本局）。 */
+  runs: number;
+  /** 各主线等级、隐藏结局、中途结局、去向结局已出现的次数（不含本局）。 */
+  tiers: Record<string, number>;
+  hidden: Record<string, number>;
+  early: Record<string, number>;
+  flavors: Record<string, number>;
+  /** 已得到的成就 id。 */
+  achievements: string[];
+  /** 已解锁的锁定天赋 id。 */
+  unlockedTalents: string[];
+}
+/** 一局结束后的跨局收获。 */
+export interface RunRewards {
+  /** 本局新得到的成就 id，按成就清单顺序。 */
+  achievements: string[];
+  /** 本局新解锁的天赋 id；没有则 null。 */
+  unlockedTalent: string | null;
 }
 
 export interface TierOdds {

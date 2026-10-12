@@ -4,11 +4,12 @@
 import { EVENT_BY_ID } from "../content";
 import { baseReadinessFor, poolCounts, resolveAdmission, sampleOffers } from "./admission";
 import {
-  ALL_TIERS, CONTENT_VERSION, CORE_EVENT_IDS, ECONOMY_ORDER, HIGH_SCHOOL_EVENT_IDS, INITIAL_STATS, MASTERS_PLANS,
-  MASTERS_PROGRAM_ORDER, MIN_POOL_SIZE, OPPORTUNITY_ORDER, RULES_VERSION, STIPEND, TALENT_PICK_CLASSIC,
-  TALENT_PICK_STANDARD, UG_TERMS, UPKEEP_DEFAULT,
+  ALL_TIERS, CONTENT_VERSION, CORE_EVENT_IDS, ECONOMY_ORDER, HIGH_SCHOOL_EVENT_IDS, MASTERS_PLANS,
+  MASTERS_PROGRAM_ORDER, MIN_POOL_SIZE, OPPORTUNITY_ORDER, POINT_MAX, RULES_VERSION, TALENT_PICK_CLASSIC,
+  TALENT_PICK_STANDARD, UG_TERMS,
 } from "./constants";
-import { computeEndingCard } from "./endingCard";
+import { checkEarlyEnding } from "./early";
+import { computeEndingCard, earlyEndingCard } from "./endingCard";
 import { freezeGraduation, mastersBlockers, offeredList, revealGraduation } from "./graduation";
 import {
   basePlans, classicTalents, happeningPool, nodeCandidates, planPool, randomEventPool, talentOrder, talentPool,
@@ -18,7 +19,8 @@ import {
 } from "./rules";
 import type { PlanVector } from "./rules";
 import {
-  drawTalents, effectiveGrowth, effectiveStipend, effectiveUpkeep, initialStatsFor, originFor, totalsFor,
+  drawPool, drawTalents, economyFromFamily, effectiveGrowth, effectiveStipend, effectiveUpkeep, initialStatsFor,
+  normalizeUnlocked, originFor, pointBudget, pointsValid, readinessHeadStart, startStatsFromPoints, totalsFor,
 } from "./talents";
 import type { TalentTotals } from "./talents";
 import { mainSlotEvent, rollHappening, termSlate } from "./terms";
@@ -59,6 +61,8 @@ export function checkCatalog(catalog: RuntimeCatalog): CatalogCheck {
 /**
  * 新开一局，停在 SETUP。目录不合格时抛出 CATALOG_POOL_TOO_SMALL。
  * mode 缺省为 standard；classic（只给测试用，docs/16 第 7 节）必须同时给出 classicEconomy。
+ * standard 可以带上跨局进度里的两样输入：已解锁的锁定天赋（决定十连抽的池子）与上一局选择继承的天赋。
+ * classic 没有十连抽，这两样一律忽略。
  */
 export function createRun(args: {
   seed: number;
@@ -66,6 +70,8 @@ export function createRun(args: {
   catalog: RuntimeCatalog;
   mode?: RunMode;
   classicEconomy?: Economy;
+  unlockedTalents?: string[];
+  inheritedTalent?: string | null;
 }): SetupRun {
   const check = checkCatalog(args.catalog);
   if (!check.ok) throw new Error(`CATALOG_POOL_TOO_SMALL: ${check.message}`);
@@ -78,8 +84,13 @@ export function createRun(args: {
     throw new Error("INVALID_MODE: classic 模式必须指定 classicEconomy");
   }
   if (mode === "standard" && args.classicEconomy !== undefined) {
-    throw new Error("INVALID_MODE: standard 模式的出身是抽出来的，不能指定经济档");
+    throw new Error("INVALID_MODE: standard 模式的家境由分点决定，不能指定经济档");
   }
+  // 已解锁的天赋：只保留确实是锁定天赋的 id，去重，按池内顺序。继承的天赋必须在这一局的池子里，否则当作没有。
+  const unlockedTalents = mode === "standard" ? normalizeUnlocked(talentPool(), args.unlockedTalents) : [];
+  const inherited = mode === "standard" && typeof args.inheritedTalent === "string" ? args.inheritedTalent : null;
+  const inheritedTalent =
+    inherited !== null && drawPool(talentPool(), unlockedTalents).some((talent) => talent.id === inherited) ? inherited : null;
   const run: SetupRun = {
     schemaVersion: 1,
     rulesVersion: RULES_VERSION,
@@ -93,32 +104,45 @@ export function createRun(args: {
     revision: 0,
     mode,
     phase: "SETUP",
+    unlockedTalents,
+    inheritedTalent,
   };
   if (mode === "classic") run.classicEconomy = args.classicEconomy;
   return run;
 }
 
-/** 本局可以选的天赋：standard 是十连抽的结果（按抽出顺序），classic 是六张特质天赋。 */
-function setupDraw(state: SetupRun): { draw: Talent[]; pickCount: number } {
-  if (state.mode === "classic") return { draw: classicTalents(), pickCount: TALENT_PICK_CLASSIC };
-  return { draw: drawTalents(state.seed, talentPool()), pickCount: TALENT_PICK_STANDARD };
+/** 这一局开局时的两样跨局输入（SETUP 之后也原样带着）。 */
+export function runInputs(state: RunState): { unlockedTalents: string[]; inheritedTalent: string | null } {
+  return { unlockedTalents: state.unlockedTalents ?? [], inheritedTalent: state.inheritedTalent ?? null };
 }
 
-/** 开局一屏需要的全部信息：抽出来的出身、可选的天赋、要选几张、基础准备度。 */
+/** 本局可以选的天赋：standard 是十连抽的结果（按抽出顺序，继承的排第一），classic 是六张特质天赋。 */
+export function drawFor(state: Pick<RunState, "seed" | "mode" | "unlockedTalents" | "inheritedTalent">): Talent[] {
+  if (state.mode === "classic") return classicTalents();
+  return drawTalents(state.seed, drawPool(talentPool(), state.unlockedTalents ?? []), undefined, state.inheritedTalent ?? null);
+}
+
+/** 开局需要的信息：抽出来的家庭期待与愿望、可选的天赋、要选几张、每项点数的上限、基础准备度。 */
 export function setupView(state: SetupRun): SetupView {
-  const origin = originFor(state.seed, state.mode === "classic" ? state.classicEconomy : undefined);
-  const { draw, pickCount } = setupDraw(state);
   return {
-    origin: {
-      ...origin,
-      initialStats: copyStats(INITIAL_STATS[origin.economy]),
-      stipend: STIPEND[origin.economy],
-      upkeep: UPKEEP_DEFAULT,
-    },
-    draw,
-    pickCount,
+    origin: originFor(state.seed),
+    draw: drawFor(state),
+    pickCount: state.mode === "classic" ? TALENT_PICK_CLASSIC : TALENT_PICK_STANDARD,
+    pointMax: state.mode === "classic" ? 0 : POINT_MAX,
     baseReadiness: baseReadinessFor(state.seed),
+    inherited: state.inheritedTalent,
   };
+}
+
+/** 这次选的天赋是否合法：数量对、互不相同、都来自本局可选的天赋。返回问题描述或 null。 */
+export function talentPickProblem(state: SetupRun, picked: unknown): string | null {
+  const view = setupView(state);
+  if (!Array.isArray(picked) || !picked.every((id) => typeof id === "string")) return "天赋选择无效。";
+  if (picked.length !== view.pickCount) return `需要恰好选 ${view.pickCount} 张天赋，实际 ${picked.length} 张。`;
+  if (new Set(picked).size !== picked.length) return "选中的天赋不能重复。";
+  const offered = new Set(view.draw.map((talent) => talent.id));
+  if (!picked.every((id) => offered.has(id as string))) return "只能从这一局抽到的天赋里选。";
+  return null;
 }
 
 /** 20–80 的整数。 */
@@ -229,7 +253,7 @@ function record(step: Step, kind: HistoryKind, requested: Stats, extra: Partial<
 function beginTerm(step: Step): void {
   const { draft } = step;
   if (draft.stage !== "UG" && draft.stage !== "MS") fail("WRONG_PHASE", "当前不在学期中。");
-  record(step, "STIPEND", { ...zeroStats(), money: effectiveStipend(draft.profile.economy, step.totals) });
+  record(step, "STIPEND", { ...zeroStats(), money: effectiveStipend(draft.profile, step.totals) });
   if (draft.mode === "standard") {
     const happening = rollHappening(draft.seed, draft.stage, draft.termIndex, happeningPool(), usedHappeningIds(draft));
     if (happening) record(step, "HAPPENING", happening.effects, { happeningId: happening.id });
@@ -249,6 +273,34 @@ function endTerm(step: Step): void {
     upkeep: { cost: result.cost, paid: result.paid, shortfall: result.shortfall, stress: result.stress },
   });
   record(step, "GROWTH", effectiveGrowth(totals));
+  if (draft.mode === "standard") {
+    // 中途结局（docs/22 §4）：期末结算之后、进入下一学期或毕业之前检查；经典模式没有。
+    const hit = checkEarlyEnding(draft.seed, {
+      stage: draft.stage,
+      term: draft.termIndex,
+      stats: draft.stats,
+      counts: draft.focusCounts,
+      points: draft.profile.points,
+      flags: draft.flags,
+      talents: draft.profile.talents,
+      history: draft.history,
+      school: draft.school,
+      aspiration: draft.profile.aspiration,
+    });
+    if (hit) {
+      draft.ending = {
+        kind: "EARLY",
+        route: null,
+        early: hit.ending.id,
+        degree: draft.stage,
+        transitionMode: null,
+        entryMode: null,
+        card: earlyEndingCard(hit),
+      };
+      draft.phase = "ENDING";
+      return;
+    }
+  }
   if (draft.termIndex < termCountOf(draft)) {
     draft.termIndex += 1;
     beginTerm(step);
@@ -274,17 +326,37 @@ function requireActive(state: RunState): ActiveRun {
 
 function confirmSetup(state: RunState, action: Extract<Action, { type: "CONFIRM_SETUP" }>): ActiveRun {
   if (state.phase !== "SETUP") fail("WRONG_PHASE", "开局选择已经确认。");
-  const { draw, pickCount } = setupDraw(state);
-  const picked = action.talents;
-  if (!Array.isArray(picked) || !picked.every((id) => typeof id === "string")) fail("INVALID_ACTION", "天赋选择无效。");
-  if (picked.length !== pickCount) fail("INVALID_ACTION", `需要恰好选 ${pickCount} 张天赋，实际 ${picked.length} 张。`);
-  if (new Set(picked).size !== picked.length) fail("INVALID_ACTION", "选中的天赋不能重复。");
-  const offered = new Set(draw.map((talent) => talent.id));
-  if (!picked.every((id) => offered.has(id))) fail("INVALID_ACTION", "只能从这一局抽到的天赋里选。");
+  const problem = talentPickProblem(state, action.talents);
+  if (problem) fail("INVALID_ACTION", problem);
 
-  const talents = [...picked].sort((a, b) => talentOrder(a) - talentOrder(b));
+  const talents = [...action.talents].sort((a, b) => talentOrder(a) - talentOrder(b));
   const totals = totalsFor(talents);
-  const origin = originFor(state.seed, state.mode === "classic" ? state.classicEconomy : undefined);
+  const origin = originFor(state.seed);
+  let profile: ActiveRun["profile"];
+  let stats: Stats;
+  if (state.mode === "classic") {
+    // 经典模式：没有分点，经济档由调用方给定，开局数值按经济档查表。
+    if (action.points !== undefined) fail("INVALID_ACTION", "经典模式没有分点。");
+    const economy = state.classicEconomy;
+    if (!economy) fail("INVALID_ACTION", "经典模式缺少经济档。");
+    profile = { economy, expectation: origin.expectation, aspiration: origin.aspiration, talents, points: null };
+    stats = initialStatsFor(economy, totals);
+  } else {
+    // 正式玩法：四项点数每项 0–10、总和等于可分配的总点数（20 加上天赋的 points）。
+    const points = action.points;
+    if (!pointsValid(points, totals)) {
+      fail("INVALID_ACTION", `点数无效：每项应为 0–${POINT_MAX} 的整数，总和应恰好为 ${pointBudget(totals)}。`);
+    }
+    const kept = { family: points.family, academics: points.academics, career: points.career, wellbeing: points.wellbeing };
+    profile = {
+      economy: economyFromFamily(kept.family),
+      expectation: origin.expectation,
+      aspiration: origin.aspiration,
+      talents,
+      points: kept,
+    };
+    stats = startStatsFromPoints(kept, totals);
+  }
   return {
     schemaVersion: state.schemaVersion,
     rulesVersion: state.rulesVersion,
@@ -302,14 +374,15 @@ function confirmSetup(state: RunState, action: Extract<Action, { type: "CONFIRM_
     termIndex: 0,
     highSchoolNode: 1,
     mastersYears: null,
-    profile: { economy: origin.economy, expectation: origin.expectation, aspiration: origin.aspiration, talents },
-    stats: initialStatsFor(origin.economy, totals),
+    profile,
+    stats,
     focusCounts: zeroFocusCounts(),
     flags: [],
     arcs: { A: null, B: null },
     admission: {
       baseReadiness: baseReadinessFor(state.seed),
-      talentBonus: totals.readiness,
+      // 开局即确定的准备度加成：学业点数（正式玩法）加上天赋的 readiness。
+      talentBonus: readinessHeadStart(profile.points, totals),
       readinessBonus: null,
       readiness: null,
       strategy: null,
@@ -323,6 +396,8 @@ function confirmSetup(state: RunState, action: Extract<Action, { type: "CONFIRM_
     history: [],
     graduations: { UG: null, MS: null },
     ending: null,
+    unlockedTalents: [...state.unlockedTalents],
+    inheritedTalent: state.inheritedTalent,
   };
 }
 
@@ -445,12 +520,15 @@ function chooseRoute(step: Step, action: Extract<Action, { type: "CHOOSE_ROUTE" 
   const entryMode = route === "PHD" ? (degree === "UG" ? "undergrad_direct" : "masters_entry") : null;
   graduation.resolution = route;
   draft.ending = {
+    kind: "GRADUATION",
     route,
+    early: null,
     degree,
     transitionMode,
     entryMode,
     card: computeEndingCard({
       seed: draft.seed,
+      school: draft.school,
       profile: draft.profile,
       arcs: draft.arcs,
       history: draft.history,
@@ -475,8 +553,9 @@ function enterMasters(step: Step, action: Extract<Action, { type: "ENTER_MASTERS
     action.program,
     undergrad,
     draft.stats.money,
-    effectiveStipend(draft.profile.economy, totals),
+    effectiveStipend(draft.profile, totals),
     effectiveUpkeep(totals),
+    draft.mode === "classic",
   );
   if (blockers.length > 0) fail("MASTERS_NOT_AVAILABLE", `不满足硕士方案条件：${blockers.join(", ")}。`);
   const plan = MASTERS_PLANS[action.program];

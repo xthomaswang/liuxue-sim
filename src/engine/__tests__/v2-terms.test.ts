@@ -1,5 +1,6 @@
 // 第二版的学期（docs/16 §2–§5、§8）：每学期四张安排、每局不同的主线槽、突发小事、没有学期小结的流程。
 // 抽取规则用合成的小池子对照文档伪代码验证；整局行为用真实内容池验证，不写死条数。
+// 第三版起正式玩法里一局可能中途结束（docs/22 §4），所以这里的整局检查都只看“实际走到的那几个学期”。
 
 import { describe, expect, it } from "vitest";
 import { CORE_EVENTS, CORE_VARIANTS, EVENT_BY_ID, HAPPENINGS, PLANS, RANDOM_EVENTS } from "../../content";
@@ -151,6 +152,7 @@ describe("每学期四张安排（16 §2）", () => {
   });
 
   it("名单只由 seed 与学期决定：两种完全不同的玩法看到的每学期安排相同", () => {
+    let compared = 0;
     for (let seed = 1; seed <= 25; seed++) {
       const slates = (policy: Policy) =>
         walk(start(seed), policy)
@@ -158,16 +160,21 @@ describe("每学期四张安排（16 §2）", () => {
           .map((state) => `${state.termIndex}:${focusView(state)?.options.map((option) => option.plan.id).join(",")}`);
       const a = slates(first);
       const b = slates(lastOption);
-      expect(a).toHaveLength(8);
-      expect(a).toEqual(b);
+      // 两种玩法可能在不同的学期中途结束；共同走到的学期里看到的名单必须相同
+      const common = Math.min(a.length, b.length);
+      expect(common).toBeGreaterThanOrEqual(1);
+      expect(a.slice(0, common)).toEqual(b.slice(0, common));
+      compared += common;
       a.forEach((line, index) => expect(line).toBe(`${index + 1}:${termSlate(seed, "UG", index + 1, PLANS).plans.map((plan) => plan.id).join(",")}`));
     }
+    expect(compared).toBeGreaterThan(60);
   });
 
   it("选安排：只能选本学期名单里的；买不起的不可选并写明差额；历史记录类别与安排", () => {
     let paidSeen = 0;
     for (let seed = 1; seed <= 60; seed++) {
       const focus = asActive(play(start(seed), first, at("FOCUS", 2)).state);
+      if (focus.phase !== "FOCUS") continue; // 第 1 学期就中途结束了
       const view = focusView(focus);
       const offered = new Set(view?.options.map((option) => option.plan.id));
       expect(view?.options).toHaveLength(4);
@@ -271,11 +278,13 @@ describe("主线槽事件（16 §3）", () => {
     let middleSlots = 0;
     const variantsSeen = new Set<string>();
     const randomSeen = new Set<string>();
-    const runs = 300;
+    const runs = 500;
     for (let seed = 1; seed <= runs; seed++) {
       const end = asActive(play(start(seed), first, at("GRAD_PREVIEW")).state);
       const main = end.history.filter((entry) => entry.kind === "EVENT" && entry.stage === "UG" && EVENT_BY_ID[entry.eventId ?? ""]?.kind !== "arc");
-      expect(main.map((entry) => entry.termIndex)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+      // 走到毕业的局有八个；中途结束的局是 1…n
+      expect(main.map((entry) => entry.termIndex)).toEqual(main.map((_, index) => index + 1));
+      if (end.phase === "GRAD_PREVIEW") expect(main).toHaveLength(8);
       const used: string[] = [];
       for (const entry of main) {
         const event = EVENT_BY_ID[entry.eventId ?? ""];
@@ -298,7 +307,7 @@ describe("主线槽事件（16 §3）", () => {
       }
       expect(new Set(used).size).toBe(used.length);
     }
-    expect(middleSlots).toBe(runs * 6);
+    expect(middleSlots).toBeGreaterThan(runs * 2); // 中途结束的局学期数少一些，留足余量
     expect(Math.abs(randomSlots / middleSlots - 0.45)).toBeLessThan(0.04);
     // 全部节点候选与全部随机事件都真实出现过
     expect(variantsSeen.size).toBe(CORE_EVENTS.length + CORE_VARIANTS.length);
@@ -329,13 +338,19 @@ describe("主线槽事件（16 §3）", () => {
   });
 
   it("主线槽只由 seed 决定：换安排、换选项都不会让后面的事件错位", () => {
+    let compared = 0;
     for (let seed = 1; seed <= 30; seed++) {
       const sequence = (policy: Policy) =>
         asActive(play(start(seed), policy, at("GRAD_PREVIEW")).state)
           .history.filter((entry) => entry.kind === "EVENT" && entry.stage === "UG" && EVENT_BY_ID[entry.eventId ?? ""]?.kind !== "arc")
           .map((entry) => entry.eventId);
-      expect(sequence(first)).toEqual(sequence(lastOption));
+      const a = sequence(first);
+      const b = sequence(lastOption);
+      const common = Math.min(a.length, b.length);
+      expect(a.slice(0, common)).toEqual(b.slice(0, common));
+      compared += common;
     }
+    expect(compared).toBeGreaterThan(60);
   });
 
   it("经典模式的主线槽固定是 CORE_01–08", () => {
@@ -455,6 +470,7 @@ describe("突发小事（16 §4）", () => {
       const choice = view?.choices.find((option) => option.available && option.choice.effects.money <= 0);
       if (!view || !choice) continue;
       const after = asActive(act(broke, { type: "CHOOSE_EVENT", eventId: view.event.id, choiceId: choice.choice.id }));
+      if (after.phase === "ENDING") continue; // 资金清零后这学期触发了中途结局，换下一个 seed
       expect(after).toMatchObject({ phase: "FOCUS", termIndex: target.termIndex });
       const stipend = after.history.find((h) => h.kind === "STIPEND" && h.termIndex === after.termIndex && h.stage === "UG");
       const happening = after.history.find((h) => h.kind === "HAPPENING" && h.termIndex === after.termIndex && h.stage === "UG");
@@ -481,11 +497,13 @@ describe("突发小事（16 §4）", () => {
 // ---------- 流程与回顾 ----------
 
 describe("学期流程：没有学期小结（16 §5）", () => {
-  it("每一步之后的阶段都在第二版的阶段表里；最后一张事件之后直接到下一学期或毕业预览", () => {
+  it("每一步之后的阶段都在阶段表里；最后一张事件之后直接到下一学期、毕业预览，或在这里中途结束", () => {
     const allowed = ["HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "ENDING"];
-    for (let seed = 1; seed <= 40; seed++) {
+    let graduated = 0;
+    let endedEarly = 0;
+    for (let seed = 1; seed <= 60; seed++) {
       const log: Action[] = [];
-      const end = play(start(seed), first, undefined, log).state;
+      const end = asActive(play(start(seed), first, undefined, log).state);
       expect(end.phase).toBe("ENDING");
       expect(log.some((action) => (action.type as string) === "NEXT_TERM" || (action.type as string) === "CHOOSE_FOCUS")).toBe(false);
       const states = walk(start(seed), first);
@@ -494,29 +512,44 @@ describe("学期流程：没有学期小结（16 §5）", () => {
         expect(allowed).toContain(state.phase);
         if (previous && (previous.phase === "CORE_EVENT" || previous.phase === "ARC_EVENT") && previous.stage === "UG") {
           const hasArc = previous.termIndex >= 2 && previous.termIndex <= 7;
+          const kinds = state.history.filter((entry) => entry.revision === previous?.revision).map((entry) => entry.kind);
           if (previous.phase === "CORE_EVENT" && hasArc) {
             expect(state).toMatchObject({ phase: "ARC_EVENT", termIndex: previous.termIndex });
+          } else if (state.phase === "ENDING") {
+            // 期末结算之后、进入下一学期或毕业之前触发了中途结局：没有资助，没有毕业快照
+            expect(state.ending).toMatchObject({ kind: "EARLY", route: null, degree: "UG" });
+            expect(state.termIndex).toBe(previous.termIndex);
+            expect(kinds).toEqual(["EVENT", "UPKEEP", "GROWTH"]);
+            expect(state.graduations.UG).toBeNull();
           } else if (previous.termIndex < 8) {
             expect(state).toMatchObject({ phase: "FOCUS", termIndex: previous.termIndex + 1 });
             // 同一次操作里：事件 → 必要开销 → 基础成长 → 资助 →（突发小事）
-            const kinds = state.history.filter((entry) => entry.revision === previous?.revision).map((entry) => entry.kind);
             expect(kinds.slice(0, 4)).toEqual(["EVENT", "UPKEEP", "GROWTH", "STIPEND"]);
             expect(kinds.slice(4)).toEqual(kinds.length === 5 ? ["HAPPENING"] : []);
           } else {
             expect(state).toMatchObject({ phase: "GRAD_PREVIEW", termIndex: 8 });
-            const kinds = state.history.filter((entry) => entry.revision === previous?.revision).map((entry) => entry.kind);
             expect(kinds).toEqual(["EVENT", "UPKEEP", "GROWTH"]);
             expect(state.graduations.UG?.frozenStats).toEqual(state.stats);
           }
         }
         previous = state;
       }
-      // 24 次生活决策，没有额外的“继续”
-      expect(log.filter((action) => action.type === "CHOOSE_PLAN" || action.type === "CHOOSE_EVENT")).toHaveLength(24);
-      expect(log.filter((action) => action.type !== "CHOOSE_PLAN" && action.type !== "CHOOSE_EVENT").map((action) => action.type)).toEqual([
-        "CONFIRM_SETUP", "CHOOSE_SCHOOL", "REVEAL_GRADUATION", "CHOOSE_ROUTE",
-      ]);
+      if (end.ending?.kind === "GRADUATION") {
+        graduated++;
+        // 走到毕业的局：24 次生活决策，没有额外的“继续”
+        expect(log.filter((action) => action.type === "CHOOSE_PLAN" || action.type === "CHOOSE_EVENT")).toHaveLength(24);
+        expect(log.filter((action) => action.type !== "CHOOSE_PLAN" && action.type !== "CHOOSE_EVENT").map((action) => action.type)).toEqual([
+          "CONFIRM_SETUP", "CHOOSE_SCHOOL", "REVEAL_GRADUATION", "CHOOSE_ROUTE",
+        ]);
+      } else {
+        endedEarly++;
+        // 中途结束的局：最后一步是某个学期的最后一张事件，之后没有毕业相关的操作
+        expect(log[log.length - 1].type).toBe("CHOOSE_EVENT");
+        expect(log.some((action) => action.type === "REVEAL_GRADUATION" || action.type === "CHOOSE_ROUTE")).toBe(false);
+      }
     }
+    expect(graduated).toBeGreaterThan(0);
+    expect(graduated + endedEarly).toBe(60);
   });
 
   it("阶段标题里没有“学期小结”；账目跟在下一屏：FOCUS 给上一学期，毕业预览给最后一学期", () => {
@@ -553,10 +586,17 @@ describe("学期流程：没有学期小结（16 §5）", () => {
 describe("结局回顾取实际出现的主线槽事件（16 §8）", () => {
   it("本科第 1、4、8 学期主线槽里实际出现的那张；条数不变；带上本局的三张天赋", () => {
     let nonOriginal = 0;
-    for (let seed = 1; seed <= 80; seed++) {
+    let graduated = 0;
+    // 中途结局的多少取决于内容；一直找到凑够 30 局走到毕业的为止
+    for (let seed = 1; graduated < 30 && seed <= 5000; seed++) {
       const end = asActive(play(start(seed), first).state);
       const view = endingView(end);
+      if (end.ending?.kind !== "GRADUATION") {
+        expect(view).toBeNull(); // 中途结局没有 docs/07 的回顾
+        continue;
+      }
       if (!view) throw new Error("没有结局视图");
+      graduated++;
       const mainOf = (term: number) =>
         end.history.find((entry) => entry.kind === "EVENT" && entry.stage === "UG" && entry.termIndex === term && EVENT_BY_ID[entry.eventId ?? ""]?.kind !== "arc")?.eventId;
       const expected = ["HS_01", "HS_02", mainOf(1), mainOf(4), `ARC_${end.arcs.A}_3`, `ARC_${end.arcs.B}_3`, mainOf(8)];
@@ -573,6 +613,7 @@ describe("结局回顾取实际出现的主线槽事件（16 §8）", () => {
       expect(view.talents.map((talent) => talent.id)).toEqual(end.profile.talents);
       expect(view.short.keyExperience.startsWith("你记得「")).toBe(true);
     }
-    expect(nonOriginal).toBeGreaterThan(40); // 多数局的回顾里出现了变体或随机事件
+    expect(graduated).toBe(30);
+    expect(nonOriginal).toBeGreaterThan(graduated / 2); // 多数局的回顾里出现了变体或随机事件
   });
 });

@@ -7,9 +7,11 @@ import {
   ALL_TIERS, ARC_ORDER, ASPIRATION_ORDER, CONTENT_VERSION, ECONOMY_ORDER, EXPECTATION_ORDER, FOCUS_ORDER, OFFER_COUNT,
   RULES_VERSION, SAVE_FORMAT, STAT_KEYS, STAT_MAX, STAT_MIN, TALENT_PICK_CLASSIC, TALENT_PICK_STANDARD, UG_TERMS,
 } from "./constants";
-import { findTalent } from "./pools";
+import { findEarlyEnding } from "./early";
+import { findTalent, talentPool } from "./pools";
 import { applyAction, createRun } from "./reducer";
 import { totalFocus } from "./rules";
+import { drawPool, economyFromFamily, normalizeUnlocked, pointsWellFormed } from "./talents";
 import type {
   Action, ActiveRun, Economy, EngineContext, LoadResult, Phase, RunMode, RunState, SaveEnvelope,
 } from "./types";
@@ -39,9 +41,18 @@ export function serializeSave(state: RunState, log: Action[]): string {
 /**
  * 从 seed 重放整段操作，返回最终状态；任何一步被拒绝则抛错。
  * mode 缺省为 standard；重放 classic 模式的局要同时给出 classicEconomy。
+ * 正式玩法的十连抽还取决于开局时已解锁的天赋与继承的天赋，重放时要原样给出。
  */
 export function replay(
-  args: { seed: number; runId: string; log: Action[]; mode?: RunMode; classicEconomy?: Economy },
+  args: {
+    seed: number;
+    runId: string;
+    log: Action[];
+    mode?: RunMode;
+    classicEconomy?: Economy;
+    unlockedTalents?: string[];
+    inheritedTalent?: string | null;
+  },
   ctx: EngineContext,
 ): RunState {
   let state: RunState = createRun({
@@ -50,6 +61,8 @@ export function replay(
     catalog: ctx.catalog,
     mode: args.mode,
     classicEconomy: args.classicEconomy,
+    unlockedTalents: args.unlockedTalents,
+    inheritedTalent: args.inheritedTalent,
   });
   args.log.forEach((action, index) => {
     const result = applyAction(state, { ...action, revision: state.revision }, ctx);
@@ -89,6 +102,16 @@ export function invariantProblem(state: unknown): string | null {
   if (typeof state.runId !== "string") return "runId 无效";
   if (!isInt(state.revision) || state.revision < 0) return "revision 无效";
   if (!MODES.includes(state.mode as RunMode)) return "mode 无效";
+  // 开局时的两样跨局输入：已解锁的锁定天赋（规整过的列表）与继承的天赋（必须在这一局的池子里）。
+  const unlocked = state.unlockedTalents;
+  if (!Array.isArray(unlocked) || !unlocked.every((id) => typeof id === "string")) return "unlockedTalents 无效";
+  if (normalizeUnlocked(talentPool(), unlocked as string[]).join(",") !== (unlocked as string[]).join(",")) return "unlockedTalents 不是规整的锁定天赋列表";
+  const inherited = state.inheritedTalent;
+  if (!(inherited === null || typeof inherited === "string")) return "inheritedTalent 无效";
+  if (typeof inherited === "string" && !drawPool(talentPool(), unlocked as string[]).some((talent) => talent.id === inherited)) {
+    return "继承的天赋不在这一局的池子里";
+  }
+  if (state.mode === "classic" && ((unlocked as string[]).length > 0 || inherited !== null)) return "classic 模式没有解锁与继承";
   if (state.phase === "SETUP") {
     if (state.mode === "classic" && !ECONOMY_ORDER.includes(state.classicEconomy as never)) return "classic 模式缺少经济档";
     if (state.mode === "standard" && state.classicEconomy !== undefined) return "standard 模式不应指定经济档";
@@ -106,6 +129,13 @@ export function invariantProblem(state: unknown): string | null {
   if (talents.length !== (state.mode === "classic" ? TALENT_PICK_CLASSIC : TALENT_PICK_STANDARD)) return "天赋数量不对";
   if (new Set(talents).size !== talents.length) return "天赋有重复";
   if (!talents.every((id) => findTalent(id) !== undefined)) return "天赋不在天赋池里";
+  // 分点：正式玩法必须有四项 0–10 的整数，经济档由家境点数推出；经典模式没有分点。
+  if (state.mode === "classic") {
+    if (profile.points !== null) return "classic 模式不应有分点";
+  } else {
+    if (!pointsWellFormed(profile.points)) return "profile.points 无效";
+    if (economyFromFamily(profile.points.family) !== profile.economy) return "经济档与家境点数不符";
+  }
 
   const stats = statsProblem(state.stats, "stats");
   if (stats) return stats;
@@ -161,7 +191,8 @@ export function invariantProblem(state: unknown): string | null {
     const before = stage === "UG" ? 0 : UG_TERMS;
     const expected = before + run.termIndex - (phase === "FOCUS" ? 1 : 0);
     if (total !== expected) return `安排次数 ${total} 与学段进度不符（应为 ${expected}）`;
-    if ((phase === "GRAD_PREVIEW" || phase === "GRAD_RESULTS" || phase === "ENDING") && run.termIndex !== termCount) {
+    const earlyEnd = phase === "ENDING" && isRecord(state.ending) && state.ending.kind === "EARLY";
+    if ((phase === "GRAD_PREVIEW" || phase === "GRAD_RESULTS" || (phase === "ENDING" && !earlyEnd)) && run.termIndex !== termCount) {
       return "毕业阶段的 termIndex 不在最后一学期";
     }
     if (stage === "MS" && !run.graduations.UG) return "硕士阶段缺少本科毕业快照";
@@ -178,8 +209,21 @@ export function invariantProblem(state: unknown): string | null {
     if (new Set((state.offers as Array<Record<string, unknown>>).map((offer) => offer.tier)).size !== 1) return "offers 不同档";
     if (run.school && !ids.has(run.school.unitid)) return "所选学校不在 offers 中";
   }
-  if (phase === "ENDING" && !isRecord(state.ending)) return "结局记录缺失";
-  if (phase !== "ENDING" && state.ending !== null) return "尚未终局却已有结局记录";
+  if (phase !== "ENDING") return state.ending !== null ? "尚未终局却已有结局记录" : null;
+  const ending = state.ending;
+  if (!isRecord(ending) || !isRecord(ending.card)) return "结局记录缺失";
+  if (ending.kind === "EARLY") {
+    // 中途结局：没有去向，id 必须是内容表里的；只出现在正式玩法里。
+    if (state.mode !== "standard") return "classic 模式没有中途结局";
+    if (ending.route !== null || findEarlyEnding(ending.early as string) === undefined) return "中途结局记录无效";
+    if (ending.card.early !== ending.early) return "中途结局与结局卡不符";
+  } else if (ending.kind === "GRADUATION") {
+    if (ending.early !== null || ending.card.early !== null) return "毕业结局不应带中途结局";
+    if (!["PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION"].includes(ending.route as string)) return "毕业结局的去向无效";
+    if (!run.graduations[run.stage === "MS" ? "MS" : "UG"]) return "毕业结局缺少毕业快照";
+  } else {
+    return "结局类型无效";
+  }
   return null;
 }
 
@@ -234,6 +278,8 @@ export function loadSave(text: string, ctx: EngineContext): LoadResult {
         mode: typedState.mode,
         classicEconomy:
           typedState.mode !== "classic" ? undefined : typedState.phase === "SETUP" ? typedState.classicEconomy : typedState.profile.economy,
+        unlockedTalents: typedState.unlockedTalents ?? [],
+        inheritedTalent: typedState.inheritedTalent ?? null,
       },
       ctx,
     );

@@ -209,17 +209,22 @@ export function mastersBudget(program: MastersProgram, money: number, stipend: n
 
 export type MastersBlocker = "HAS_JOB_OFFER" | "ACADEMICS_BELOW_55" | "FUNDS_SHORT";
 
-/** 本科检查点能否进入某个硕士方案；返回全部不满足的条件。 */
+/**
+ * 本科检查点能否进入某个硕士方案；返回全部不满足的条件。
+ * jobOfferBlocks：第一版（经典模式）里只要取得了任一种工作机会就不开放硕士；
+ * 第三版的正式玩法放宽了这一条（docs/22 §3.4），只看学业与预算。
+ */
 export function mastersBlockers(
   program: MastersProgram,
   undergrad: Graduation,
   money: number,
   stipend: number,
   cost: number,
+  jobOfferBlocks: boolean = true,
 ): MastersBlocker[] {
   const blockers: MastersBlocker[] = [];
   const outcomes = undergrad.outcomes;
-  if (outcomes && (outcomes.LOCAL_JOB === "OFFERED" || outcomes.HOME_JOB === "OFFERED")) blockers.push("HAS_JOB_OFFER");
+  if (jobOfferBlocks && outcomes && (outcomes.LOCAL_JOB === "OFFERED" || outcomes.HOME_JOB === "OFFERED")) blockers.push("HAS_JOB_OFFER");
   if (undergrad.frozenStats.academics < MASTERS_ACADEMICS_MIN) blockers.push("ACADEMICS_BELOW_55");
   if (!mastersBudget(program, money, stipend, cost).fundingEligible) blockers.push("FUNDS_SHORT");
   return blockers;

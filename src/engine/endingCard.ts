@@ -6,13 +6,18 @@ import {
   CARD, EPILOGUE, FLAG_CREATIVE_WORK, FLAG_MASTERS_REPORT, FLAG_RESEARCH_REPORT, OPPORTUNITY_ORDER,
 } from "./constants";
 import { draw01 } from "./rng";
+import type { ConditionContext } from "./conditions";
+import { pickFlavor } from "./early";
+import type { EarlyHit } from "./early";
 import type {
   ArcId, Degree, EndingCard, EndingStatusId, EndingTierId, EpilogueDraw, FinalRoute, Graduation, HiddenEndingId,
-  HistoryEntry, Opportunity, Profile, TransitionMode,
+  HistoryEntry, Opportunity, Profile, RuntimeSchool, TransitionMode,
 } from "./types";
 
 export interface EndingCardInput {
   seed: number;
+  /** 学校（去向结局的条件可能用到所在州与档次）；缺省为没有。 */
+  school?: RuntimeSchool | null;
   profile: Profile;
   arcs: { A: ArcId | null; B: ArcId | null };
   history: readonly HistoryEntry[];
@@ -192,7 +197,26 @@ export function computeEndingCard(input: EndingCardInput): EndingCard {
   const statusLabel = ENDING_CARDS.status[status];
   const combo = [content.label, ...hidden.filter((entry) => entry.id !== "H12").map((entry) => entry.id), statusLabel].join("＋");
 
+  // 去向结局（docs/22 §5.2）：在等级、隐藏标签都定下来之后再起一个更具体的名字；不改变它们，也不改任何数值。
+  const flavorContext: ConditionContext = {
+    stage: degree,
+    term: degree === "UG" ? 8 : Math.max(1, input.history.filter((entry) => entry.stage === "MS" && entry.kind === "GROWTH").length),
+    stats: checkpoint.frozenStats,
+    counts,
+    points: profile.points,
+    flags,
+    talents: profile.talents,
+    history: input.history,
+    school: input.school ?? null,
+    aspiration: profile.aspiration,
+    transitionMode,
+    tier,
+  };
+  const flavor = pickFlavor(seed, route, flavorContext);
+
   return {
+    early: null,
+    flavor: flavor ? { id: flavor.id, name: flavor.name, roast: flavor.roast, text: flavor.text } : null,
     tier,
     tierLabel: content.label,
     tierKind: content.kind,
@@ -204,5 +228,31 @@ export function computeEndingCard(input: EndingCardInput): EndingCard {
     statusLabel,
     combo,
     draws,
+  };
+}
+
+/**
+ * 中途结局的卡片（docs/22 第 4 节）：等级与完结状态取内容表，沿用该档的标签与类别，
+ * 名称与吐槽用中途结局自己的；没有隐藏标签；组合写法照旧。
+ */
+export function earlyEndingCard(hit: EarlyHit): EndingCard {
+  const content = ENDING_CARDS.tiers.find((entry) => entry.id === hit.ending.tier);
+  if (!content) throw new Error(`ENDING_CARD_CONTENT_MISSING: ${hit.ending.tier}`);
+  const statusLabel = ENDING_CARDS.status[hit.ending.status];
+  if (!statusLabel) throw new Error(`ENDING_CARD_STATUS_MISSING: ${hit.ending.status}`);
+  return {
+    early: hit.ending.id,
+    flavor: null,
+    tier: hit.ending.tier,
+    tierLabel: content.label,
+    tierKind: content.kind,
+    name: hit.ending.name,
+    roast: hit.ending.roast,
+    facts: [...hit.facts],
+    hidden: [],
+    status: hit.ending.status,
+    statusLabel,
+    combo: [content.label, statusLabel].join("＋"),
+    draws: hit.draws.map((draw) => ({ ...draw })),
   };
 }

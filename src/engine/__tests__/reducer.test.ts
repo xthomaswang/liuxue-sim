@@ -147,16 +147,18 @@ describe("经典模式的开局与高中（06 §1、13 §1、16 §7）", () => {
     expect(stageInfo(setup)).toMatchObject({ stage: "SETUP", title: "开局" });
     expect(admissionPreview(setup)).toMatchObject({ baseReadiness: 65, talentBonus: 0, readinessSoFar: 65 });
     const view = setupView(setup);
-    expect(view.origin.economy).toBe("MID");
-    expect(view.origin.initialStats).toEqual(stats(42, 18, 12, 70));
-    expect(view.origin).toMatchObject({ stipend: 10, upkeep: 12 });
+    expect(Object.keys(view.origin).sort()).toEqual(["aspiration", "expectation"]);
     expect(view.draw.map((talent) => talent.id)).toEqual(["T_FOCUSED", "T_PRACTICAL", "T_OUTGOING", "T_FRUGAL", "T_RESILIENT", "T_REFLECTIVE"]);
     expect(view.pickCount).toBe(1);
+    expect(view.pointMax).toBe(0); // 经典模式没有分点
+    expect(view.inherited).toBeNull();
     expect(view.baseReadiness).toBe(65);
+    // 经典模式不带解锁与继承
+    expect(setup).toMatchObject({ unlockedTalents: [], inheritedTalent: null });
 
     const run = asActive(act(setup, { type: "CONFIRM_SETUP", talents: ["T_FOCUSED"] }));
     expect(run).toMatchObject({ phase: "HIGH_SCHOOL_EVENT", revision: 1, stage: "HS", highSchoolNode: 1, mode: "classic" });
-    expect(run.profile).toEqual({ economy: "MID", expectation: view.origin.expectation, aspiration: view.origin.aspiration, talents: ["T_FOCUSED"] });
+    expect(run.profile).toEqual({ economy: "MID", expectation: view.origin.expectation, aspiration: view.origin.aspiration, talents: ["T_FOCUSED"], points: null });
     expect(run.stats).toEqual(stats(42, 18, 12, 70));
     expect(run.admission).toMatchObject({ baseReadiness: 65, talentBonus: 0, readiness: null, tier: null });
     expect(run.school).toBeNull();
@@ -173,6 +175,9 @@ describe("经典模式的开局与高中（06 §1、13 §1、16 §7）", () => {
       expect(result.ok ? "OK" : result.error.code).toBe("INVALID_ACTION");
       expect(result.state).toBe(setup);
     }
+    // 经典模式没有分点：带了点数也被拒绝
+    const withPoints = tryAct(setup, { type: "CONFIRM_SETUP", talents: ["T_FOCUSED"], points: { family: 5, academics: 5, career: 5, wellbeing: 5 } });
+    expect(withPoints.ok ? "OK" : withPoints.error.code).toBe("INVALID_ACTION");
   });
 
   it("高中只结算两张事件：不发资助、不计安排、不扣费；属性原样带入本科", () => {

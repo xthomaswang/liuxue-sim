@@ -1,0 +1,543 @@
+[
+  {
+    "id": "F_LOCAL_DEFAULT",
+    "route": "LOCAL_JOB",
+    "name": "OPT 打工人",
+    "roast": "工牌到手，身份倒计时同步开始。",
+    "text": "你留在美国上班，日历上除了发薪日，还圈着几个和身份有关的日期。",
+    "hint": "留美工作最普通的样子。",
+    "when": {},
+    "weight": 3,
+    "fallback": true
+  },
+  {
+    "id": "F_BAY_CODER",
+    "route": "LOCAL_JOB",
+    "name": "湾区码农",
+    "roast": "房租吃掉一半工资，剩下一半拿去买牛油果。",
+    "text": "你在湾区写代码，工位靠窗，窗外是高速公路。周末的活动是排队吃拉面，顺便聊聊谁又跳槽了。",
+    "hint": "学校在阳光最多的那个西海岸大州。",
+    "when": {
+      "schoolStates": [
+        "CA"
+      ]
+    },
+    "weight": 8
+  },
+  {
+    "id": "F_WEST_CODER",
+    "route": "LOCAL_JOB",
+    "name": "西漂码农",
+    "roast": "不管当初学的是什么，最后写的都是代码。",
+    "text": "毕业后你一路向西，行李里有一半是面试题。入职第一周，你学会了在站会上把“没做完”说成“在推进”。",
+    "hint": "职业积累冲得非常高。",
+    "when": {
+      "statMin": {
+        "career": 88
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "F_NYC_WORKER",
+    "route": "LOCAL_JOB",
+    "name": "纽约打工人",
+    "roast": "地铁晚点是日常，准点才值得发朋友圈。",
+    "text": "你挤进了纽约的早高峰。合租的房间放下床就放不下桌子，好在楼下的贝果确实好吃。",
+    "hint": "学校在大苹果附近。",
+    "when": {
+      "schoolStates": [
+        "NY",
+        "NJ",
+        "CT"
+      ]
+    },
+    "weight": 8
+  },
+  {
+    "id": "F_WALL_STREET",
+    "route": "LOCAL_JOB",
+    "name": "华尔街表格侠",
+    "roast": "年薪写在合同上，时薪不敢算。",
+    "text": "你的工作是把表格做成别人看得懂的样子，通常在凌晨两点。西装是租房那天一起买的，一直没空送去干洗。",
+    "hint": "东北部的学校，职业积累接近拉满。",
+    "when": {
+      "schoolStates": [
+        "NY",
+        "NJ",
+        "CT",
+        "MA",
+        "PA"
+      ],
+      "statMin": {
+        "career": 90
+      }
+    },
+    "weight": 7
+  },
+  {
+    "id": "F_SEATTLE",
+    "route": "LOCAL_JOB",
+    "name": "西雅图雨中牛马",
+    "roast": "这里不怎么下大雨，只是一直在下。",
+    "text": "你留在了西雅图。一年有九个月是阴天，于是你养成了两个习惯：喝咖啡，以及半夜回工作消息。",
+    "hint": "学校在常年下雨的那个州。",
+    "when": {
+      "schoolStates": [
+        "WA"
+      ]
+    },
+    "weight": 8
+  },
+  {
+    "id": "F_TEXAS",
+    "route": "LOCAL_JOB",
+    "name": "德州牛仔工程师",
+    "roast": "没有州税，也没有人行道。",
+    "text": "你留在了德州，买了人生第一辆皮卡。烤肉很好吃，夏天很长，去哪儿都要开四十分钟。",
+    "hint": "学校在什么都很大的那个州。",
+    "when": {
+      "schoolStates": [
+        "TX"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "F_MIDWEST",
+    "route": "LOCAL_JOB",
+    "name": "中部大农村村民",
+    "roast": "方圆十里，最热闹的地方是超市。",
+    "text": "你留在了中部的小城。房子大，物价低，窗外是看不到头的玉米地。朋友来玩，你带他们逛了超市。",
+    "hint": "学校在中西部的大平原上。",
+    "when": {
+      "schoolStates": [
+        "OH",
+        "MI",
+        "IN",
+        "IL",
+        "WI",
+        "MN",
+        "IA",
+        "MO",
+        "KS",
+        "NE",
+        "ND",
+        "SD"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "F_PPT_WORKER",
+    "route": "LOCAL_JOB",
+    "name": "PPT民工",
+    "roast": "方案改到第十七版，客户说还是第一版好。",
+    "text": "你进了咨询行业，每周飞一座不认识的城市。你最熟练的技能是对齐，其次是把三句话讲成三十页。",
+    "hint": "校园活动没少参加，职业积累也过得去。",
+    "when": {
+      "countMin": {
+        "CAMPUS": 3
+      },
+      "statMin": {
+        "career": 60
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "F_LAB_TECH",
+    "route": "LOCAL_JOB",
+    "name": "实验室洗瓶工",
+    "roast": "读了那么多书，现在主要负责不让仪器报警。",
+    "text": "你在一间实验室找到了技术岗。每天开机、记录、洗瓶子，偶尔帮博士生看一眼他们的数据。",
+    "hint": "学业很高，职业积累一般，人留在了美国。",
+    "when": {
+      "statMin": {
+        "academics": 80
+      },
+      "statMax": {
+        "career": 75
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_STATUS_ANXIETY",
+    "route": "LOCAL_JOB",
+    "name": "身份焦虑永动机",
+    "roast": "工作稳定，心态稳定，只有身份还在加载。",
+    "text": "你的工作不错，日子也过得去。只是每年春天你都格外迷信，会在某个日子反复刷新邮箱。",
+    "hint": "什么都准备好了，只差一点运气。",
+    "when": {
+      "tiers": [
+        "SR_PLUS"
+      ],
+      "statMin": {
+        "career": 70,
+        "wellbeing": 40
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_TAILWIND",
+    "route": "LOCAL_JOB",
+    "name": "顺风局选手",
+    "roast": "别问经验，问就是运气好。",
+    "text": "该顺的事都顺了。你自己也说不清哪一步做对了，学弟学妹来问经验，你只好请他们喝咖啡。",
+    "hint": "留美结局里最顺的那一种。",
+    "when": {
+      "tiers": [
+        "SSR"
+      ]
+    },
+    "weight": 9
+  },
+  {
+    "id": "F_LAYOFF_RESERVE",
+    "route": "LOCAL_JOB",
+    "name": "被裁预备役",
+    "roast": "每封全员邮件，都先看标题里有没有“调整”。",
+    "text": "你上岸了，但没敢松劲。简历一直是最新版，工位上的私人物品一个纸箱就能装走。",
+    "hint": "工作到手了，人也快耗尽了。",
+    "when": {
+      "statMin": {
+        "career": 60
+      },
+      "statMax": {
+        "wellbeing": 30
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_HOME_DEFAULT",
+    "route": "HOME_JOB",
+    "name": "海归打工人",
+    "roast": "简历上多了一行英文，地铁还是那条地铁。",
+    "text": "你回国入职，工位上的绿植是前任留下的。同事问起留学，你想了想，说挺好的。",
+    "hint": "回国工作最普通的样子。",
+    "when": {},
+    "weight": 3,
+    "fallback": true
+  },
+  {
+    "id": "F_BIGTECH_996",
+    "route": "HOME_JOB",
+    "name": "大厂996",
+    "roast": "福报是公司的，颈椎是自己的。",
+    "text": "你进了大厂，工牌绳的颜色代表职级。晚上十点的班车坐满了人，大家都在低头回消息。",
+    "hint": "带着很高的职业积累回了国。",
+    "when": {
+      "statMin": {
+        "career": 85
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_CIVIL_SERVICE",
+    "route": "HOME_JOB",
+    "name": "考公上岸",
+    "roast": "出国绕了一大圈，终点是家门口的单位。",
+    "text": "你回国备考，一次上岸。亲戚们终于不再问你在国外学的是什么，改口夸你稳重。",
+    "hint": "想过安稳日子，书也读得不错。",
+    "when": {
+      "aspirations": [
+        "BELONGING"
+      ],
+      "statMin": {
+        "academics": 70
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_SOE_SCREW",
+    "route": "HOME_JOB",
+    "name": "国企螺丝钉",
+    "roast": "面试只问了一句：家里人最近都好吧。",
+    "text": "家里早就打过招呼。你每天八点半到岗、五点半下班，办公室那罐茶叶的资历比你老得多。",
+    "hint": "家境分得够多。",
+    "when": {
+      "pointsMin": {
+        "family": 7
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_CRAM_TEACHER",
+    "route": "HOME_JOB",
+    "name": "教培名师",
+    "roast": "把自己踩过的坑，做成了一门课。",
+    "text": "你成了培训机构的老师，教别人怎么考出去。学生叫你名师，你的海报挂在电梯里，修过图。",
+    "hint": "很会读书，不太会找工作。",
+    "when": {
+      "statMin": {
+        "academics": 80
+      },
+      "statMax": {
+        "career": 70
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_STUDY_AGENT",
+    "route": "HOME_JOB",
+    "name": "留学顾问",
+    "roast": "申请季淋过的雨，现在按小时收费。",
+    "text": "申请了三轮之后，你发现自己最熟的就是申请。你入职一家留学机构，第一单客户是亲戚家的孩子。",
+    "hint": "读完硕士才回的国。",
+    "when": {
+      "stage": "MS"
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_FOUNDER",
+    "route": "HOME_JOB",
+    "name": "海归创业者",
+    "roast": "名片上印着创始人，办公室是自家客厅。",
+    "text": "你带着一个想法回国创业。融资计划写了很多版，目前最大的投资人还是家里。",
+    "hint": "职业拉得很高，家里也有点底气。",
+    "when": {
+      "statMin": {
+        "career": 90
+      },
+      "pointsMin": {
+        "family": 6
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_LANDLORD",
+    "route": "HOME_JOB",
+    "name": "回家收租",
+    "roast": "学成归来，继承了一串钥匙。",
+    "text": "你回国找了份清闲的工作，主要收入来自每月一号。你常说留学改变了自己，比如学会了看合同。",
+    "hint": "家境几乎拉满。",
+    "when": {
+      "pointsMin": {
+        "family": 9
+      }
+    },
+    "weight": 8
+  },
+  {
+    "id": "F_SALTED_FISH",
+    "route": "HOME_JOB",
+    "name": "体制内咸鱼",
+    "roast": "下午三点的会议室，适合思考人生。",
+    "text": "你找了份不太忙的工作。保温杯是入职时发的，现在里面泡着枸杞。你觉得这样也挺好。",
+    "hint": "状态很好，野心不大。",
+    "when": {
+      "statMin": {
+        "wellbeing": 60
+      },
+      "statMax": {
+        "career": 70
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_NEW_TIER_ONE",
+    "route": "HOME_JOB",
+    "name": "新一线打工人",
+    "roast": "一线的房租劝退，老家的工作也劝退。",
+    "text": "算了一笔账之后，你去了一座新一线城市。工资不算高，但通勤只要二十分钟，周末还能回家吃饭。",
+    "hint": "毕业时兜里没剩几个钱。",
+    "when": {
+      "statMax": {
+        "money": 15
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "F_BLIND_DATE",
+    "route": "HOME_JOB",
+    "name": "相亲硬通货",
+    "roast": "简历投给了公司，也被亲戚投给了相亲对象。",
+    "text": "你回国安顿下来。海归加稳定工作，让你在亲戚的介绍名单里排到了第一页，周末总是有安排。",
+    "hint": "爱热闹，状态也不错，人回了国。",
+    "when": {
+      "countMin": {
+        "CAMPUS": 3
+      },
+      "statMin": {
+        "wellbeing": 50
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "F_PHD_DEFAULT",
+    "route": "PHD",
+    "name": "学术民工",
+    "roast": "恭喜入学，工期五年起，上不封顶。",
+    "text": "你成了一名博士生，工位在实验室最里面那张。导师说，先读文献。",
+    "hint": "读博最普通的样子。",
+    "when": {},
+    "weight": 3,
+    "fallback": true
+  },
+  {
+    "id": "F_FOREVER_POSTDOC",
+    "route": "PHD",
+    "name": "千老预备役",
+    "roast": "热爱科研的人，往往要爱很久。",
+    "text": "你是那种真心喜欢做研究的人。师兄师姐提醒你这条路很长，你点点头，转身又进了实验室。",
+    "hint": "学业拉满，时间几乎都给了学习。",
+    "when": {
+      "statMin": {
+        "academics": 95
+      },
+      "countMin": {
+        "STUDY": 5
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_CAREER_SWITCHER",
+    "route": "PHD",
+    "name": "转码预备役",
+    "roast": "论文写不下去的时候，就去刷两道题。",
+    "text": "你读着博，浏览器里却常开着招聘页面。导师问你周末在忙什么，你说在学一点编程。",
+    "hint": "读博的人里，职业积累偏高的那种。",
+    "when": {
+      "statMin": {
+        "career": 70
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_ETERNAL_STUDENT",
+    "route": "PHD",
+    "name": "实验室钉子户",
+    "roast": "读完硕士接着读博，学生证一续再续。",
+    "text": "硕士读完，你又接着读博。算下来，你当学生的时间已经比很多人的工龄还长，学生优惠用得炉火纯青。",
+    "hint": "读完硕士，又接着读。",
+    "when": {
+      "stage": "MS"
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_PAPER_TAILOR",
+    "route": "PHD",
+    "name": "论文裁缝",
+    "roast": "一份数据，三种讲法，各投一处。",
+    "text": "本科那份小报告成了你的起点。你学会了把一个结果拆开来讲，也学会了在致谢里写很长的名单。",
+    "hint": "本科时就交出过一份研究报告。",
+    "when": {
+      "flagsAll": [
+        "ARC_RESEARCH_3_A"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_DELAY_CANDIDATE",
+    "route": "PHD",
+    "name": "延毕候选人",
+    "roast": "录取是录取了，毕业是另一回事。",
+    "text": "你拿到了博士录取，自己也有点意外。第一次组会上，你发现要补的东西比想象的多得多。",
+    "hint": "学业不算高，却拿到了博士录取。",
+    "when": {
+      "statMax": {
+        "academics": 88
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_GAP_DEFAULT",
+    "route": "TRANSITION",
+    "name": "海待",
+    "roast": "海归和海待，只差一份 offer。",
+    "text": "你回到家，行李箱在房间角落立了很久。下一步是什么，你还在想。",
+    "hint": "过渡期最普通的样子。",
+    "when": {},
+    "weight": 3,
+    "fallback": true
+  },
+  {
+    "id": "F_FULLTIME_CHILD",
+    "route": "TRANSITION",
+    "name": "全职儿女",
+    "roast": "岗位：子女。薪资：面议。考核：按时吃饭。",
+    "text": "你搬回了自己的房间。每天买菜、做饭、陪家里人散步，零花钱按月到账。家里说，不着急。",
+    "hint": "家境还不错，也没有急着找去处。",
+    "when": {
+      "pointsMin": {
+        "family": 6
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_BACKPACKER",
+    "route": "TRANSITION",
+    "name": "间隔年背包客",
+    "roast": "offer 先放着，世界先看看。",
+    "text": "你把手里的机会都放下，订了一张单程票。朋友圈里是雪山和夜市，定位每周换一个。",
+    "hint": "手里有机会、有钱、有精神，却都没接。",
+    "when": {
+      "transitionMode": "SELF_CHOSEN",
+      "statMin": {
+        "money": 40,
+        "wellbeing": 50
+      }
+    },
+    "weight": 7
+  },
+  {
+    "id": "F_SECOND_ROUND",
+    "route": "TRANSITION",
+    "name": "二战选手",
+    "roast": "不是没考上，是明年再上。",
+    "text": "这一轮没有结果，你决定再来一次。书桌重新收拾出来，墙上贴了新的倒计时。",
+    "hint": "书读得不差，这一轮却落了空。",
+    "when": {
+      "transitionMode": "NO_OFFER",
+      "statMin": {
+        "academics": 75
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_FREELANCER",
+    "route": "TRANSITION",
+    "name": "自由接单侠",
+    "roast": "没有老板，但有十二个甲方。",
+    "text": "你没接那些机会，开始自己接活。收入像心电图，好处是不用打卡，坏处是随时都在上班。",
+    "hint": "手里有机会，却想自己干。",
+    "when": {
+      "transitionMode": "SELF_CHOSEN"
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_BEDROOM_RESIDENT",
+    "route": "TRANSITION",
+    "name": "卧室常驻民",
+    "roast": "时差倒不过来，干脆就不倒了。",
+    "text": "你回到家里的卧室，作息和家里人差着八个小时。外卖员已经认得你家的门牌号。",
+    "hint": "这一轮输得有点彻底。",
+    "when": {
+      "tiers": [
+        "BE",
+        "D"
+      ]
+    },
+    "weight": 6
+  }
+]
