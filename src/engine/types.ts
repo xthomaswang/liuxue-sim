@@ -207,7 +207,10 @@ export interface EndingCard {
   statusLabel: string;
   /** 如 "SSR＋H01＋HE"。 */
   combo: string;
-  /** 本卡实际读取并使用的尾声抽签（未满足前置条件的不列出）。 */
+  /**
+   * 可以公开给玩家看的尾声抽签。身份抽签在前置条件满足时列出（无论中没中）；
+   * 隐藏结局相关的抽签只在命中时列出，没命中的不写，避免提前剧透。
+   */
   draws: EpilogueDraw[];
 }
 

@@ -53,11 +53,11 @@ shortfallTerms = 全程出现资金短缺（shortfall > 0）的学期数
 | 顺序 | 等级 | 名称 | 游戏内条件 |
 |---:|---|---|---|
 | 1 | `EX` 传奇结局 | 学术飞升 | `route=PHD` 且 `A>=95` 且 `S>=4` 且 `(R 或 MR)` |
-| 2 | `UR` 满配结局 | 家族存档继承者 | `economy=HIGH` 且 `MONEY>=70` 且 `n>=2`（任意去向） |
+| 2 | `UR` 满配结局 | 家族存档继承者 | `economy=HIGH` 且 `MONEY>=80` 且 `n=3`（三个机会全部取得；任意去向） |
 | 3 | `SSR` 豪华大圆满 | 事业、身份双通关 | `route=LOCAL_JOB` 且 `C>=70` 且 `WB>=40` 且 `epilogue:status` 成功 |
 | 4 | `SR＋` 精英结局 | 职业上岸，身份仍在加载 | `route=LOCAL_JOB` 的其余情况 |
 | 5 | `SR＋` 精英结局 | 博士上岸，学位仍在加载 | `route=PHD` 的其余情况（本游戏补充的变体） |
-| 6 | `SR` 优良结局 | 归国好岗 | `route=HOME_JOB` 且 `C>=70` |
+| 6 | `SR` 优良结局 | 归国好岗 | `route=HOME_JOB` 且 `C>=85` |
 | 7 | `R＋` 安稳结局 | 回家过好日子 | `route=HOME_JOB` 且 `WB>=40` 且 `MONEY>=20` |
 | 8 | `R` 普通结局 | 普通毕业，普通上班 | `route=HOME_JOB` 的其余情况 |
 | 9 | `BE` 翻车结局 | 学业／申请线崩盘 | `route=TRANSITION` 且 `NO_OFFER` 且 `(A<55 或 allIneligible)` |
@@ -65,6 +65,8 @@ shortfallTerms = 全程出现资金短缺（shortfall > 0）的学期数
 | 11 | `N` 待机结局 | 毕业了，但下一关没开 | `route=TRANSITION` 的其余情况 |
 
 每个合法结局恰好落入一档。等级 ID 为 `EX, UR, SSR, SR_PLUS, SR, R_PLUS, R, N, D, BE`；图鉴按 `EX → BE` 的固定顺序展示十档。
+
+阈值按 4200 局自动模拟的频率调过一次：最初 UR 取 `MONEY>=70 且 n>=2`，在宽裕家庭里约四成都能达到（全体 13%），比 EX、SSR 常见得多；SR 最初取 `C>=70`，占了回国结局的四分之三。现行数值见上表与 `src/engine/constants.ts` 的 `CARD`。模拟用的是几种简单策略，不代表真实玩家分布，试玩后可再调。
 
 原表把 EX 写成“成为教授”、SSR 写成“长期身份落定”。游戏不模拟博士过程和签证，所以 EX 只表示“带着拉满的学业与研究成果进入博士”，SSR 里的“身份”只是一次公开概率的尾声抽签；卡面文字不得声称已取得学位、教职、工作许可或永久身份。
 
