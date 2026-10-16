@@ -9,10 +9,12 @@ export type Focus = "STUDY" | "CAREER" | "CAMPUS" | "WORK" | "REST";
 export type FocusCounts = Record<Focus, number>;
 export type ArcId = "RESEARCH" | "INTERNSHIP" | "FRIENDSHIP" | "FAMILY" | "REORIENTATION" | "CREATIVE";
 export type Degree = "UG" | "MS";
-/** 当前所处学段。SETUP 之后、选校之前为 HS。 */
-export type Stage = "HS" | Degree;
+/** 当前所处学段。SETUP 之后、选校之前为 HS；毕业（或中途离场）之后的几年为 LIFE（第四版，docs/24）。 */
+export type Stage = "HS" | Degree | "LIFE";
 export type Opportunity = "PHD" | "LOCAL_JOB" | "HOME_JOB";
 export type FinalRoute = Opportunity | "TRANSITION";
+/** 毕业（或中途离场）之后所在的轨道（docs/24 §4）。前四个与毕业去向同名；DROPOUT 是中途结局之后。 */
+export type LifeTrack = FinalRoute | "DROPOUT";
 export type Outcome = "INELIGIBLE" | "OFFERED" | "NOT_OFFERED";
 export type Economy = "LOW" | "MID" | "HIGH";
 export type Expectation = "ACADEMIC" | "STABILITY" | "AUTONOMY";
@@ -88,6 +90,10 @@ export interface TalentEffects {
   growth?: Partial<Stats>;
   /** 可分配点数的增减（基础 20）。 */
   points?: number;
+  /** 第四版：每学期期末 GPA 的加成，单位是 0.01（20 表示 +0.20）。 */
+  gpa?: number;
+  /** 第四版：毕业后每年基础变化的加成（加在 LIFE_BASE 上）。 */
+  lifeGrowth?: Partial<Stats>;
 }
 export interface Talent {
   id: string;
@@ -132,6 +138,31 @@ export interface EndingCondition {
   transitionMode?: TransitionMode;
   /** 去向结局：结局卡等级在列表里。 */
   tiers?: EndingTierId[];
+
+  // ---- 第四版新增（docs/24 §6）。上下文里没有对应信息时，除 *None 外一律视为不满足 ----
+  /** 日常：本学期的安排类别在列表里。 */
+  focusAny?: Focus[];
+  /** 毕业后：当前轨道在列表里。 */
+  tracks?: LifeTrack[];
+  /** 毕业后：第几年（1 起，含两端）。 */
+  yearMin?: number;
+  yearMax?: number;
+  /** 毕业后：人生标记全部拥有 / 至少有一个 / 一个都没有。 */
+  lifeFlagsAll?: string[];
+  lifeFlagsAny?: string[];
+  lifeFlagsNone?: string[];
+  /** 一张天赋都没有（例如“没有签证锦鲤才会被 check”）。 */
+  talentsNone?: string[];
+  /** 毕业后：当年的去向结局 id 在列表里。 */
+  flavors?: string[];
+  /** 毕业后：当年的中途结局 id 在列表里。 */
+  earlies?: string[];
+  /** 毕业后：当年的毕业去向在列表里（中途结局没有去向）。 */
+  routes?: FinalRoute[];
+  /** 毕业后：离开学校时的学段在列表里（读过硕士为 MS）。 */
+  degrees?: Degree[];
+  /** 家境档在列表里。 */
+  economies?: Economy[];
 }
 /** 中途结局（docs/22 §4），内容在 src/content/earlyEndings.json，数组顺序即检查顺序。 */
 export interface EarlyEnding {
@@ -149,6 +180,8 @@ export interface EarlyEnding {
   when: EndingCondition;
   /** 条件满足时每个学期期末的触发概率，千分之几；1000 表示必然。 */
   chancePermille: number;
+  /** 第四版：离场之后的几年走哪条轨道；缺省为 DROPOUT。 */
+  lifeTrack?: LifeTrack;
 }
 /** 去向结局（docs/22 §5.3）：毕业去向之上的一层“你后来成了什么人”，内容在 src/content/endingFlavors.json。 */
 export interface EndingFlavor {
@@ -185,6 +218,92 @@ export interface Happening {
   scope: "ANY" | "UG" | "MS";
   text: string;
   effects: Stats;
+  /** 第四版：出现的条件（按发生那一刻的状态判断）；缺省为不限。 */
+  when?: EndingCondition;
+}
+
+// ---------- 第四版新增内容（docs/24） ----------
+
+/** 暑假的种类：出国前的夏天、本科的暑假、硕士的暑假。 */
+export type SummerSlot = "DEPARTURE" | "UG" | "MS";
+/** 暑假里的一件事（src/content/summers.json）。有数值变化，记进历史。 */
+export interface SummerEvent {
+  id: string;
+  slot: SummerSlot;
+  text: string;
+  effects: Stats;
+  when: EndingCondition;
+  /** 候选之间的相对权重，1–10。 */
+  weight: number;
+}
+/** 日常的位置：任何学期、只在上学期（秋）、只在下学期（春）、下学期开头的寒假。 */
+export type DailySlot = "TERM" | "FALL" | "SPRING" | "WINTER";
+/** 日常（src/content/daily.json）：只是一行字，没有数值变化，不进历史；轨迹按学期现挑几条穿插进去。 */
+export interface DailyLine {
+  id: string;
+  slot: DailySlot;
+  text: string;
+  when: EndingCondition;
+  /** 候选之间的相对权重，1–10。条件越具体的写得越高。 */
+  weight: number;
+}
+/** 期末 GPA 那一行的说法（src/content/gpa.json）：GPA ≥ min 的第一档，从 texts 里挑一句，{gpa} 换成数值。 */
+export interface GpaBand {
+  min: number;
+  texts: string[];
+}
+/** 毕业后每年的重心（每条轨道五类各一张）。 */
+export interface LifePlan {
+  focus: Focus;
+  name: string;
+  delta: Stats;
+}
+/** 毕业后的一件事：里程碑（按顺序检查、按概率发生）或生活事件（每年抽一两条）。 */
+export interface LifeEvent {
+  id: string;
+  text: string;
+  delta: Stats;
+  when: EndingCondition;
+  /** 里程碑：条件满足时这一年发生的概率，千分之几。 */
+  chancePermille?: number;
+  /** 里程碑：可以在不同年份重复发生（例如每年一次的抽签）；缺省一局最多一次。 */
+  repeatable?: boolean;
+  /** 生活事件：候选之间的相对权重，1–10。 */
+  weight?: number;
+  /** 发生后加上的人生标记。 */
+  setFlags?: string[];
+  /** 发生后换到这条轨道（从下一年起生效）。 */
+  setTrack?: LifeTrack;
+}
+/** 五年后的结局：过完最后一年后，按最后的轨道挑一条。 */
+export interface LifeOutcome {
+  id: string;
+  name: string;
+  roast: string;
+  /** 一两句话。 */
+  text: string;
+  /** 图册里没解锁时显示的提示。 */
+  hint: string;
+  /** 稀有度着色：N／R／SR／SSR，越往后越难得。 */
+  grade: TalentRarity;
+  when: EndingCondition;
+  /** 候选之间的相对权重，1–10。 */
+  weight: number;
+  /** 每条轨道恰好一条：没有任何条件的兜底。 */
+  fallback?: boolean;
+}
+/** 一条轨道的全部内容（src/content/life/<TRACK>.json）。 */
+export interface LifeTrackContent {
+  track: LifeTrack;
+  /** 轨道的名字，如“留美工作”。 */
+  name: string;
+  /** 每年固定发生的变化（工资、房租、成长），配一句从 texts 里挑的话。 */
+  base: { delta: Stats; texts: string[] };
+  /** 五类各一张，按 STUDY、CAREER、CAMPUS、WORK、REST 的顺序。 */
+  plans: LifePlan[];
+  milestones: LifeEvent[];
+  events: LifeEvent[];
+  outcomes: LifeOutcome[];
 }
 
 // ---------- 学校目录（运行时精简快照，由 scripts/schools 生成） ----------
@@ -241,6 +360,8 @@ export type Phase =
   | "ARC_EVENT"
   | "GRAD_PREVIEW"
   | "GRAD_RESULTS"
+  /** 第四版：毕业（或中途离场）之后，一年一年过。 */
+  | "LIFE"
   | "ENDING";
 
 export interface Profile {
@@ -281,7 +402,30 @@ export interface Graduation {
   resolution: FinalRoute | "MASTERS" | null;
 }
 
-export type HistoryKind = "EVENT" | "STIPEND" | "HAPPENING" | "FOCUS" | "UPKEEP" | "GROWTH" | "MASTERS_FEE";
+export type HistoryKind =
+  | "EVENT" | "STIPEND" | "HAPPENING" | "FOCUS" | "UPKEEP" | "GROWTH" | "MASTERS_FEE"
+  // 第四版（docs/24）
+  | "SUMMER" | "LIFE_BASE" | "LIFE_PLAN" | "LIFE_EVENT";
+
+/** 毕业（或中途离场）之后的几年（docs/24 §4）。进入时创建，每过一年更新；经典模式没有。 */
+export interface LifeState {
+  /** 当前所在的轨道。某一年里发生的换轨从下一年起生效。 */
+  track: LifeTrack;
+  /** 走过的轨道，按顺序，含起点（换过一次轨就有两项）。 */
+  tracks: LifeTrack[];
+  /** 已经过完的年数，0 到 LIFE_YEARS。 */
+  year: number;
+  /** 离开学校那年的年龄。第 k 年结束时的年龄是 startAge + k。 */
+  startAge: number;
+  /** 离开学校时（毕业确定去向，或中途结局那一刻）的四属性。 */
+  startStats: Stats;
+  /** 毕业后的事件加上的人生标记，只增不删，按获得顺序。 */
+  flags: string[];
+  /** 毕业后各类重心的次数（不并入学期的 focusCounts）。 */
+  focusCounts: FocusCounts;
+  /** 五年后的结局；过完最后一年才有。 */
+  outcome: null | { id: string; track: LifeTrack };
+}
 
 /** 每一次对四属性的原子应用记一条。requested 是名义变化，applied 是截断后真正发生的变化。 */
 export interface HistoryEntry {
@@ -306,6 +450,15 @@ export interface HistoryEntry {
   /** UPKEEP：必要开销、实付、短缺与短缺带来的身心压力。 */
   upkeep?: { cost: number; paid: number; shortfall: number; stress: number };
   program?: MastersProgram;
+  /** SUMMER：暑假里那件事的 id。 */
+  summerId?: string;
+  /** LIFE_BASE／LIFE_PLAN／LIFE_EVENT：这一年所在的轨道。LIFE_PLAN 的类别记在 focus。 */
+  track?: LifeTrack;
+  /** LIFE_BASE：从 base.texts 里挑中的那一句的下标。 */
+  textIndex?: number;
+  /** LIFE_EVENT：事件 id，以及它是不是里程碑。 */
+  lifeEventId?: string;
+  milestone?: boolean;
 }
 
 // ---------- 结局卡（docs/14） ----------
@@ -417,6 +570,8 @@ export interface ActiveRun extends RunCommon {
   /** 开局时的输入，原样带着走：读档重放与成就判定要用它重新推出这一局的十连抽。 */
   unlockedTalents?: string[];
   inheritedTalent?: string | null;
+  /** 第四版：毕业（或中途离场）之后的几年；还没走到、或经典模式为 null／缺省。 */
+  life?: LifeState | null;
 }
 
 export type RunState = SetupRun | ActiveRun;
@@ -430,7 +585,9 @@ export type Action =
   | { type: "CHOOSE_PLAN"; planId: string }
   | { type: "REVEAL_GRADUATION" }
   | { type: "CHOOSE_ROUTE"; route: FinalRoute }
-  | { type: "ENTER_MASTERS"; program: MastersProgram };
+  | { type: "ENTER_MASTERS"; program: MastersProgram }
+  /** 第四版：过一年，focus 是这一年的重心（由角色按倾向自动选）。 */
+  | { type: "LIVE_YEAR"; focus: Focus };
 
 /** 操作加上发出时看到的 revision；与当前 revision 不一致即视为重复或过期。 */
 export type Command = Action & { revision: number };
@@ -517,17 +674,23 @@ export interface StartPreview {
 export interface TimelineLine {
   kind:
     | "EVENT" | "PLAN" | "HAPPENING" | "SHORTFALL" | "ADMISSION" | "SCHOOL"
-    | "OPPORTUNITY" | "ROUTE" | "MASTERS" | "EARLY_END" | "FLAVOR";
+    | "OPPORTUNITY" | "ROUTE" | "MASTERS" | "EARLY_END" | "FLAVOR"
+    // 第四版（docs/24 §7）
+    | "SUMMER" | "DAILY" | "GPA" | "LIFE_BASE" | "LIFE_PLAN" | "LIFE_EVENT" | "MILESTONE" | "OUTCOME";
   text: string;
   /** 这一行实际造成的四属性变化；没有数值变化为 null。 */
   delta: Stats | null;
 }
-/** 人生轨迹里的一段（高三、申请季、每个学期、毕业、中途结局）。 */
+/** 人生轨迹里的一段（高三、申请季、出国前的夏天、每个学期、暑假、毕业、中途结局、毕业后的每一年、五年后）。 */
 export interface TimelineEntry {
-  /** 稳定的键，如 "HS"、"ADMISSION"、"UG:3"、"GRAD:UG"、"MS:1"、"EARLY"。 */
+  /** 稳定的键，如 "HS"、"ADMISSION"、"SUMMER:HS:0"、"UG:3"、"SUMMER:UG:2"、"GRAD:UG"、"MS:1"、"EARLY"、"LIFE:1"、"OUTCOME"。 */
   id: string;
-  /** 左侧的时间标签，如 “高三”“申请季”“大二上”“本科毕业”。 */
+  /** 左侧的时间标签，如 “高三”“申请季”“大二上”“大一暑假”“本科毕业”“毕业第 1 年”“五年后”。 */
   label: string;
+  /** 这一段的年龄（docs/24 §7.1）；没有明确年龄的段为 null。 */
+  age: number | null;
+  /** 分组：在校（含高三、申请季、毕业、中途结局）、暑假、毕业后、五年后。界面据此加分隔与配色。 */
+  group: "SCHOOL" | "SUMMER" | "LIFE" | "END";
   lines: TimelineLine[];
   /** 这一段结束时的四属性。 */
   statsAfter: Stats;
@@ -553,6 +716,24 @@ export interface SummaryView {
   /** 最终检查点的三路机会；中途结局为空数组。 */
   opportunities: OpportunityView[];
   card: EndingCard;
+  /** 第四版：在校期间各学期 GPA 的平均（两位小数）；一个学期都没读完为 null。 */
+  gpa: number | null;
+  /** 第四版：毕业（或离校）之后的五年；经典模式为 null。有它时 stats 是五年后的四属性。 */
+  life: LifeSummary | null;
+}
+
+/** 人生总结里“五年后”那一块（docs/24 §8）。 */
+export interface LifeSummary {
+  outcome: { id: string; name: string; roast: string; text: string; grade: TalentRarity };
+  /** 五年后的年龄。 */
+  age: number;
+  /** 最后所在的轨道与它的名字。 */
+  track: LifeTrack;
+  trackName: string;
+  /** 走过的轨道名字，按顺序（含起点）。 */
+  trackNames: string[];
+  /** 离开学校时的四属性与评价。 */
+  startStats: Array<{ key: StatKey; name: string; value: number; rating: string }>;
 }
 
 /** 跨局进度的快照（由界面保存，判定成就与解锁时传给引擎）。 */
@@ -564,6 +745,8 @@ export interface ProgressSnapshot {
   hidden: Record<string, number>;
   early: Record<string, number>;
   flavors: Record<string, number>;
+  /** 第四版：五年后的结局已出现的次数（不含本局）；旧进度没有这一项时按空处理。 */
+  outcomes?: Record<string, number>;
   /** 已得到的成就 id。 */
   achievements: string[];
   /** 已解锁的锁定天赋 id。 */

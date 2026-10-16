@@ -95,6 +95,10 @@ export interface TalentTotals {
   growth: Stats;
   /** 可分配点数的增减。 */
   points: number;
+  /** 第四版：期末 GPA 的加成，单位 0.01。 */
+  gpa: number;
+  /** 第四版：毕业后每年基础变化的加成。 */
+  lifeGrowth: Stats;
 }
 
 function addPartial(target: Stats, source: Partial<Stats> | undefined): void {
@@ -116,6 +120,8 @@ export function sumTalentEffects(talents: readonly Pick<Talent, "effects">[]): T
     arcWeight: Object.fromEntries(ARC_ORDER.map((arc) => [arc, 0])) as Record<ArcId, number>,
     growth: zeroStats(),
     points: 0,
+    gpa: 0,
+    lifeGrowth: zeroStats(),
   };
   for (const { effects } of talents) {
     addPartial(totals.initial, effects.initial);
@@ -125,6 +131,8 @@ export function sumTalentEffects(talents: readonly Pick<Talent, "effects">[]): T
     totals.focusWellbeingRelief += effects.focusWellbeingRelief ?? 0;
     totals.readiness += effects.readiness ?? 0;
     totals.points += effects.points ?? 0;
+    totals.gpa += effects.gpa ?? 0;
+    addPartial(totals.lifeGrowth, effects.lifeGrowth);
     for (const focus of FOCUS_ORDER) addPartial(totals.focus[focus], effects.focus?.[focus]);
     for (const key of OPPORTUNITY_ORDER) totals.chance[key] += effects.chance?.[key] ?? 0;
     for (const arc of ARC_ORDER) totals.arcWeight[arc] += effects.arcWeight?.[arc] ?? 0;

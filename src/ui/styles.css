@@ -27,6 +27,10 @@
   --row-sr: #e8dcf6;
   --row-ssr: #fbdfb8;
 
+  /* 人生轨迹的分组：暑假、毕业后。 */
+  --summer: #2d6e66;
+  --life: #4a5aa3;
+
   --serif: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
   --sans: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
 
@@ -57,6 +61,9 @@
     --row-r: #1c2f4a;
     --row-sr: #33234a;
     --row-ssr: #4a3010;
+
+    --summer: #7cc6bb;
+    --life: #a3b2f0;
   }
 }
 
@@ -640,12 +647,59 @@ input:focus-visible {
   border-bottom-color: transparent;
 }
 
-.tl-label {
-  flex: 0 0 4.2em;
+.tl-when {
+  flex: 0 0 4.6em;
+  display: flex;
+  flex-direction: column;
   padding-top: 1px;
+}
+
+.tl-label {
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.4;
   color: var(--accent);
+}
+
+.tl-age {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-entry.group-summer .tl-label {
+  color: var(--summer);
+}
+
+.tl-entry.group-life .tl-label {
+  color: var(--life);
+}
+
+/* 五年后：整段高亮。 */
+.tl-entry.group-end {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-bottom: 0;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+
+/* 进入毕业后、五年后之前的分隔。 */
+.tl-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 2px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.tl-divider::before,
+.tl-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--line);
 }
 
 .tl-lines {
@@ -670,14 +724,58 @@ input:focus-visible {
 }
 
 .tl-line.kind-happening,
-.tl-line.kind-plan {
+.tl-line.kind-plan,
+.tl-line.kind-daily,
+.tl-line.kind-life_base,
+.tl-line.kind-life_plan {
   color: var(--muted);
+}
+
+.tl-line.kind-gpa {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-line.kind-milestone {
+  font-weight: 600;
+}
+
+.tl-line.kind-outcome {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* 最新的一段逐行淡入；系统要求减少动态效果时直接显示。 */
+.tl-entry.latest .tl-line {
+  animation: tl-fade 360ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 140ms);
+}
+
+@keyframes tl-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-entry.latest .tl-line {
+    animation: none;
+  }
 }
 
 .tl-line.kind-shortfall {
   color: var(--warn);
 }
 
+.tl-line.kind-flavor,
 .tl-line.kind-route,
 .tl-line.kind-masters,
 .tl-line.kind-school,
@@ -722,6 +820,40 @@ input:focus-visible {
 }
 
 /* ---------- 总结 ---------- */
+
+.life {
+  align-items: center;
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.life-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--accent);
+}
+
+.life-name .rarity {
+  font-family: var(--sans);
+  font-size: 15px;
+}
+
+/* 有五年后时，“当年”的去向结局退到第二位。 */
+.flavor.then {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.flavor.then .flavor-name {
+  font-size: 22px;
+}
 
 .flavor {
   align-items: center;
@@ -871,6 +1003,28 @@ input:focus-visible {
 .gallery-item.locked .hidden-id,
 .gallery-item.locked .gallery-name {
   color: var(--muted);
+}
+
+.gallery-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.group-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+#gallery-outcomes {
+  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 56px);
 }
 
 .gallery-head {

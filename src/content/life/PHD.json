@@ -1,0 +1,382 @@
+{
+  "track": "PHD",
+  "name": "读博",
+  "base": {
+    "delta": { "money": 0, "academics": 3, "career": 0, "wellbeing": -2 },
+    "texts": [
+      "又在实验室过了一年，咖啡机比你先认识新生。",
+      "补助刚好够交房租，剩下的够买泡面。",
+      "这一年读的论文，比本科四年加起来还多。",
+      "组会上，你学会了用一张图讲二十分钟。",
+      "导师说明年一定能发，你点头的样子很熟练。",
+      "你的作息，逐渐和服务器的维护时间同步了。",
+      "实验室冰箱里有一盒饭，比你入学还早。",
+      "年度进度报告里，你把“没进展”写成了“有新发现”。",
+      "你给变量起的名字，只有凌晨三点的你看得懂。",
+      "这一年你在实验室过了生日，蛋糕是同门顺手买的。"
+    ]
+  },
+  "plans": [
+    { "focus": "STUDY", "name": "闭关赶论文", "delta": { "money": 0, "academics": 6, "career": 0, "wellbeing": -4 } },
+    { "focus": "CAREER", "name": "找业界实习", "delta": { "money": 3, "academics": -1, "career": 5, "wellbeing": -3 } },
+    { "focus": "CAMPUS", "name": "去开会顺便玩", "delta": { "money": -1, "academics": 1, "career": 2, "wellbeing": 4 } },
+    { "focus": "WORK", "name": "多带一门助教", "delta": { "money": 5, "academics": 0, "career": 0, "wellbeing": -4 } },
+    { "focus": "REST", "name": "摆烂一年", "delta": { "money": -1, "academics": -2, "career": 0, "wellbeing": 7 } }
+  ],
+  "milestones": [
+    {
+      "id": "LM_PHD_DONE_MS",
+      "text": "答辩通过了。读过的那个硕士，让你比同届早一年穿上博士袍。",
+      "delta": { "money": 2, "academics": 4, "career": 4, "wellbeing": 8 },
+      "when": { "routes": ["PHD"], "degrees": ["MS"], "yearMin": 3, "yearMax": 3, "statMin": { "academics": 80 }, "lifeFlagsAll": ["PHD_QUAL"], "lifeFlagsNone": ["PHD_DONE"] },
+      "chancePermille": 250,
+      "setFlags": ["PHD_DONE"]
+    },
+    {
+      "id": "LM_PHD_DONE_PAPER",
+      "text": "答辩通过了。委员会签完字，你终于能在签名档里写 Dr. 了。",
+      "delta": { "money": 2, "academics": 4, "career": 4, "wellbeing": 8 },
+      "when": { "routes": ["PHD"], "yearMin": 4, "statMin": { "academics": 75 }, "lifeFlagsAll": ["PHD_QUAL", "PAPER"], "lifeFlagsNone": ["PHD_DONE"] },
+      "chancePermille": 550,
+      "setFlags": ["PHD_DONE"]
+    },
+    {
+      "id": "LM_PHD_DONE",
+      "text": "毕业论文写了两百页，答辩讲了四十分钟，你成了博士。",
+      "delta": { "money": 2, "academics": 4, "career": 3, "wellbeing": 8 },
+      "when": { "routes": ["PHD"], "yearMin": 4, "statMin": { "academics": 80 }, "lifeFlagsAll": ["PHD_QUAL"], "lifeFlagsNone": ["PHD_DONE", "PAPER"] },
+      "chancePermille": 300,
+      "setFlags": ["PHD_DONE"]
+    },
+    {
+      "id": "LM_PHD_FACULTY_KID",
+      "text": "你拿到了教职。当教授的爸妈听完，只问了一句：启动经费多少？",
+      "delta": { "money": 4, "academics": 2, "career": 8, "wellbeing": 8 },
+      "when": { "talentsAny": ["T_PROF_KID"], "yearMin": 5, "lifeFlagsAll": ["PHD_DONE"], "lifeFlagsNone": ["FACULTY", "RETURNED"] },
+      "chancePermille": 200,
+      "setFlags": ["FACULTY"]
+    },
+    {
+      "id": "LM_PHD_FACULTY",
+      "text": "投了几十份教职申请，终于有一所学校要了你。你成了助理教授。",
+      "delta": { "money": 4, "academics": 2, "career": 8, "wellbeing": 8 },
+      "when": { "talentsNone": ["T_PROF_KID"], "yearMin": 5, "lifeFlagsAll": ["PHD_DONE"], "lifeFlagsNone": ["FACULTY", "RETURNED"] },
+      "chancePermille": 100,
+      "setFlags": ["FACULTY"]
+    },
+    {
+      "id": "LM_PHD_HOME_QINGJIAO",
+      "text": "国内高校的人才计划向你招手。你签了合同，回国当青椒。",
+      "delta": { "money": 4, "academics": 2, "career": 6, "wellbeing": 2 },
+      "when": { "yearMin": 4, "lifeFlagsAll": ["PHD_DONE"], "lifeFlagsNone": ["FACULTY", "RETURNED", "INDUSTRY", "POSTDOC"] },
+      "chancePermille": 120,
+      "setFlags": ["RETURNED"],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_PHD_INDUSTRY",
+      "text": "大厂研究院给了你 offer，头衔是研究科学家，工资翻了几番。",
+      "delta": { "money": 10, "academics": 0, "career": 5, "wellbeing": 3 },
+      "when": { "yearMin": 5, "statMin": { "career": 60 }, "lifeFlagsAll": ["PHD_DONE"], "lifeFlagsNone": ["FACULTY", "RETURNED", "INDUSTRY", "POSTDOC"] },
+      "chancePermille": 400,
+      "setFlags": ["INDUSTRY"]
+    },
+    {
+      "id": "LM_PHD_POSTDOC",
+      "text": "你签了一份两年的博后合同。工资比补助多一点，比实习少很多。",
+      "delta": { "money": 3, "academics": 3, "career": 1, "wellbeing": -2 },
+      "when": { "yearMin": 5, "lifeFlagsAll": ["PHD_DONE"], "lifeFlagsNone": ["FACULTY", "RETURNED", "INDUSTRY", "POSTDOC"] },
+      "chancePermille": 650,
+      "setFlags": ["POSTDOC"]
+    },
+    {
+      "id": "LM_PHD_QUAL_MS",
+      "text": "硕士修过的课派上了用场，资格考第一年就过了。",
+      "delta": { "money": 0, "academics": 3, "career": 0, "wellbeing": 4 },
+      "when": { "degrees": ["MS"], "yearMax": 1, "lifeFlagsNone": ["PHD_QUAL"] },
+      "chancePermille": 400,
+      "setFlags": ["PHD_QUAL"]
+    },
+    {
+      "id": "LM_PHD_QUAL",
+      "text": "资格考过了。委员会问了三个问题，你答上了两个半。",
+      "delta": { "money": 0, "academics": 3, "career": 1, "wellbeing": 5 },
+      "when": { "yearMin": 2, "statMin": { "academics": 60 }, "lifeFlagsNone": ["PHD_QUAL"] },
+      "chancePermille": 700,
+      "setFlags": ["PHD_QUAL"]
+    },
+    {
+      "id": "LM_PHD_QUAL_FAIL",
+      "text": "资格考没过。委员会给了你一次补考机会，和一个意味深长的眼神。",
+      "delta": { "money": 0, "academics": -2, "career": 0, "wellbeing": -6 },
+      "when": { "yearMin": 2, "lifeFlagsNone": ["PHD_QUAL", "QUAL_FAIL"] },
+      "chancePermille": 1000,
+      "setFlags": ["QUAL_FAIL"]
+    },
+    {
+      "id": "LM_PHD_QUIT_HOME",
+      "text": "你在电话里跟爸妈说不读了。一周后，你坐上了回国的飞机。",
+      "delta": { "money": -2, "academics": -4, "career": 0, "wellbeing": 8 },
+      "when": { "yearMin": 2, "yearMax": 4, "statMax": { "wellbeing": 15 }, "lifeFlagsNone": ["PHD_QUIT", "PHD_DONE", "PHD_FOR_VISA"] },
+      "chancePermille": 100,
+      "setFlags": ["PHD_QUIT", "RETURNED"],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_PHD_QUIT_BURN",
+      "text": "凌晨三点，你关掉实验记录，打开了刷题网站。退学，转码。",
+      "delta": { "money": 0, "academics": -4, "career": 4, "wellbeing": 6 },
+      "when": { "yearMin": 2, "yearMax": 4, "statMax": { "wellbeing": 20 }, "lifeFlagsNone": ["PHD_QUIT", "PHD_DONE", "PHD_FOR_VISA"] },
+      "chancePermille": 150,
+      "setFlags": ["PHD_QUIT"],
+      "setTrack": "LOCAL_JOB"
+    },
+    {
+      "id": "LM_PHD_QUIT_QUAL",
+      "text": "补考还是没过。你拿着顺路的硕士学位，体面地转去了业界。",
+      "delta": { "money": 2, "academics": -3, "career": 3, "wellbeing": 2 },
+      "when": { "yearMin": 3, "yearMax": 4, "lifeFlagsAll": ["QUAL_FAIL"], "lifeFlagsNone": ["PHD_QUAL", "PHD_QUIT", "PHD_DONE", "PHD_FOR_VISA"] },
+      "chancePermille": 300,
+      "setFlags": ["PHD_QUIT"],
+      "setTrack": "LOCAL_JOB"
+    },
+    {
+      "id": "LM_PHD_QUIT_OFFER",
+      "text": "实习的公司发来全职 offer，薪水是补助的好几倍。你办了退学。",
+      "delta": { "money": 6, "academics": -4, "career": 4, "wellbeing": 2 },
+      "when": { "yearMin": 2, "yearMax": 4, "statMin": { "career": 75 }, "lifeFlagsAll": ["INTERN"], "lifeFlagsNone": ["PHD_QUIT", "PHD_DONE", "PHD_FOR_VISA"] },
+      "chancePermille": 120,
+      "setFlags": ["PHD_QUIT"],
+      "setTrack": "LOCAL_JOB"
+    },
+    {
+      "id": "LM_PHD_INTERN",
+      "text": "暑假去大厂实习了三个月，第一次领到了像样的工资。",
+      "delta": { "money": 8, "academics": -2, "career": 5, "wellbeing": 1 },
+      "when": { "yearMin": 2, "yearMax": 4, "statMin": { "career": 55 }, "lifeFlagsNone": ["INTERN", "PHD_DONE", "PHD_QUIT"] },
+      "chancePermille": 250,
+      "setFlags": ["INTERN"]
+    },
+    {
+      "id": "LM_PHD_PAPER_MORE",
+      "text": "这次中的是顶会。你站在自己的海报前，把同一段话讲了四个小时。",
+      "delta": { "money": 0, "academics": 4, "career": 4, "wellbeing": 2 },
+      "when": { "yearMin": 3, "statMin": { "academics": 85 }, "lifeFlagsAll": ["PAPER"], "lifeFlagsNone": ["PAPER_MORE", "PHD_QUIT"] },
+      "chancePermille": 180,
+      "setFlags": ["PAPER_MORE"]
+    },
+    {
+      "id": "LM_PHD_PAPER",
+      "text": "论文中了。审稿人二号这次居然没有为难你。",
+      "delta": { "money": 0, "academics": 4, "career": 3, "wellbeing": 5 },
+      "when": { "yearMin": 2, "statMin": { "academics": 70 }, "lifeFlagsNone": ["PAPER", "PHD_QUIT"] },
+      "chancePermille": 250,
+      "setFlags": ["PAPER"]
+    },
+    {
+      "id": "LM_PHD_DELAY",
+      "text": "今年也没能毕业。你成了组里资历最老的学生，新生以为你是博后。",
+      "delta": { "money": 0, "academics": 2, "career": 0, "wellbeing": -5 },
+      "when": { "routes": ["PHD"], "yearMin": 5, "lifeFlagsNone": ["PHD_DONE", "PHD_QUIT"] },
+      "chancePermille": 1000,
+      "setFlags": ["DELAYED"]
+    }
+  ],
+  "events": [
+    { "id": "LE_PHD_GROUP_MEETING", "text": "组会上导师问你这周的进展，你讲了二十分钟背景。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": -2 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_PIE", "text": "导师说这个方向做出来能发顶刊，这话你已经听了三遍。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": -2 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_HANDS_OFF", "text": "导师这学期休学术假，你们一整年只见了两面。", "delta": { "money": 0, "academics": -1, "career": 0, "wellbeing": 3 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_PUSH", "text": "周日晚上十一点，导师发来消息：明早能看看结果吗？", "delta": { "money": 0, "academics": 3, "career": 0, "wellbeing": -4 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_GRADING", "text": "你当助教改了两百份作业，一半的答案长得一模一样。", "delta": { "money": 2, "academics": 0, "career": 0, "wellbeing": -3 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_RA", "text": "导师拿到了新经费，你这学期不用当助教了。", "delta": { "money": 2, "academics": 2, "career": 0, "wellbeing": 2 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_FUNDING_CUT", "text": "导师的经费没续上，你被派去带一门三百人的大课。", "delta": { "money": -2, "academics": -2, "career": 0, "wellbeing": -3 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_REVIEWER_TWO", "text": "审稿意见回来了，审稿人二号建议你把实验全部重做。", "delta": { "money": 0, "academics": -2, "career": 0, "wellbeing": -4 }, "when": {}, "weight": 6 },
+    { "id": "LE_PHD_REJECTED", "text": "论文被拒了。你改了改格式，投给了下一个会。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": -3 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_BEACH_CONF", "text": "去海边开会，你在酒店里改了三天幻灯片，只看了一眼海。", "delta": { "money": -1, "academics": 0, "career": 3, "wellbeing": -1 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_POSTER", "text": "你在会场站了四个小时讲海报，最认真的听众是隔壁展位的人。", "delta": { "money": 0, "academics": 0, "career": 2, "wellbeing": -1 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_BIG_NAME", "text": "茶歇时你鼓起勇气跟大牛搭话，TA 记住了你的名字，念错了。", "delta": { "money": 0, "academics": 0, "career": 3, "wellbeing": 1 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_SERVER_DOWN", "text": "服务器又宕机了，跑了三天的实验得从头再来。", "delta": { "money": 0, "academics": -2, "career": 0, "wellbeing": -3 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_GOOD_RESULT", "text": "实验终于跑出了好结果，你截图发到组群，没人在线。", "delta": { "money": 0, "academics": 4, "career": 0, "wellbeing": 2 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_BUG", "text": "你发现结果好得离谱的原因：代码里有个 bug。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": -3 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_PIZZA", "text": "系里讲座有免费披萨，你把第二天的午饭也解决了。", "delta": { "money": 1, "academics": 0, "career": 0, "wellbeing": 2 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_STIPEND_RAISE", "text": "补助涨了一点点，刚好被房租的涨幅抵消。", "delta": { "money": 1, "academics": 0, "career": 0, "wellbeing": -1 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_PEERS", "text": "本科同学在大厂升职了，你还在等审稿意见。", "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": -3 }, "when": {}, "weight": 5 },
+    { "id": "LE_PHD_RELATIVES", "text": "过年视频，亲戚问你什么时候毕业，你说快了。", "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": -2 }, "when": { "lifeFlagsNone": ["PHD_DONE"] }, "weight": 5 },
+    { "id": "LE_PHD_COFFEE_MACHINE", "text": "实验室的咖啡机坏了，整层楼的产出一起停摆。", "delta": { "money": 0, "academics": -1, "career": 0, "wellbeing": -2 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_PLANT", "text": "你在工位上养的绿萝，成了组里唯一稳定增长的东西。", "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 2 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_AUTHOR_ORDER", "text": "你和隔壁组合写论文，作者顺序吵了一个月。", "delta": { "money": 0, "academics": 3, "career": 0, "wellbeing": -3 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_TA_PRAISE", "text": "期末的助教评价里，有学生说你是这门课唯一的光。", "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": 4 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_SUMMER_SCHOOL", "text": "去欧洲参加暑期学校，回来时你的英语带了点口音。", "delta": { "money": -2, "academics": 1, "career": 2, "wellbeing": 3 }, "when": {}, "weight": 3 },
+    { "id": "LE_PHD_UNDERGRAD", "text": "你带的本科生做出了你两年没做出来的结果。", "delta": { "money": 0, "academics": 3, "career": 0, "wellbeing": -2 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_GPU_QUEUE", "text": "组里抢 GPU 抢到排班表，你的任务被排在凌晨四点。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": -3 }, "when": {}, "weight": 4 },
+    { "id": "LE_PHD_THESIS_TITLE", "text": "你开始写毕业论文，第一章的标题改了十一次。", "delta": { "money": 0, "academics": 3, "career": 0, "wellbeing": -3 }, "when": { "yearMin": 4, "lifeFlagsAll": ["PHD_QUAL"], "lifeFlagsNone": ["PHD_DONE"] }, "weight": 6 },
+    { "id": "LE_PHD_NEW_BUILDING", "text": "实验室搬进了新楼，你的工位离窗户近了，离厕所远了。", "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 1 }, "when": {}, "weight": 3 },
+    { "id": "LE_PHD_ADVISOR_LEFT", "text": "导师跳槽去了业界，你成了组里没人管的孩子。", "delta": { "money": 0, "academics": -3, "career": 1, "wellbeing": -4 }, "when": { "lifeFlagsNone": ["PHD_DONE"] }, "weight": 2 },
+    { "id": "LE_PHD_ADVISOR_TENURE", "text": "导师拿到了终身教职，组会上第一次笑出了声。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": 3 }, "when": {}, "weight": 3 },
+    { "id": "LE_PHD_QUAL_PREP", "text": "备考资格考的那几个月，你做梦都在推公式。", "delta": { "money": 0, "academics": 4, "career": 0, "wellbeing": -4 }, "when": { "lifeFlagsNone": ["PHD_QUAL"] }, "weight": 6 },
+    { "id": "LE_PHD_OPEN_SOURCE", "text": "你顺手写的小工具开源了，星星比你论文的引用还多。", "delta": { "money": 0, "academics": -1, "career": 3, "wellbeing": 1 }, "when": {}, "weight": 3 },
+    { "id": "LE_PHD_SPRING_GALA", "text": "学联春晚上你被拉去演了个小品，台词是你自己写的。", "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": 3 }, "when": {}, "weight": 3 },
+    { "id": "LE_PHD_TA_AWARD", "text": "你拿了优秀助教奖，奖品是一个印着系徽的马克杯。", "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": 2 }, "when": {}, "weight": 3 },
+    { "id": "LE_PHD_SEND_HOME", "text": "你把补助省下一部分寄回了家，自己又吃了一个月泡面。", "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": 2 }, "when": { "economies": ["LOW"] }, "weight": 5 },
+    { "id": "LE_PHD_CHECK", "text": "回国开会被 check，你在家远程开了两个月组会。", "delta": { "money": 0, "academics": -2, "career": 0, "wellbeing": -3 }, "when": { "talentsNone": ["T_VISA_KOI"] }, "weight": 3 },
+    { "id": "LE_PHD_FELLOWSHIP", "text": "你拿到了一笔奖学金，一整年不用当助教。", "delta": { "money": 3, "academics": 2, "career": 0, "wellbeing": 2 }, "when": { "statMin": { "academics": 85 } }, "weight": 3 },
+
+    { "id": "LE_PHD_FIRST_CITATION", "text": "你的论文第一次被人引用，你把那篇文章读了三遍。", "delta": { "money": 0, "academics": 2, "career": 0, "wellbeing": 4 }, "when": { "lifeFlagsAll": ["PAPER"] }, "weight": 8 },
+    { "id": "LE_PHD_VIRAL_PAPER", "text": "你的论文被一个大号转发了，引用没涨，粉丝涨了。", "delta": { "money": 0, "academics": 0, "career": 2, "wellbeing": 2 }, "when": { "lifeFlagsAll": ["PAPER"] }, "weight": 5 },
+    { "id": "LE_PHD_WHY_PHD", "text": "导师问你为什么读博，你说热爱科研，眼神很坚定。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": 1 }, "when": { "lifeFlagsAll": ["PHD_FOR_VISA"] }, "weight": 9 },
+    { "id": "LE_PHD_BACK_TO_CAMPUS", "text": "上了几年班再回学校，你发现学生食堂居然挺好吃。", "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": 3 }, "when": { "lifeFlagsAll": ["PHD_FOR_VISA"] }, "weight": 8 },
+    { "id": "LE_PHD_OLDEST_FRESHMAN", "text": "二战上岸读博，你发现自己是组里年纪最大的新生。", "delta": { "money": 0, "academics": 2, "career": 0, "wellbeing": 1 }, "when": { "lifeFlagsAll": ["REAPPLIED"] }, "weight": 8 },
+    { "id": "LE_PHD_POSTDOC_LIFE", "text": "博后的第一个月，你既像学生又像老师，工资两样都不像。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": -2 }, "when": { "lifeFlagsAll": ["POSTDOC"] }, "weight": 8 },
+    { "id": "LE_PHD_INDUSTRY_LAPTOP", "text": "到研究院报到第一天，你领的笔记本比组里所有电脑都快。", "delta": { "money": 0, "academics": 0, "career": 2, "wellbeing": 3 }, "when": { "lifeFlagsAll": ["INDUSTRY"] }, "weight": 8 },
+    { "id": "LE_PHD_FIRST_GRANT", "text": "你开始写第一份基金申请，突然理解了当年的导师。", "delta": { "money": 0, "academics": 2, "career": 1, "wellbeing": -2 }, "when": { "lifeFlagsAll": ["FACULTY"] }, "weight": 9 },
+    { "id": "LE_PHD_SENIOR_HELP", "text": "你开始帮新生改论文，改得比自己的还认真。", "delta": { "money": 0, "academics": 1, "career": 1, "wellbeing": 1 }, "when": { "lifeFlagsAll": ["DELAYED"] }, "weight": 8 },
+    { "id": "LE_PHD_DR_SIGNATURE", "text": "你在邮件签名里加上了 Dr.，此后每封邮件都多看一眼。", "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": 3 }, "when": { "lifeFlagsAll": ["PHD_DONE"] }, "weight": 7 },
+    { "id": "LE_PHD_PARTNER_WAIT", "text": "对象问你什么时候毕业，你说快了。TA 说你去年也这么说。", "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": -2 }, "when": { "lifeFlagsAll": ["DATING"], "lifeFlagsNone": ["PHD_DONE"] }, "weight": 5 },
+    { "id": "LE_PHD_RETAKE_PREP", "text": "补考前一周，你把委员会每位老师的论文都读了一遍。", "delta": { "money": 0, "academics": 4, "career": 0, "wellbeing": -3 }, "when": { "lifeFlagsAll": ["QUAL_FAIL"], "lifeFlagsNone": ["PHD_QUAL"] }, "weight": 8 },
+    { "id": "LE_PHD_AFTER_INTERN", "text": "实习回来，你看实验室的旧电脑格外不顺眼。", "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": -2 }, "when": { "lifeFlagsAll": ["INTERN"] }, "weight": 5 },
+    { "id": "LE_PHD_KID_REVIEWER", "text": "你一边带娃一边改论文，娃先学会了说“审稿人”。", "delta": { "money": 0, "academics": 1, "career": 0, "wellbeing": -3 }, "when": { "lifeFlagsAll": ["KID"] }, "weight": 6 }
+  ],
+  "outcomes": [
+    {
+      "id": "LO_PHD_FACULTY",
+      "name": "拿到教职",
+      "roast": "非升即走的倒计时，从今天开始。",
+      "text": "你成了助理教授，有了自己的办公室和第一个学生。第一次组会，你听见自己说出了那句熟悉的话：先读文献。",
+      "hint": "博士毕业，还在教职市场上赢了一回。",
+      "grade": "SSR",
+      "when": { "lifeFlagsAll": ["FACULTY"] },
+      "weight": 10
+    },
+    {
+      "id": "LO_PHD_INDUSTRY",
+      "name": "业界研究员",
+      "roast": "论文照发，工资翻了几番。",
+      "text": "你去了大厂的研究院，头衔是研究科学家。论文还在写，只是再也不用半夜起来抢 GPU 了。",
+      "hint": "博士毕业，去业界做研究。",
+      "grade": "SR",
+      "when": { "lifeFlagsAll": ["INDUSTRY"] },
+      "weight": 8
+    },
+    {
+      "id": "LO_PHD_PAPER_MACHINE",
+      "name": "顶会论文机器",
+      "roast": "别人投稿，你批量生产。",
+      "text": "你的名字连着出现在几个顶会的论文集里。新生把你的论文当模板，导师把你当招生广告。",
+      "hint": "论文中了一篇，又中了一篇顶会。",
+      "grade": "SR",
+      "when": { "lifeFlagsAll": ["PAPER_MORE"] },
+      "weight": 6
+    },
+    {
+      "id": "LO_PHD_ON_TIME",
+      "name": "全须全尾毕业",
+      "roast": "按时毕业，头发还在，也算天赋。",
+      "text": "你按时穿上了博士袍，头发还在，精神也还在。同门说你是组里的传说，你说主要靠睡得早。",
+      "hint": "博士毕业了，人还好好的。",
+      "grade": "SR",
+      "when": { "statMin": { "wellbeing": 55 }, "lifeFlagsAll": ["PHD_DONE"] },
+      "weight": 5
+    },
+    {
+      "id": "LO_PHD_POSTDOC",
+      "name": "博后漂流",
+      "roast": "合同两年一签，城市两年一换。",
+      "text": "你成了博后，在新的城市、新的实验室里从头来过。工资比补助多一点，下一份合同在哪还不知道。",
+      "hint": "博士毕业了，还没找到落脚处。",
+      "grade": "R",
+      "when": { "lifeFlagsAll": ["POSTDOC"] },
+      "weight": 7
+    },
+    {
+      "id": "LO_PHD_DELAYED",
+      "name": "延毕第六年",
+      "roast": "毕业时间：待定。",
+      "text": "第五年结束了，毕业论文还停在第三章。导师说再补一个实验就好，这句话你已经听过很多遍。",
+      "hint": "第五年了，还没毕业。",
+      "grade": "R",
+      "when": { "lifeFlagsAll": ["DELAYED"] },
+      "weight": 6
+    },
+    {
+      "id": "LO_PHD_VISA_PHD",
+      "name": "身份续命博士",
+      "roast": "热爱科研，也热爱合法身份。",
+      "text": "三次没抽中 H1B 之后，你回到学校读博。导师以为你热爱科研，你自己也慢慢开始这么觉得了。",
+      "hint": "没抽中签，回学校续上身份。",
+      "grade": "R",
+      "when": { "lifeFlagsAll": ["PHD_FOR_VISA"] },
+      "weight": 9
+    },
+    {
+      "id": "LO_PHD_JOBLESS",
+      "name": "博士待业中",
+      "roast": "学历到顶了，工作还没到。",
+      "text": "你拿到了博士学位，也拿到了一摞拒信。简历上终于可以写 Dr.，求职网站却提示你“资历过高”。",
+      "hint": "博士毕业了，下一站还没定。",
+      "grade": "R",
+      "when": { "lifeFlagsAll": ["PHD_DONE"], "lifeFlagsNone": ["FACULTY", "INDUSTRY", "POSTDOC", "RETURNED"] },
+      "weight": 5
+    },
+    {
+      "id": "LO_PHD_SECOND_TRY",
+      "name": "回炉读博",
+      "roast": "兜兜转转，又回到了实验室。",
+      "text": "离开学校又申请回来，你成了组里年纪最大的博士生。有人问你后不后悔，你说至少这一次是自己选的。",
+      "hint": "离开过学校，又申请回来读博。",
+      "grade": "N",
+      "when": { "lifeFlagsAll": ["REAPPLIED"] },
+      "weight": 8
+    },
+    {
+      "id": "LO_PHD_QIANLAO",
+      "name": "千年老博士",
+      "roast": "实验室换了三拨新生，你还在。",
+      "text": "你是组里待得最久的人，见证了三台咖啡机的更替。新生来问毕业的诀窍，你说先别问。",
+      "hint": "很久没毕业，论文也还没中。",
+      "grade": "N",
+      "when": { "lifeFlagsAll": ["DELAYED"], "lifeFlagsNone": ["PAPER"] },
+      "weight": 5
+    },
+    {
+      "id": "LO_PHD_LAB_WORKER",
+      "name": "资深学术民工",
+      "roast": "实验做了一千次，论文还在路上。",
+      "text": "这几年你跑了无数个实验，搬了无数次数据，论文还在改。导师说你是组里最靠谱的人，你听出了别的意思。",
+      "hint": "读了好几年，还没发出论文。",
+      "grade": "N",
+      "when": { "lifeFlagsNone": ["PAPER", "PHD_DONE"] },
+      "weight": 4
+    },
+    {
+      "id": "LO_PHD_GHOST",
+      "name": "实验室幽灵",
+      "roast": "人在实验室，魂在床上。",
+      "text": "你每天最早到、最晚走，但没人记得上次见你笑是什么时候。体检报告最后一行写着：建议休息。",
+      "hint": "被读博耗空了。",
+      "grade": "N",
+      "when": { "statMax": { "wellbeing": 20 } },
+      "weight": 5
+    },
+    {
+      "id": "LO_PHD_HEART_AWAY",
+      "name": "心在业界",
+      "roast": "论文在写，简历也在改。",
+      "text": "实习过一次之后，你的心就留在了那边。组会上你讲实验，脑子里在算期权，浏览器开着招聘页。",
+      "hint": "实习过，心就野了。",
+      "grade": "N",
+      "when": { "statMin": { "career": 80 }, "lifeFlagsAll": ["INTERN"], "lifeFlagsNone": ["PHD_DONE"] },
+      "weight": 4
+    },
+    {
+      "id": "LO_PHD_DEFAULT",
+      "name": "实验室常驻",
+      "roast": "实验室的灯，你关得最晚。",
+      "text": "五年过去，你在实验室有了固定的工位、固定的咖啡杯和固定的焦虑。论文还在改，日子还在过。",
+      "hint": "读博五年最普通的样子。",
+      "grade": "N",
+      "when": {},
+      "weight": 3,
+      "fallback": true
+    }
+  ]
+}

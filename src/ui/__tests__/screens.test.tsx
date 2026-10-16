@@ -5,7 +5,8 @@ import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { makeSampleCatalog } from "../../../tests/helpers/sampleCatalog";
 import { ACHIEVEMENTS, EARLY_ENDINGS, ENDING_CARDS, ENDING_FLAVORS, TALENTS } from "../../content";
-import { setupView, startPreview } from "../../engine";
+import { setupView, startPreview, summaryView } from "../../engine";
+import { LIFE_TRACK_LIST } from "../lifeTracks";
 import {
   POINT_KEYS,
   ZERO_POINTS,
@@ -119,7 +120,9 @@ describe("图册", () => {
     expect(screen.getByTestId("screen-gallery")).toBeTruthy();
     expect(screen.getByTestId("stage-title").textContent).toBe("图册");
     const locked = TALENTS.filter((talent) => talent.locked);
-    const endingTotal = ENDING_CARDS.tiers.length + ENDING_CARDS.hidden.length + EARLY_ENDINGS.length + ENDING_FLAVORS.length;
+    const outcomes = LIFE_TRACK_LIST.flatMap((track) => track.outcomes);
+    const endingTotal =
+      ENDING_CARDS.tiers.length + ENDING_CARDS.hidden.length + EARLY_ENDINGS.length + ENDING_FLAVORS.length + outcomes.length;
     expect(screen.getByTestId("gallery-progress").textContent).toContain(
       `成就 0 / ${ACHIEVEMENTS.length} · 天赋 ${TALENTS.length - locked.length} / ${TALENTS.length} · 结局 0 / ${endingTotal}`,
     );
@@ -135,6 +138,7 @@ describe("图册", () => {
       { prefix: "gallery-hidden-", items: ENDING_CARDS.hidden },
       { prefix: "gallery-early-", items: EARLY_ENDINGS },
       { prefix: "gallery-flavor-", items: ENDING_FLAVORS },
+      { prefix: "gallery-outcome-", items: outcomes },
     ]) {
       for (const entry of list.items) {
         const item = screen.getByTestId(`${list.prefix}${entry.id}`);
@@ -144,6 +148,14 @@ describe("图册", () => {
         expect(item.textContent).not.toContain(entry.name);
       }
     }
+    // 五年后：按轨道分组，组名是轨道名。
+    for (const track of LIFE_TRACK_LIST) {
+      const group = screen.getByTestId(`gallery-track-${track.track}`);
+      expect(group.querySelector(".group-heading")?.textContent).toContain(track.name);
+      expect(group.querySelector(".group-heading")?.textContent).toContain(`0 / ${track.outcomes.length}`);
+      expect(group.querySelectorAll("[data-testid^='gallery-outcome-']").length).toBe(track.outcomes.length);
+    }
+    expect(screen.getByTestId("jump-gallery-outcomes")).toBeTruthy();
     // 成就是公开目标：没达成也显示名称与说明。
     for (const achievement of ACHIEVEMENTS) {
       const item = screen.getByTestId(`gallery-achievement-${achievement.id}`);
@@ -180,6 +192,12 @@ describe("图册", () => {
     }
     if (card?.flavor) expect(screen.getByTestId(`gallery-flavor-${card.flavor.id}`).textContent).toContain(card.flavor.name);
     if (card?.early) expect(screen.getByTestId(`gallery-early-${card.early}`).getAttribute("data-unlocked")).toBe("true");
+    const life = summaryView(savedEnding(storage)).life;
+    if (life) {
+      const item = screen.getByTestId(`gallery-outcome-${life.outcome.id}`);
+      expect(item.getAttribute("data-unlocked")).toBe("true");
+      expect(item.textContent).toContain(life.outcome.name);
+    }
     expect(screen.getByTestId("gallery-progress").textContent).not.toContain("结局 0 /");
     expect(screen.getByTestId("gallery-progress").textContent).not.toContain("成就 0 /");
     await click("close-gallery");

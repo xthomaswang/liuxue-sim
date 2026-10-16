@@ -1,0 +1,1610 @@
+[
+  {
+    "id": "SU_DEP_RICE_COOKER",
+    "slot": "DEPARTURE",
+    "text": "行李箱塞了一个电饭煲和六瓶老干妈，超重两公斤。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {
+      "talentsNone": [
+        "T_RICE_COOKER"
+      ]
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_DEP_RICE_COOKER_TALENT",
+    "slot": "DEPARTURE",
+    "text": "爸妈把电饭煲用秋裤裹了三层塞进箱子，说它比你金贵。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "talentsAny": [
+        "T_RICE_COOKER"
+      ]
+    },
+    "weight": 8
+  },
+  {
+    "id": "SU_DEP_VISA",
+    "slot": "DEPARTURE",
+    "text": "面签前一晚你把“学成回国”背了二十遍，签证官只问了两句。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {},
+    "weight": 5
+  },
+  {
+    "id": "SU_DEP_VISA_CHECK",
+    "slot": "DEPARTURE",
+    "text": "面签被 check，你每天刷三遍邮箱，开学前一周终于放行。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -4
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_DEP_GRAD_TRIP",
+    "slot": "DEPARTURE",
+    "text": "高中毕业旅行去了云南，回来晒得只剩牙是白的。",
+    "effects": {
+      "money": -3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 4
+    },
+    "when": {
+      "economies": [
+        "LOW",
+        "MID"
+      ]
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_DEP_EUROPE",
+    "slot": "DEPARTURE",
+    "text": "毕业旅行全家去了欧洲，你在每个景点都发了九宫格。",
+    "effects": {
+      "money": -3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 4
+    },
+    "when": {
+      "economies": [
+        "HIGH"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_DEP_RELATIVES",
+    "slot": "DEPARTURE",
+    "text": "出发前每个亲戚都请你吃了顿饭，塞了红包，叮嘱的话一模一样。",
+    "effects": {
+      "money": 3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {},
+    "weight": 5
+  },
+  {
+    "id": "SU_DEP_DRIVING",
+    "slot": "DEPARTURE",
+    "text": "出国前去考了驾照，科目二挂了一次，教练的嗓门你记一辈子。",
+    "effects": {
+      "money": -2,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": -1
+    },
+    "when": {
+      "talentsNone": [
+        "T_DRIVER"
+      ]
+    },
+    "weight": 3
+  },
+  {
+    "id": "SU_DEP_DRIVER_TALENT",
+    "slot": "DEPARTURE",
+    "text": "驾照科目二一次过，教练把你倒车入库的视频拿去当了教材。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": 2
+    },
+    "when": {
+      "talentsAny": [
+        "T_DRIVER"
+      ]
+    },
+    "weight": 8
+  },
+  {
+    "id": "SU_DEP_FLIGHT_DEAL",
+    "slot": "DEPARTURE",
+    "text": "机票在涨价前一晚下了单，你觉得自己赚到了一个暑假的零花钱。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 1
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_DEP_LAYOVERS",
+    "slot": "DEPARTURE",
+    "text": "直飞的机票太贵，你买了转机两次的，路上要三十个小时。",
+    "effects": {
+      "money": 1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -3
+    },
+    "when": {
+      "economies": [
+        "LOW"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_DEP_ROOMMATE",
+    "slot": "DEPARTURE",
+    "text": "新生群里找到了室友，你们聊了一个月，还没见面就为空调温度吵了一架。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -2
+    },
+    "when": {
+      "talentsNone": [
+        "T_ROOMMATE"
+      ]
+    },
+    "weight": 3
+  },
+  {
+    "id": "SU_DEP_ROOMMATE_TALENT",
+    "slot": "DEPARTURE",
+    "text": "新生群里匹配到的室友提前问了你的忌口，还说要带一口锅。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "talentsAny": [
+        "T_ROOMMATE"
+      ]
+    },
+    "weight": 8
+  },
+  {
+    "id": "SU_DEP_HAIRCUT",
+    "slot": "DEPARTURE",
+    "text": "听说那边理发要几十刀，你出国前剪了个特别短的头。",
+    "effects": {
+      "money": 1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_DEP_ADAPTER",
+    "slot": "DEPARTURE",
+    "text": "你买了五个转换插头，到了才发现只用得上一个。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 0
+    },
+    "when": {},
+    "weight": 2
+  },
+  {
+    "id": "SU_DEP_PREVIEW",
+    "slot": "DEPARTURE",
+    "text": "暑假你预习了大一的微积分，学完发现国内高中都学过了。",
+    "effects": {
+      "money": 0,
+      "academics": 3,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {
+      "pointsMin": {
+        "academics": 6
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_DEP_HOW_ARE_YOU",
+    "slot": "DEPARTURE",
+    "text": "出国前突击练口语，你对着镜子说了一个月的“How are you”。",
+    "effects": {
+      "money": -2,
+      "academics": 1,
+      "career": 1,
+      "wellbeing": 0
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_DEP_SAVINGS_JOB",
+    "slot": "DEPARTURE",
+    "text": "出国前你在奶茶店打了两个月工，攒下的钱够买一张机票。",
+    "effects": {
+      "money": 4,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": -2
+    },
+    "when": {
+      "economies": [
+        "LOW"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_DEP_NEW_GEAR",
+    "slot": "DEPARTURE",
+    "text": "出发前家里给你换了一整套新行头，连袜子都带着吊牌。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "economies": [
+        "HIGH"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_DEP_FAREWELL",
+    "slot": "DEPARTURE",
+    "text": "高中同学的散伙饭吃了五场，每场都有人哭。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_DEP_COLD_MEDICINE",
+    "slot": "DEPARTURE",
+    "text": "出发前一晚，爸妈把你的箱子打开又检查了一遍，塞进一包感冒药。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_DEP_S_TIER",
+    "slot": "DEPARTURE",
+    "text": "录取的消息在家族群里转了一整个夏天，你被迫发了三次感言。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": 1
+    },
+    "when": {
+      "schoolTiers": [
+        "S"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_DEP_COLD_STATE",
+    "slot": "DEPARTURE",
+    "text": "查了学校冬天的气温，家里连夜给你买了一件到膝盖的羽绒服。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 1
+    },
+    "when": {
+      "schoolStates": [
+        "MA",
+        "NY",
+        "IL",
+        "MI",
+        "MN",
+        "WI",
+        "IA",
+        "NH",
+        "VT",
+        "ME",
+        "IN",
+        "OH",
+        "PA",
+        "RI",
+        "CT",
+        "NE",
+        "KS",
+        "MO",
+        "CO",
+        "UT",
+        "WY",
+        "ID"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_DEP_CA",
+    "slot": "DEPARTURE",
+    "text": "听说加州四季如春，你把羽绒服从箱子里拿出来，换成了防晒霜。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {
+      "schoolStates": [
+        "CA"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_DEP_BELONGING",
+    "slot": "DEPARTURE",
+    "text": "出发前你和发小在老街吃遍了每家小店，说好回来再吃一遍。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "aspirations": [
+        "BELONGING"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_DEP_INDEPENDENCE",
+    "slot": "DEPARTURE",
+    "text": "你没让爸妈送机，一个人拖着两个大箱子过了安检。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": 1
+    },
+    "when": {
+      "aspirations": [
+        "INDEPENDENCE"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_DEP_DISCOVERY",
+    "slot": "DEPARTURE",
+    "text": "你把学校的课程目录翻了三遍，标出了二十门想上的课。",
+    "effects": {
+      "money": 0,
+      "academics": 2,
+      "career": 0,
+      "wellbeing": 1
+    },
+    "when": {
+      "aspirations": [
+        "DISCOVERY"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_UG_HOME_LIE_FLAT",
+    "slot": "UG",
+    "text": "暑假回国躺平，爸妈从第三天开始嫌你碍事。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 4
+    },
+    "when": {
+      "statMin": {
+        "money": 25
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_HOME_BLIND_DATE",
+    "slot": "UG",
+    "text": "回国被安排了一场相亲，对方也是被安排来的，你们聊了一下午游戏。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {
+      "statMin": {
+        "money": 25
+      },
+      "termMin": 4
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_HOME_RELATIVE_INTERN",
+    "slot": "UG",
+    "text": "暑假回国在亲戚的公司实习，每天的工作是给全办公室订奶茶。",
+    "effects": {
+      "money": 1,
+      "academics": 0,
+      "career": 2,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMin": {
+        "money": 25
+      },
+      "statMax": {
+        "career": 29
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_UG_HOME_OLD_FRIENDS",
+    "slot": "UG",
+    "text": "暑假回国见了老同学，大家聊起各自的城市，你突然很想留下。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "statMin": {
+        "money": 25
+      },
+      "aspirations": [
+        "BELONGING"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_HOME_FOOD_LIST",
+    "slot": "UG",
+    "text": "暑假回国，你把想吃的列了一张清单，一个月吃完了第一页。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 4
+    },
+    "when": {
+      "statMin": {
+        "money": 25
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_HOME_TUTOR",
+    "slot": "UG",
+    "text": "暑假回国给亲戚家的孩子补英语，赚回了一半机票钱。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMin": {
+        "money": 25
+      }
+    },
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_HOME_FAMILY_TRIP",
+    "slot": "UG",
+    "text": "暑假回国陪爸妈出去玩了一趟，全程负责拍照和导航。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "statMin": {
+        "money": 25
+      }
+    },
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_HOME_ENGLISH_WORDS",
+    "slot": "UG",
+    "text": "大一暑假回国，你说话开始夹英文单词，被家里人笑了一个夏天。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {
+      "termMax": 2,
+      "statMin": {
+        "money": 25
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_HOME_MILK_TEA",
+    "slot": "UG",
+    "text": "暑假回国，你一天喝三杯国内的奶茶，说要把一年的份补回来。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "talentsAny": [
+        "T_MILK_TEA"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_HOME_LAOGANMA",
+    "slot": "UG",
+    "text": "暑假回国补货，托运的箱子一半是老干妈，过安检时被开箱检查了。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "talentsAny": [
+        "T_LAOGANMA"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_INTERN",
+    "slot": "UG",
+    "text": "暑假在一家小公司实习，学会了用表格假装很忙。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 3,
+      "wellbeing": -2
+    },
+    "when": {
+      "statMin": {
+        "career": 30
+      },
+      "statMax": {
+        "career": 49
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_UG_INTERN_BIG",
+    "slot": "UG",
+    "text": "暑假进了大厂实习，工牌挂在脖子上，拍照发了三条朋友圈。",
+    "effects": {
+      "money": 3,
+      "academics": 0,
+      "career": 4,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMin": {
+        "career": 50
+      },
+      "termMin": 4
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_INTERN_UNPAID",
+    "slot": "UG",
+    "text": "暑假的实习没有工资，但有免费的零食柜，你吃回了一点本。",
+    "effects": {
+      "money": -2,
+      "academics": 0,
+      "career": 3,
+      "wellbeing": 1
+    },
+    "when": {
+      "statMin": {
+        "career": 20
+      },
+      "statMax": {
+        "career": 39
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_INTERN_COFFEE",
+    "slot": "UG",
+    "text": "实习的第一个任务是记住全组人的咖啡口味，你做到了。",
+    "effects": {
+      "money": 1,
+      "academics": 0,
+      "career": 2,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMin": {
+        "career": 20
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_INTERN_SYNC",
+    "slot": "UG",
+    "text": "实习期间你开了很多会，学会了在会上说“我回去对齐一下”。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 3,
+      "wellbeing": -2
+    },
+    "when": {
+      "statMin": {
+        "career": 35
+      },
+      "termMin": 4
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_UG_INTERN_CN_BIG",
+    "slot": "UG",
+    "text": "暑假回国在某厂实习，见识了晚上十点的写字楼有多亮。",
+    "effects": {
+      "money": 1,
+      "academics": 0,
+      "career": 4,
+      "wellbeing": -3
+    },
+    "when": {
+      "statMin": {
+        "career": 40,
+        "money": 25
+      },
+      "aspirations": [
+        "BELONGING"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_SUMMER_SCHOOL",
+    "slot": "UG",
+    "text": "暑假上了暑校补学分，一门课压缩到六周，每天都像期末。",
+    "effects": {
+      "money": -3,
+      "academics": 4,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_RETAKE",
+    "slot": "UG",
+    "text": "暑校重修了一门挂掉的课，教室里全是熟悉的面孔。",
+    "effects": {
+      "money": -2,
+      "academics": 4,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMax": {
+        "academics": 35
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_DINING_JOB",
+    "slot": "UG",
+    "text": "暑假留校在食堂打工，整个夏天的工资刚好补上窟窿。",
+    "effects": {
+      "money": 5,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -2
+    },
+    "when": {
+      "statMax": {
+        "money": 20
+      }
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_LIBRARY_DESK",
+    "slot": "UG",
+    "text": "暑假在图书馆值班，读完了一整排没人借的书。",
+    "effects": {
+      "money": 3,
+      "academics": 2,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMax": {
+        "money": 35
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_UG_FURNITURE",
+    "slot": "UG",
+    "text": "暑假帮毕业的学长学姐搬家，换来一整套免费的家具。",
+    "effects": {
+      "money": 3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_CAMP_TA",
+    "slot": "UG",
+    "text": "暑假给夏令营当助教，每天带着一群高中生在校园里迷路。",
+    "effects": {
+      "money": 3,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": -2
+    },
+    "when": {},
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_TOUR_TA",
+    "slot": "UG",
+    "text": "暑假给国内来的游学团当助教，被家长问了一个夏天怎么申请。",
+    "effects": {
+      "money": 3,
+      "academics": 0,
+      "career": 2,
+      "wellbeing": -2
+    },
+    "when": {
+      "termMin": 4
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_T_DRIVER",
+    "slot": "UG",
+    "text": "暑假你开车帮同学搬家、接机，大家塞给你的油钱攒了一小笔。",
+    "effects": {
+      "money": 3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 1
+    },
+    "when": {
+      "talentsAny": [
+        "T_DRIVER"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_T_PART_TIMER",
+    "slot": "UG",
+    "text": "暑假你同时打了三份校内工，排班表比课表还满。",
+    "effects": {
+      "money": 5,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -3
+    },
+    "when": {
+      "talentsAny": [
+        "T_PART_TIMER",
+        "T_SIDE_HUSTLE"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_T_SECONDHAND",
+    "slot": "UG",
+    "text": "毕业季你低价收了一屋子家具，开学前转手卖给了新生。",
+    "effects": {
+      "money": 4,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": 0
+    },
+    "when": {
+      "talentsAny": [
+        "T_SECONDHAND"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_RESEARCH",
+    "slot": "UG",
+    "text": "暑假跟教授做科研，你的任务是把三百篇文献整理成表格。",
+    "effects": {
+      "money": 0,
+      "academics": 4,
+      "career": 2,
+      "wellbeing": -2
+    },
+    "when": {
+      "statMin": {
+        "academics": 60
+      }
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_RESEARCH_LAB",
+    "slot": "UG",
+    "text": "暑假在实验室帮博士生跑数据，你见识了凌晨四点的实验楼。",
+    "effects": {
+      "money": 0,
+      "academics": 4,
+      "career": 1,
+      "wellbeing": -3
+    },
+    "when": {
+      "statMin": {
+        "academics": 70
+      },
+      "termMin": 4
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_RESEARCH_PAPER",
+    "slot": "UG",
+    "text": "暑研的结果不错，你的名字出现在了论文的第五作者。",
+    "effects": {
+      "money": 0,
+      "academics": 3,
+      "career": 3,
+      "wellbeing": 1
+    },
+    "when": {
+      "statMin": {
+        "academics": 80
+      },
+      "termMin": 6
+    },
+    "weight": 8
+  },
+  {
+    "id": "SU_UG_GRE",
+    "slot": "UG",
+    "text": "大三暑假你闭关考 GRE，背单词背到梦里都在拼写。",
+    "effects": {
+      "money": -2,
+      "academics": 3,
+      "career": 0,
+      "wellbeing": -3
+    },
+    "when": {
+      "termMin": 6
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_UG_ESSAY",
+    "slot": "UG",
+    "text": "大三暑假开始写申请文书，第一稿写了你的一生，第二稿删掉了一半。",
+    "effects": {
+      "money": 0,
+      "academics": 2,
+      "career": 1,
+      "wellbeing": -2
+    },
+    "when": {
+      "termMin": 6,
+      "aspirations": [
+        "DISCOVERY"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_UG_LEETCODE",
+    "slot": "UG",
+    "text": "暑假你每天刷十道题，进度条涨得比头发掉得还快。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 4,
+      "wellbeing": -3
+    },
+    "when": {
+      "termMin": 4,
+      "aspirations": [
+        "INDEPENDENCE"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_UG_ROAD_TRIP",
+    "slot": "UG",
+    "text": "暑假和朋友自驾去国家公园，一路的风景比你拍的好看一百倍。",
+    "effects": {
+      "money": -3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 4
+    },
+    "when": {},
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_FLAT_TIRE",
+    "slot": "UG",
+    "text": "自驾到半路爆了胎，你们在荒野里等了三小时拖车，看了一场最美的日落。",
+    "effects": {
+      "money": -2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 1
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_EUROPE",
+    "slot": "UG",
+    "text": "暑假去欧洲转了一圈，朋友圈的定位换了十二个国家。",
+    "effects": {
+      "money": -4,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 4
+    },
+    "when": {
+      "economies": [
+        "HIGH"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_SUBLET",
+    "slot": "UG",
+    "text": "暑假要转租房子，你在群里发了十天广告，最后租给了一只猫的主人。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_MOVE_OUT",
+    "slot": "UG",
+    "text": "暑假从宿舍搬进校外公寓，第一次签了租约，押金让你心疼了一周。",
+    "effects": {
+      "money": -3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 1
+    },
+    "when": {
+      "termMax": 4
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_MOVING_STUFF",
+    "slot": "UG",
+    "text": "暑假搬家，你的东西比想象中多三倍，最后扔了一半。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -2
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_RUNNING",
+    "slot": "UG",
+    "text": "暑假你天天去公园跑步，晒出了一圈手表印。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_GAMING",
+    "slot": "UG",
+    "text": "暑假你在宿舍打了一个月游戏，段位上去了，作息下来了。",
+    "effects": {
+      "money": 0,
+      "academics": -1,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_COOKING",
+    "slot": "UG",
+    "text": "暑假你学会了二十道家常菜，室友开始按顿给你交伙食费。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_T_NET_SENSE",
+    "slot": "UG",
+    "text": "暑假你随手剪了几条留学生活的视频，有一条突然火了。",
+    "effects": {
+      "money": 1,
+      "academics": 0,
+      "career": 3,
+      "wellbeing": 2
+    },
+    "when": {
+      "talentsAny": [
+        "T_NET_SENSE"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_T_GOOD_LOOKING",
+    "slot": "UG",
+    "text": "暑假在街上被拉去给服装店拍了一组照片，酬劳是一件外套。",
+    "effects": {
+      "money": 1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "talentsAny": [
+        "T_GOOD_LOOKING"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_T_HOTPOT",
+    "slot": "UG",
+    "text": "暑假留校的人不多，你还是凑齐了一桌火锅，连着吃了一个夏天。",
+    "effects": {
+      "money": -2,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": 3
+    },
+    "when": {
+      "talentsAny": [
+        "T_HOTPOT"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_UG_BURNOUT_SLEEP",
+    "slot": "UG",
+    "text": "期末把你掏空了，暑假你在家睡了整整两周才缓过来。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 5
+    },
+    "when": {
+      "statMax": {
+        "wellbeing": 25
+      }
+    },
+    "weight": 8
+  },
+  {
+    "id": "SU_UG_SEASIDE",
+    "slot": "UG",
+    "text": "朋友拉你去海边住了几天，你什么也没干，只看了几天海。",
+    "effects": {
+      "money": -2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 4
+    },
+    "when": {
+      "statMax": {
+        "wellbeing": 40
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_CAREER_CAMP",
+    "slot": "UG",
+    "text": "暑假你报了一个高价的职业规划营，收获是一沓名片和一件文化衫。",
+    "effects": {
+      "money": -4,
+      "academics": 0,
+      "career": 2,
+      "wellbeing": 0
+    },
+    "when": {
+      "statMin": {
+        "money": 70
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_NOODLE_SUMMER",
+    "slot": "UG",
+    "text": "暑假没回国，靠一箱泡面和室友留下的半袋米撑到了开学。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -3
+    },
+    "when": {
+      "statMax": {
+        "money": 15
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_VOLUNTEER",
+    "slot": "UG",
+    "text": "暑假在社区做志愿者，教老人用手机视频，被叫了一个夏天的“小老师”。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 2,
+      "wellbeing": 2
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_US_DRIVING",
+    "slot": "UG",
+    "text": "暑假在美国考驾照，路考时你把停车标志当成了建议。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -2
+    },
+    "when": {
+      "talentsNone": [
+        "T_DRIVER"
+      ]
+    },
+    "weight": 3
+  },
+  {
+    "id": "SU_UG_FULLTIME_CAMPUS",
+    "slot": "UG",
+    "text": "打工的食堂暑假缺人，主管问你能不能全职，你说能。",
+    "effects": {
+      "money": 5,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -3
+    },
+    "when": {
+      "focusAny": [
+        "WORK"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_PLAN_THREE_DAYS",
+    "slot": "UG",
+    "text": "上学期歇够了，暑假你排了一张满满的计划表，执行了三天。",
+    "effects": {
+      "money": 0,
+      "academics": 1,
+      "career": 0,
+      "wellbeing": 1
+    },
+    "when": {
+      "focusAny": [
+        "REST"
+      ]
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_UG_CA_SURF",
+    "slot": "UG",
+    "text": "暑假在加州的海边学冲浪，准确地说是学会了呛水。",
+    "effects": {
+      "money": -1,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "schoolStates": [
+        "CA"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_NY_SUBLET",
+    "slot": "UG",
+    "text": "暑假住在纽约，转租的房间只放得下一张床，月租抵得上国内一个月工资。",
+    "effects": {
+      "money": -3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "when": {
+      "schoolStates": [
+        "NY",
+        "NJ"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_MIDWEST_CORN",
+    "slot": "UG",
+    "text": "暑假留校，四周的玉米长得比你还高，你骑车穿过去像在拍电影。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 2
+    },
+    "when": {
+      "schoolStates": [
+        "IA",
+        "IN",
+        "NE",
+        "KS",
+        "OH",
+        "MO"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_UG_S_OPEN_DAY",
+    "slot": "UG",
+    "text": "暑假你在学校的开放日当志愿者，被游客的家长围着问了一下午。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 2,
+      "wellbeing": -1
+    },
+    "when": {
+      "schoolTiers": [
+        "S"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_MS_STAY",
+    "slot": "MS",
+    "text": "暑假留在学校赶项目，整栋楼只剩你和空调。",
+    "effects": {
+      "money": 0,
+      "academics": 2,
+      "career": 2,
+      "wellbeing": -2
+    },
+    "when": {},
+    "weight": 3
+  },
+  {
+    "id": "SU_MS_INTERN",
+    "slot": "MS",
+    "text": "硕士暑期实习终于落地，你在工位上拍了一张照片，没敢发。",
+    "effects": {
+      "money": 3,
+      "academics": 0,
+      "career": 4,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMax": {
+        "career": 94
+      },
+      "focusAny": [
+        "CAREER",
+        "CAMPUS",
+        "WORK"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_MS_INTERN_BIG",
+    "slot": "MS",
+    "text": "暑假在大厂实习，组里的人说话一半是缩写，你记了一整本。",
+    "effects": {
+      "money": 3,
+      "academics": 0,
+      "career": 4,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMin": {
+        "career": 95
+      },
+      "focusAny": [
+        "CAREER",
+        "CAMPUS",
+        "WORK"
+      ]
+    },
+    "weight": 8
+  },
+  {
+    "id": "SU_MS_LEETCODE_CAMP",
+    "slot": "MS",
+    "text": "没找到实习，你给自己办了个暑期刷题营，学员只有你一个。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 3,
+      "wellbeing": -3
+    },
+    "when": {
+      "focusAny": [
+        "STUDY",
+        "REST"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_MS_RESEARCH",
+    "slot": "MS",
+    "text": "暑假跟着教授做项目，教授说做得好可以考虑读博，你没敢接话。",
+    "effects": {
+      "money": 0,
+      "academics": 4,
+      "career": 1,
+      "wellbeing": -1
+    },
+    "when": {
+      "statMin": {
+        "academics": 60
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_MS_HOME",
+    "slot": "MS",
+    "text": "硕士的暑假回了趟国，被问最多的问题是“什么时候毕业”。",
+    "effects": {
+      "money": -2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "statMin": {
+        "money": 25
+      }
+    },
+    "weight": 4
+  },
+  {
+    "id": "SU_MS_HOME_CAREER",
+    "slot": "MS",
+    "text": "暑假回国听了几场秋招宣讲，你开始认真考虑回来。",
+    "effects": {
+      "money": -2,
+      "academics": 0,
+      "career": 2,
+      "wellbeing": 2
+    },
+    "when": {
+      "aspirations": [
+        "BELONGING"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "SU_MS_TA",
+    "slot": "MS",
+    "text": "暑假给暑校当助教，学生问的问题你得先回去查一下。",
+    "effects": {
+      "money": 3,
+      "academics": 1,
+      "career": 0,
+      "wellbeing": -2
+    },
+    "when": {},
+    "weight": 4
+  },
+  {
+    "id": "SU_MS_LAB_DESK",
+    "slot": "MS",
+    "text": "暑假你在学校机房值班，顺便把毕业项目写了一半。",
+    "effects": {
+      "money": 4,
+      "academics": 1,
+      "career": 0,
+      "wellbeing": -2
+    },
+    "when": {
+      "statMax": {
+        "money": 20
+      }
+    },
+    "weight": 7
+  },
+  {
+    "id": "SU_MS_CONFERENCE",
+    "slot": "MS",
+    "text": "暑假你参加了一场行业大会，带回三十张名片和一个帆布袋。",
+    "effects": {
+      "money": -2,
+      "academics": 0,
+      "career": 3,
+      "wellbeing": 0
+    },
+    "when": {},
+    "weight": 4
+  },
+  {
+    "id": "SU_MS_YELLOWSTONE",
+    "slot": "MS",
+    "text": "趁暑假你终于去了趟黄石，回来发现群里已经有人拿到了全职 offer。",
+    "effects": {
+      "money": -3,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {},
+    "weight": 4
+  },
+  {
+    "id": "SU_MS_PARENTS",
+    "slot": "MS",
+    "text": "暑假爸妈飞来看你，冰箱被塞满了，作息也被纠正了。",
+    "effects": {
+      "money": 2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 3
+    },
+    "when": {
+      "economies": [
+        "MID",
+        "HIGH"
+      ]
+    },
+    "weight": 5
+  },
+  {
+    "id": "SU_MS_RECHARGE",
+    "slot": "MS",
+    "text": "硕一的节奏把你压扁了，暑假你什么也没干，只是睡觉。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 5
+    },
+    "when": {
+      "statMax": {
+        "wellbeing": 25
+      }
+    },
+    "weight": 8
+  },
+  {
+    "id": "SU_MS_VISA_TIMELINE",
+    "slot": "MS",
+    "text": "暑假你把工作签证的时间线算了一遍，决定还是先找到工作再说。",
+    "effects": {
+      "money": 0,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": -2
+    },
+    "when": {},
+    "weight": 3
+  }
+]

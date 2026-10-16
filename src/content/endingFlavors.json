@@ -539,5 +539,159 @@
       ]
     },
     "weight": 6
+  },
+  {
+    "id": "F_BOSTON_BIO",
+    "route": "LOCAL_JOB",
+    "name": "波士顿生物民工",
+    "roast": "细胞二十四小时要人照顾，你也是。",
+    "text": "你留在波士顿，在一家生物公司养细胞。冬天的雪能埋到膝盖，龙虾卷很贵，实验室的灯每天都是你最后关的。",
+    "hint": "学校在龙虾和冬天都很有名的那个州，书也读得好。",
+    "when": {
+      "schoolStates": [
+        "MA"
+      ],
+      "statMin": {
+        "academics": 75
+      }
+    },
+    "weight": 7
+  },
+  {
+    "id": "F_CHICAGO",
+    "route": "LOCAL_JOB",
+    "name": "芝加哥冻人",
+    "roast": "风城的风，是从袖口钻进骨头里的。",
+    "text": "你留在了芝加哥。冬天的风从湖面直接灌进袖口，你学会了穿三层出门。夏天短得像一场促销，你一天也舍不得错过。",
+    "hint": "学校在五大湖边那个风很大的州。",
+    "when": {
+      "schoolStates": [
+        "IL"
+      ]
+    },
+    "weight": 8
+  },
+  {
+    "id": "F_DC_THINK_TANK",
+    "route": "LOCAL_JOB",
+    "name": "华盛顿智库实习生",
+    "roast": "报告写了八十页，从头读到尾的只有你自己。",
+    "text": "你在华盛顿一家智库上班，头衔里还带着“实习”两个字。每天开会、写备忘录，在午餐讲座上抢最后一块三明治。",
+    "hint": "学校在首都附近，说话总想引用数据。",
+    "when": {
+      "schoolStates": [
+        "DC",
+        "VA",
+        "MD"
+      ]
+    },
+    "weight": 7
+  },
+  {
+    "id": "F_SHANGHAI_MNC",
+    "route": "HOME_JOB",
+    "name": "沪漂外企人",
+    "roast": "英文名比中文名常用，下午茶比午饭准时。",
+    "text": "你回国去了上海一家外企。周会用英文开，周报用中文写，公司楼下那条街的咖啡店你喝了个遍。",
+    "hint": "爱社交，职业积累也不差，带着外企滤镜回了国。",
+    "when": {
+      "countMin": {
+        "CAMPUS": 2
+      },
+      "statMin": {
+        "career": 70
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_HOMETOWN_TEACHER",
+    "route": "HOME_JOB",
+    "name": "回老家考编",
+    "roast": "绕了地球半圈，回到了县城第一中学。",
+    "text": "你回到老家，考进了县里的中学教英语。学生问你美国什么样，你说跟电影里差不多，就是没那么多爆炸。",
+    "hint": "家境一般，书读得还行，最后回到了家乡。",
+    "when": {
+      "pointsMax": {
+        "family": 4
+      },
+      "statMin": {
+        "academics": 60
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_PRODUCT_MANAGER",
+    "route": "HOME_JOB",
+    "name": "大厂产品经理",
+    "roast": "需求文档写了一百页，用户只用了其中一个按钮。",
+    "text": "你成了大厂的产品经理，每天在会议室里和程序员互相说服。你最常说的一句话是：“这个需求很简单。”",
+    "hint": "爱张罗，会讲故事，职业积累很高。",
+    "when": {
+      "countMin": {
+        "CAMPUS": 3
+      },
+      "statMin": {
+        "career": 75
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_FIRST_STUDENT",
+    "route": "PHD",
+    "name": "青椒的开山弟子",
+    "roast": "导师刚拿到教职，饼画得比经费还大。",
+    "text": "你是导师招的第一个学生。实验室里只有你、一台还没拆封的服务器，和一块写满五年计划的白板。",
+    "hint": "想自己说了算的人，选了一个刚起步的组。",
+    "when": {
+      "aspirations": [
+        "INDEPENDENCE"
+      ]
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_TA_WORKER",
+    "route": "PHD",
+    "name": "助教打工人",
+    "roast": "一半时间做研究，一半时间改作业。",
+    "text": "你的奖学金有一半是当助教换来的。每周改两百份本科生作业，评教里有人写：助教很好，就是看起来很累。",
+    "hint": "上学时就没少打工，读博也一样。",
+    "when": {
+      "countMin": {
+        "WORK": 2
+      }
+    },
+    "weight": 5
+  },
+  {
+    "id": "F_CERT_COLLECTOR",
+    "route": "TRANSITION",
+    "name": "考证专业户",
+    "roast": "证书越考越多，简历越写越长。",
+    "text": "你一口气报了三个证书班，桌上的教材摞得比出国前还高。家里人问你在忙什么，你说在充电。",
+    "hint": "爱学习的人，先停下来考几个证。",
+    "when": {
+      "countMin": {
+        "STUDY": 3
+      }
+    },
+    "weight": 6
+  },
+  {
+    "id": "F_KAOYAN",
+    "route": "TRANSITION",
+    "name": "回国考研党",
+    "roast": "出国读完了书，回国再考一次试。",
+    "text": "你回国报了考研班，打算考个国内的研究生。班里一半是海归，第一次自我介绍时，大家都说得很低调。",
+    "hint": "想过安稳日子，先回国再说。",
+    "when": {
+      "aspirations": [
+        "BELONGING"
+      ]
+    },
+    "weight": 6
   }
 ]

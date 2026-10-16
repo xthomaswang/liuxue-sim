@@ -1,0 +1,1945 @@
+{
+  "track": "DROPOUT",
+  "name": "离校之后",
+  "base": {
+    "delta": {
+      "money": 2,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": -1
+    },
+    "texts": [
+      "离开学校的日子没有课表，也没有假期。",
+      "这一年你很少再提起那所学校。",
+      "偶尔刷到同学的毕业照，你点了个赞。",
+      "你发现社会的作业没有截止日期，也没有答案。",
+      "日子一天天过，不好不坏。",
+      "家里人慢慢不再问你什么时候回去读书。",
+      "学校邮箱还没注销，每周准时收到校友捐款邀请。",
+      "简历上那段留学经历，你换了三种写法。",
+      "这一年你打过的工，比当年上过的课还多。",
+      "你学会了用“在调整”回答所有关于未来的问题。"
+    ]
+  },
+  "plans": [
+    {
+      "focus": "STUDY",
+      "name": "上网课考证",
+      "delta": {
+        "money": -2,
+        "academics": 6,
+        "career": 1,
+        "wellbeing": -4
+      }
+    },
+    {
+      "focus": "CAREER",
+      "name": "找份正经工作",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 6,
+        "wellbeing": -5
+      }
+    },
+    {
+      "focus": "CAMPUS",
+      "name": "重新交朋友",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 6
+      }
+    },
+    {
+      "focus": "WORK",
+      "name": "打零工搞钱",
+      "delta": {
+        "money": 7,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -5
+      }
+    },
+    {
+      "focus": "REST",
+      "name": "躺平回血",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 8
+      }
+    }
+  ],
+  "milestones": [
+    {
+      "id": "LM_DROPOUT_AFTER_LOTTERY",
+      "text": "你在一座小岛租了间海边的房子，手机设成了免打扰。",
+      "delta": {
+        "money": 12,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 8
+      },
+      "when": {
+        "earlies": [
+          "E_LOTTERY"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "FIRE"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_CRYPTO_MOON",
+      "text": "你提了一辆车，又把一半的钱留在币圈，说是“长期持有”。",
+      "delta": {
+        "money": 10,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {
+        "earlies": [
+          "E_CRYPTO_MOON"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_BROKE",
+      "text": "你在亲戚的店里打工还钱，第一次算清一个月房租要站多久。",
+      "delta": {
+        "money": 8,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -4
+      },
+      "when": {
+        "earlies": [
+          "E_BROKE"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_BURNOUT",
+      "text": "你在家睡了一整个月，第一次没在梦里赶截止日期。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 10
+      },
+      "when": {
+        "earlies": [
+          "E_BURNOUT"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_PROBATION",
+      "text": "你把那封学院来信存进了收藏夹，然后开始投简历。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_PROBATION"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_SUPERCAR",
+      "text": "家里收走了你的车钥匙，换成了一辆电动自行车。",
+      "delta": {
+        "money": -6,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_SUPERCAR"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_FAMILY_BANKRUPT",
+      "text": "你回家帮着收拾残局，学会了看报表，也学会了砍价。",
+      "delta": {
+        "money": -4,
+        "academics": 0,
+        "career": 5,
+        "wellbeing": -3
+      },
+      "when": {
+        "earlies": [
+          "E_FAMILY_BANKRUPT"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_GHOSTWRITER",
+      "text": "你在留学群里科普学术诚信，比当年上任何一门课都认真。",
+      "delta": {
+        "money": 0,
+        "academics": 3,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_GHOSTWRITER"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_HOMESICK",
+      "text": "你回国重新参加考试，考进了一所离家二十分钟的大学。",
+      "delta": {
+        "money": 0,
+        "academics": 4,
+        "career": 0,
+        "wellbeing": 6
+      },
+      "when": {
+        "earlies": [
+          "E_HOMESICK"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "REAPPLIED"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_NITROUS",
+      "text": "你在家养了一年，复查单上的箭头一个个消失了。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 8
+      },
+      "when": {
+        "earlies": [
+          "E_NITROUS"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_OVERINDULGE",
+      "text": "你开始十一点准时睡觉，保温杯里泡上了枸杞。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 8
+      },
+      "when": {
+        "earlies": [
+          "E_OVERINDULGE"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_PLAYBOY",
+      "text": "你换了座城市重新开始，聊天置顶只剩下一个人。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {
+        "earlies": [
+          "E_PLAYBOY"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_FLASH_MARRIAGE",
+      "text": "你们在新城市租了个一居室，冰箱上贴着市政厅门口的合影。",
+      "delta": {
+        "money": -4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 6
+      },
+      "when": {
+        "earlies": [
+          "E_FLASH_MARRIAGE"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "DATING",
+        "MARRIED"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_STRESS",
+      "text": "你把闹钟全删了，日程表上第一个填的是睡觉。",
+      "delta": {
+        "money": 0,
+        "academics": -1,
+        "career": 0,
+        "wellbeing": 9
+      },
+      "when": {
+        "earlies": [
+          "E_STRESS"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_GYM",
+      "text": "你考下了教练证，第一批学员里有三个留学生。",
+      "delta": {
+        "money": 5,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 3
+      },
+      "when": {
+        "earlies": [
+          "E_GYM"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_STARTUP",
+      "text": "你的项目有了第一个付费用户，截图你发了三个群。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 6,
+        "wellbeing": -3
+      },
+      "when": {
+        "earlies": [
+          "E_STARTUP"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "STARTUP"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_MILKTEA",
+      "text": "你的奶茶店开了第二家，期末周的订单翻了一倍。",
+      "delta": {
+        "money": 8,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": -3
+      },
+      "when": {
+        "earlies": [
+          "E_MILKTEA"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "SHOP"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_DAIGOU",
+      "text": "你的代购群开到了第五个，行李箱换成了最大号。",
+      "delta": {
+        "money": 8,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "earlies": [
+          "E_DAIGOU"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_INFLUENCER",
+      "text": "你搬进了一间能拍视频的房子，背景墙比床还贵。",
+      "delta": {
+        "money": 5,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_INFLUENCER"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "INFLUENCER"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_GAMER",
+      "text": "试训没过，你成了一个直播间的房管，专门请走捣乱的人。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_GAMER"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_PIG_BUTCHER",
+      "text": "你把聊天记录交给了警察，删掉了所有带“理财”的软件。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {
+        "earlies": [
+          "E_PIG_BUTCHER"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_CASINO",
+      "text": "你把银行卡交给爸妈保管，零花钱按周领。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_CASINO"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_CRYPTO_REKT",
+      "text": "你删光了行情软件，第一次把工资存成了定期。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_CRYPTO_REKT"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_CUSTOMS",
+      "text": "你在家附近找了份工作，护照锁进了抽屉最底层。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -1
+      },
+      "when": {
+        "earlies": [
+          "E_CUSTOMS"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_VISA_CHECK",
+      "text": "check 通过的那天，你已经在国内上了半年班。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_VISA_CHECK"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_UNDER_CREDIT",
+      "text": "补办手续的材料你准备了三遍，最后决定先在国内上班。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_UNDER_CREDIT"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_AI_ESSAY",
+      "text": "你成了公司里最会用 AI 的人，这次你记得删掉那句话。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 5,
+        "wellbeing": 1
+      },
+      "when": {
+        "earlies": [
+          "E_AI_ESSAY"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_MLM",
+      "text": "你把剩下的保健品挂上二手平台，标题写着“自用囤多了”。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_MLM"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_IDOL",
+      "text": "公司安排你去商场剪彩，台下的人比你的粉丝还多。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -3
+      },
+      "when": {
+        "earlies": [
+          "E_IDOL"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_RIDESHARE",
+      "text": "你回国接着跑网约车，导航终于不用切成英文了。",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_RIDESHARE"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_USED_CARS",
+      "text": "你的二手车行挂上了招牌，学弟学妹都来找你提车。",
+      "delta": {
+        "money": 8,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_USED_CARS"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "SHOP"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_SUBLET",
+      "text": "你回国在大学城附近租下一层楼，接着当二房东。",
+      "delta": {
+        "money": 8,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_SUBLET"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_CANADA",
+      "text": "你在加拿大重新开学，第一周就学会了说“sorry”。",
+      "delta": {
+        "money": -4,
+        "academics": 4,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_CANADA"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "CANADA",
+        "REAPPLIED"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_AFTER_COMMUNITY_COLLEGE",
+      "text": "社区大学的同学里有退伍老兵，也有带着孩子来上课的家长。",
+      "delta": {
+        "money": 2,
+        "academics": 4,
+        "career": 0,
+        "wellbeing": 0
+      },
+      "when": {
+        "earlies": [
+          "E_COMMUNITY_COLLEGE"
+        ],
+        "yearMax": 1
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "REAPPLIED"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_CIVIL_GENE",
+      "text": "你回老家报名考公，笔试面试一路顺利，一次上岸。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 4
+      },
+      "when": {
+        "talentsAny": [
+          "T_CIVIL_GENE"
+        ],
+        "yearMin": 3,
+        "statMin": {
+          "academics": 65
+        },
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "REAPPLIED",
+          "CANADA",
+          "STARTUP",
+          "SHOP",
+          "FAMILY_BIZ"
+        ]
+      },
+      "chancePermille": 320,
+      "setFlags": [
+        "CIVIL_SERVANT"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_DROPOUT_CIVIL",
+      "text": "你补了个本科学历，回老家考公，考到第三次终于上岸。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 4
+      },
+      "when": {
+        "talentsNone": [
+          "T_CIVIL_GENE"
+        ],
+        "yearMin": 3,
+        "statMin": {
+          "academics": 65
+        },
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "REAPPLIED",
+          "CANADA",
+          "STARTUP",
+          "SHOP",
+          "FAMILY_BIZ"
+        ]
+      },
+      "chancePermille": 80,
+      "setFlags": [
+        "CIVIL_SERVANT"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_DROPOUT_RESUME",
+      "text": "你回学校办了复学，教务处的老师说：学分还在，欢迎回来。",
+      "delta": {
+        "money": -5,
+        "academics": 5,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_BROKE",
+          "E_BURNOUT",
+          "E_STRESS",
+          "E_OVERINDULGE",
+          "E_NITROUS",
+          "E_VISA_CHECK",
+          "E_UNDER_CREDIT"
+        ],
+        "yearMin": 2,
+        "yearMax": 4,
+        "lifeFlagsNone": [
+          "REAPPLIED",
+          "CIVIL_SERVANT"
+        ]
+      },
+      "chancePermille": 200,
+      "setFlags": [
+        "REAPPLIED"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_REAPPLY_UK",
+      "text": "你换了个国家重新留学，英国的本科只要读三年。",
+      "delta": {
+        "money": -10,
+        "academics": 5,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "yearMin": 2,
+        "statMin": {
+          "money": 55,
+          "academics": 55
+        },
+        "lifeFlagsNone": [
+          "REAPPLIED",
+          "CIVIL_SERVANT",
+          "CANADA",
+          "FAMILY_BIZ",
+          "SHOP",
+          "STARTUP"
+        ]
+      },
+      "chancePermille": 100,
+      "setFlags": [
+        "REAPPLIED"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_REAPPLY_CC",
+      "text": "你在一所社区大学重新注册，这次的课表是自己排的。",
+      "delta": {
+        "money": -3,
+        "academics": 5,
+        "career": 0,
+        "wellbeing": 0
+      },
+      "when": {
+        "yearMin": 2,
+        "statMin": {
+          "academics": 50
+        },
+        "lifeFlagsNone": [
+          "REAPPLIED",
+          "CIVIL_SERVANT",
+          "CANADA",
+          "FAMILY_BIZ",
+          "SHOP",
+          "STARTUP"
+        ]
+      },
+      "chancePermille": 50,
+      "setFlags": [
+        "REAPPLIED"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_SECOND_DEGREE",
+      "text": "第二次毕业典礼，爸妈坐在第一排，比你还紧张。",
+      "delta": {
+        "money": 0,
+        "academics": 6,
+        "career": 3,
+        "wellbeing": 5
+      },
+      "when": {
+        "yearMin": 3,
+        "lifeFlagsAll": [
+          "REAPPLIED"
+        ],
+        "lifeFlagsNone": [
+          "SECOND_DEGREE"
+        ]
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "SECOND_DEGREE"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_FAMILY_BIZ",
+      "text": "你开始去家里的厂子上班，从仓库开始学起。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": -2
+      },
+      "when": {
+        "yearMin": 2,
+        "pointsMin": {
+          "family": 7
+        },
+        "lifeFlagsNone": [
+          "FAMILY_BIZ",
+          "CIVIL_SERVANT",
+          "REAPPLIED",
+          "CANADA",
+          "SHOP"
+        ]
+      },
+      "chancePermille": 80,
+      "setFlags": [
+        "FAMILY_BIZ"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_SHOP",
+      "text": "你用攒下的钱在老家开了家小店，招牌上加了个英文单词。",
+      "delta": {
+        "money": -10,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 3
+      },
+      "when": {
+        "yearMin": 2,
+        "statMin": {
+          "money": 50
+        },
+        "lifeFlagsNone": [
+          "SHOP",
+          "FAMILY_BIZ",
+          "CIVIL_SERVANT",
+          "REAPPLIED",
+          "CANADA"
+        ]
+      },
+      "chancePermille": 100,
+      "setFlags": [
+        "SHOP"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_HOME_JOB",
+      "text": "亲戚介绍你进了一家公司，面试只问了一句英语怎么样。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 5,
+        "wellbeing": -2
+      },
+      "when": {
+        "yearMin": 2,
+        "statMin": {
+          "career": 65
+        },
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "REAPPLIED",
+          "CANADA",
+          "STARTUP",
+          "SHOP",
+          "FAMILY_BIZ",
+          "INFLUENCER"
+        ]
+      },
+      "chancePermille": 80,
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_DROPOUT_PROMOTED",
+      "text": "你从店员做到了店长，工牌上的字大了一号。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 5,
+        "wellbeing": -2
+      },
+      "when": {
+        "yearMin": 2,
+        "statMin": {
+          "career": 70
+        },
+        "lifeFlagsNone": [
+          "PROMOTED",
+          "REAPPLIED",
+          "FAMILY_BIZ",
+          "SHOP",
+          "STARTUP",
+          "CIVIL_SERVANT"
+        ]
+      },
+      "chancePermille": 120,
+      "setFlags": [
+        "PROMOTED"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_LAID_OFF",
+      "text": "你打工的那家店关门了，老板请大家吃了最后一顿饭。",
+      "delta": {
+        "money": -6,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": -3
+      },
+      "when": {
+        "yearMin": 2,
+        "lifeFlagsNone": [
+          "LAID_OFF",
+          "REAPPLIED",
+          "FAMILY_BIZ",
+          "CIVIL_SERVANT"
+        ]
+      },
+      "chancePermille": 60,
+      "setFlags": [
+        "LAID_OFF"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_BURNOUT",
+      "text": "你在收银台前站着睡着了，店长让你回家歇一个月。",
+      "delta": {
+        "money": -4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 7
+      },
+      "when": {
+        "yearMin": 2,
+        "statMax": {
+          "wellbeing": 25
+        },
+        "lifeFlagsNone": [
+          "BURNOUT"
+        ]
+      },
+      "chancePermille": 250,
+      "setFlags": [
+        "BURNOUT"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_HOUSE",
+      "text": "你在老家付了首付，房本上终于有了你的名字。",
+      "delta": {
+        "money": -12,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 5
+      },
+      "when": {
+        "yearMin": 3,
+        "statMin": {
+          "money": 80
+        },
+        "lifeFlagsNone": [
+          "HOUSE"
+        ]
+      },
+      "chancePermille": 250,
+      "setFlags": [
+        "HOUSE"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_CRYPTO_CASH_OUT",
+      "text": "你把币全卖了，换成最无聊的理财，宣布退休。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 6
+      },
+      "when": {
+        "earlies": [
+          "E_CRYPTO_MOON"
+        ],
+        "yearMin": 2,
+        "statMin": {
+          "money": 60
+        },
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "chancePermille": 200,
+      "setFlags": [
+        "FIRE"
+      ]
+    },
+    {
+      "id": "LM_DROPOUT_CRYPTO_CRASH",
+      "text": "你留在币圈的那一半，一个周末就变成了四分之一。",
+      "delta": {
+        "money": -10,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {
+        "earlies": [
+          "E_CRYPTO_MOON"
+        ],
+        "yearMin": 2,
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "chancePermille": 150
+    }
+  ],
+  "events": [
+    {
+      "id": "LE_DROPOUT_RELATIVE_ASK",
+      "text": "亲戚问你美国的书读完没，你说读完了，没说读完哪部分。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_DROPOUT_RESUME_LINE",
+      "text": "你在简历上把留学那几年写成“海外学习经历”，字号小了两号。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -1
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_DROPOUT_INTERVIEW",
+      "text": "面试官问你为什么没毕业，你讲了一个十分钟的成长故事。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_DROPOUT_PARENTS_ARTICLE",
+      "text": "爸妈在家族群里转发《学历真的不重要》，配了三个大拇指。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_TUTOR",
+      "text": "你给邻居家孩子补英语，按小时收费，家长夸你发音纯正。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_DROPOUT_COOK",
+      "text": "你学会了做饭，红烧肉比在国外时做得好多了。",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_DROPOUT_EXAM_DREAM",
+      "text": "你梦见期末考试没复习，惊醒后想起已经不用考了，笑出了声。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_TEXTBOOKS",
+      "text": "你在二手平台卖掉了当年的教材，买家也是留学生。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 0
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_FRIEND_INVEST",
+      "text": "朋友创业拉你入股，你出了点钱，项目半年后黄了。",
+      "delta": {
+        "money": -6,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 0
+      },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_DROPOUT_GROUP_CHAT",
+      "text": "你被拉进一个“肄业人士交流群”，群主是一家公司的老板。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_BANK_CARD",
+      "text": "你注销了美国的银行卡，客服说了三遍“sorry to see you go”。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_DROPOUT_IELTS",
+      "text": "你去考了个雅思，分数比当年出国时还高。",
+      "delta": {
+        "money": -2,
+        "academics": 4,
+        "career": 0,
+        "wellbeing": 0
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_YEAR_END",
+      "text": "年底盘点：存款没涨，体重涨了。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_ROOMMATE",
+      "text": "当年的室友出差路过，请你吃了顿饭，抢着买了单。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_SPREADSHEET",
+      "text": "你学会了用表格做账，老板说你是全店最懂电脑的人。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 0
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_BLIND_DATE",
+      "text": "家里安排相亲，对方第一句就问你的学历能不能认证。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "DATING",
+          "MARRIED"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_PROFESSOR_NEWS",
+      "text": "你刷到当年的教授上了新闻，转发到旧同学群，没人回。",
+      "delta": {
+        "money": 0,
+        "academics": 1,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_DROPOUT_SHOPPING",
+      "text": "购物节囤了一堆用不上的东西，快递堆满了门口。",
+      "delta": {
+        "money": -4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_ONE_TERM",
+      "text": "春节又有人提起你离毕业只差一学期，你给大家倒了杯酒。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "stage": "UG",
+        "termMin": 7
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_DROPOUT_ACCENT",
+      "text": "你在国外只待了一年，说话却总夹着几个英文单词。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 1
+      },
+      "when": {
+        "stage": "UG",
+        "termMax": 2
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_DROPOUT_HALF_MASTER",
+      "text": "你读过的那半个硕士，在简历上占了一行，面试时占了十分钟。",
+      "delta": {
+        "money": 0,
+        "academics": 1,
+        "career": 2,
+        "wellbeing": -1
+      },
+      "when": {
+        "degrees": [
+          "MS"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_DROPOUT_SORTING",
+      "text": "你在快递站分拣包裹，一晚上能认出两百个城市的名字。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_DROPOUT_SCHOOL_EMAIL",
+      "text": "学校发来邮件问你要不要复学，你把它标成了已读。",
+      "delta": {
+        "money": 0,
+        "academics": 1,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "REAPPLIED"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_NEIGHBOR_KID",
+      "text": "邻居家孩子考上了你当年那所学校，家长特地上门问经验。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_BARBER",
+      "text": "你去理发店办了张卡，托尼老师夸你很有国际范。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_DROPOUT_LATTE_ART",
+      "text": "你在咖啡店打工，拉花比同事都好，就是心形总是歪的。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_NIGHT_SHIFT",
+      "text": "你连上了一个月夜班，白天睡觉时窗帘拉得严严实实。",
+      "delta": {
+        "money": 5,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_PARENTS_FRIENDS",
+      "text": "爸妈的朋友聚会上，你被介绍成“在国外读过书的”。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 1
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_TEACH_CHINESE",
+      "text": "你在网上教外国人中文，有个学生是你当年的同学。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 0
+      },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_DROPOUT_CAMPUS_VISIT",
+      "text": "你旅游时顺路回了一趟学校，食堂换了，自习室没换。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_DROPOUT_GOLF",
+      "text": "爸妈给你报了个高尔夫课，说是去“拓展人脉”。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 1
+      },
+      "when": {
+        "economies": [
+          "HIGH"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_DROPOUT_SEND_HOME",
+      "text": "你把每个月的工资分成三份，其中一份转给了家里。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "economies": [
+          "LOW"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_DROPOUT_CRYPTO_AGAIN",
+      "text": "你又下了一个交易软件，只放了一顿火锅的钱，然后卸载了。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "earlies": [
+          "E_CRYPTO_MOON",
+          "E_CRYPTO_REKT"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_DROPOUT_PIG_HELLO",
+      "text": "陌生人发来一句“在吗”，你熟练地拉黑，顺手举报。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_PIG_BUTCHER"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_DROPOUT_GAMER_NIGHT",
+      "text": "老队友半夜喊你上线，打完一把，天已经亮了。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 3
+      },
+      "when": {
+        "earlies": [
+          "E_GAMER"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_DROPOUT_IDOL_FANS",
+      "text": "后援会只剩下几个人，大家开始轮流催你考研。",
+      "delta": {
+        "money": 0,
+        "academics": 1,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_IDOL"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_DROPOUT_MLM_PING",
+      "text": "当年的上线又发来消息，说有个新项目，这次卖净水器。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "earlies": [
+          "E_MLM"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_DROPOUT_THAT_TREE",
+      "text": "你路过当年那棵树，它长得很好，树皮上还留着一道疤。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_SUPERCAR"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_DROPOUT_EMBASSY_MAIL",
+      "text": "邮箱弹出一封使馆来信，你深呼吸三次才点开：满意度调查。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "earlies": [
+          "E_VISA_CHECK"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_DROPOUT_MAHJONG",
+      "text": "朋友约你打麻将，你说只看不打，看了一整晚。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "earlies": [
+          "E_CASINO"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_DROPOUT_HOME_FOOD",
+      "text": "你天天吃得上家里的饭，偶尔竟然想念那边的汉堡。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "earlies": [
+          "E_HOMESICK"
+        ]
+      },
+      "weight": 6
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "LO_DROPOUT_DEFAULT",
+      "name": "肄业打工人",
+      "roast": "没有学位，也没有房贷。",
+      "text": "五年里你换过几份工作，每份都干得不差。说起当年没读完的书，你已经能笑着讲完。",
+      "hint": "什么都没发生的五年。",
+      "grade": "N",
+      "when": {},
+      "weight": 3,
+      "fallback": true
+    },
+    {
+      "id": "LO_DROPOUT_GIG",
+      "name": "零工专家",
+      "roast": "简历很长，每一段都很短。",
+      "text": "你同时干着几份零工，简历上写着“灵活就业”。日程表比上学时还满，工资条比上学时还薄。",
+      "hint": "职业积累一直没攒起来。",
+      "grade": "N",
+      "when": {
+        "statMax": {
+          "career": 60
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_DROPOUT_HOMEBODY",
+      "name": "资深家里蹲",
+      "roast": "爸妈的催促，从找工作变成了取快递。",
+      "text": "你住回自己的房间，饭点准时出现，其余时间去向不明。日子过得不富裕，但你睡得很好。",
+      "hint": "兜里没钱，心里倒挺踏实。",
+      "grade": "N",
+      "when": {
+        "statMax": {
+          "money": 20
+        },
+        "statMin": {
+          "wellbeing": 55
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_DROPOUT_BROKE",
+      "name": "月光打工人",
+      "roast": "每个月的钱都花得很准时。",
+      "text": "五年里你打过的工能列满一页纸，存款那一栏一直空着。好在你学会了一件事：月底之前不看余额。",
+      "hint": "钱总是留不住。",
+      "grade": "N",
+      "when": {
+        "statMax": {
+          "money": 5
+        }
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_DROPOUT_ZEN",
+      "name": "佛系青年",
+      "roast": "没有截止日期的人，睡得最香。",
+      "text": "你没什么大成就，也没什么大烦恼。早睡早起，周末爬山，同学们的焦虑你只在朋友圈里见过。",
+      "hint": "退学之后，反而睡得最好。",
+      "grade": "N",
+      "when": {
+        "statMin": {
+          "wellbeing": 75
+        }
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_DROPOUT_SAVER",
+      "name": "小有积蓄",
+      "roast": "学位没拿到，存款先到了。",
+      "text": "你一边打工一边存钱，五年下来，存款够付一个小首付。爸妈看了一眼余额，再没提过学位的事。",
+      "hint": "没读完书，钱倒是攒下了。",
+      "grade": "N",
+      "when": {
+        "statMin": {
+          "money": 65
+        }
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_DROPOUT_BACKBONE",
+      "name": "野生骨干",
+      "roast": "简历过不了筛选，干活过得了老板。",
+      "text": "你没有文凭，却成了单位里最离不开的那个人。招聘启事上写着“本科以上”，老板说你是例外。",
+      "hint": "没有学历，本事却越攒越多。",
+      "grade": "R",
+      "when": {
+        "statMin": {
+          "career": 90
+        }
+      },
+      "weight": 3
+    },
+    {
+      "id": "LO_DROPOUT_MANAGER",
+      "name": "没文凭的店长",
+      "roast": "学历没写完，工牌越换越大。",
+      "text": "你从最底层干起，一路做到了店长。新来的大学生叫你“老板”，你从不纠正，也从不提自己没毕业。",
+      "hint": "从店员干起，一直往上走。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "PROMOTED"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_DROPOUT_SHOP",
+      "name": "小城老板",
+      "roast": "招牌上的英文，是留学最后的痕迹。",
+      "text": "你在小城开了家店，招牌上的英文单词拼错了一个字母，生意没受影响。熟客叫你“海归老板”，你笑着收下了。",
+      "hint": "攒下一笔钱，开了自己的店。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "SHOP"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LO_DROPOUT_STUDENT_AGAIN",
+      "name": "重新当学生",
+      "roast": "退学一次，入学两次。",
+      "text": "你又成了学生，比同学大几岁，选课时比谁都谨慎。这一次，你算清了学费，也算清了自己想要什么。",
+      "hint": "绕了一圈，又回到了教室。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "REAPPLIED"
+        ],
+        "lifeFlagsNone": [
+          "SECOND_DEGREE",
+          "CANADA"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_DROPOUT_CANADA",
+      "name": "枫叶国居民",
+      "roast": "冬天铲雪，夏天钓鱼，全年说抱歉。",
+      "text": "你留在了加拿大，冬天铲雪，夏天钓鱼，排队时会跟陌生人聊天气。偶尔路过边境，你会想起当年往北开的那四个小时。",
+      "hint": "往北走的人，后来留在了北边。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "CANADA"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_DROPOUT_INFLUENCER",
+      "name": "退学博主",
+      "roast": "置顶视频：我为什么退学。",
+      "text": "你的账号简介写着“留学肄业”，播放量最高的视频是《我为什么退学》。评论区一半人羡慕你，一半人劝你回去读书。",
+      "hint": "把退学这件事，拍成了内容。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "INFLUENCER"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_DROPOUT_EARLY_FAMILY",
+      "name": "早早成家",
+      "roast": "同学在纠结读博，你在纠结周末去谁家吃饭。",
+      "text": "你比同龄人早几年成了家。同学们还在为前途发愁，你已经在研究哪款洗碗机好用。日子不算宽裕，但很热闹。",
+      "hint": "比同学们更早安顿下来。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "MARRIED"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_DROPOUT_FOUNDER",
+      "name": "创业进行时",
+      "roast": "名片换了三版，头衔都是创始人。",
+      "text": "你的公司还活着，账上的钱不多，计划书很多。投资人见了一轮又一轮，你最熟练的技能是五分钟讲完一个故事。",
+      "hint": "创了业，还在硬撑。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "STARTUP"
+        ],
+        "lifeFlagsNone": [
+          "STARTUP_EXIT"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_DROPOUT_DEGREE",
+      "name": "迟到的毕业证",
+      "roast": "晚了几年，但毕业证不分先后。",
+      "text": "绕了一大圈，你还是拿到了毕业证，比原计划晚了几年。合影里你站在最边上，笑得比谁都开心。",
+      "hint": "离开过学校，又把书读完了。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "SECOND_DEGREE"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LO_DROPOUT_HEIR",
+      "name": "继承家业",
+      "roast": "从仓库一路干到了会议室。",
+      "text": "你从仓库做起，五年后坐进了家里厂子的办公室。员工叫你“小老板”，你纠正过几次，没用。",
+      "hint": "家里有份产业等着人接。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "FAMILY_BIZ"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LO_DROPOUT_LANDLORD",
+      "name": "退学回家收租",
+      "roast": "没拿到学位，拿到了一串钥匙。",
+      "text": "你回到老家，每月一号挨家挨户收租。租客里有两户是留学生的家长，你对这两户格外客气。",
+      "hint": "老家有几套房等你回去。",
+      "grade": "SR",
+      "when": {
+        "talentsAny": [
+          "T_LANDLORD"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_DROPOUT_CRYPTO",
+      "name": "币圈幸存者",
+      "roast": "涨跌都见过，心脏练出来了。",
+      "text": "你的币涨了又跌，跌了又涨。五年下来，最大的收获是一套海边的房子，和一颗不会再被 K 线吓到的心脏。",
+      "hint": "当年睡醒多了几个零的那一位。",
+      "grade": "SR",
+      "when": {
+        "earlies": [
+          "E_CRYPTO_MOON"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_DROPOUT_UNICORN",
+      "name": "辍学神话",
+      "roast": "媒体说你是天才，你只是不想考期末。",
+      "text": "公司被收购那天，新闻把你写成“辍学创业的天才”。你没告诉记者，当年退学的真正原因是不想考期末。",
+      "hint": "创了业，还被收购了。",
+      "grade": "SSR",
+      "when": {
+        "lifeFlagsAll": [
+          "STARTUP_EXIT"
+        ]
+      },
+      "weight": 9
+    },
+    {
+      "id": "LO_DROPOUT_FIRE",
+      "name": "二十几岁退休",
+      "roast": "别人在攒首付，你在攒鱼竿。",
+      "text": "你不到三十岁就宣布退休。每天的安排是钓鱼、看海，以及拒绝各种投资建议。",
+      "hint": "钱多到可以不上班。",
+      "grade": "SSR",
+      "when": {
+        "lifeFlagsAll": [
+          "FIRE"
+        ]
+      },
+      "weight": 9
+    },
+    {
+      "id": "LO_DROPOUT_ISLAND",
+      "name": "潜水店老板",
+      "roast": "没有截止日期，只有潮汐表。",
+      "text": "有人在一个小岛的潜水店门口见过你。你晒得很黑，说这里唯一的截止日期是退潮。",
+      "hint": "当年中了头奖的那一位。",
+      "grade": "SSR",
+      "when": {
+        "earlies": [
+          "E_LOTTERY"
+        ]
+      },
+      "weight": 10
+    }
+  ]
+}

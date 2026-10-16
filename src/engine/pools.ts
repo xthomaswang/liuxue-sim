@@ -2,9 +2,16 @@
 // 经典模式需要的六张特质天赋与五张基础安排在这里有内置定义（数值即 docs/03 第 2.3 节与第 3 节），
 // 内容池里有同 id 的条目时用池里的；这样经典模式的数值不依赖内容池是否已经写好。
 
-import { CORE_EVENTS, CORE_VARIANTS, HAPPENINGS, PLANS, RANDOM_EVENTS, TALENTS, TEXTS } from "../content";
-import { CLASSIC_TALENT_IDS, FOCUS_BASE, FOCUS_ORDER } from "./constants";
-import type { Focus, Happening, PlanCard, StoryEvent, Talent, TalentEffects, Trait } from "./types";
+import {
+  CORE_EVENTS, CORE_VARIANTS, DAILY_BY_ID, DAILY_LINES, GPA_BANDS, HAPPENINGS, LIFE_COMMON, LIFE_EVENT_BY_ID, LIFE_TRACKS,
+  PLANS, RANDOM_EVENTS, SUMMERS, SUMMER_BY_ID, TALENTS, TEXTS,
+} from "../content";
+import type { LifeCommonContent } from "../content";
+import { CLASSIC_TALENT_IDS, FOCUS_BASE, FOCUS_ORDER, LIFE_TRACK_ORDER } from "./constants";
+import type {
+  DailyLine, Focus, GpaBand, Happening, LifeEvent, LifeOutcome, LifeTrack, LifeTrackContent, PlanCard, StoryEvent,
+  SummerEvent, Talent, TalentEffects, Trait,
+} from "./types";
 
 const CLASSIC_TRAITS: Readonly<Record<string, Trait>> = {
   T_FOCUSED: "FOCUSED",
@@ -90,4 +97,49 @@ export function nodeCandidates(term: number): StoryEvent[] {
   return [...CORE_EVENTS, ...CORE_VARIANTS]
     .filter((event) => event.kind === "core" && event.stage === term)
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+// ---------- 第四版（docs/24）：暑假、日常、GPA 说法、毕业后各轨道 ----------
+
+export function summerPool(): readonly SummerEvent[] {
+  return SUMMERS;
+}
+
+export function findSummer(id: string): SummerEvent | undefined {
+  return SUMMER_BY_ID[id];
+}
+
+export function dailyPool(): readonly DailyLine[] {
+  return DAILY_LINES;
+}
+
+export function findDailyLine(id: string): DailyLine | undefined {
+  return DAILY_BY_ID[id];
+}
+
+export function gpaBands(): readonly GpaBand[] {
+  return GPA_BANDS;
+}
+
+export function lifeTrackContent(track: LifeTrack): LifeTrackContent {
+  const content = LIFE_TRACKS[track];
+  if (!content) throw new Error(`LIFE_TRACK_MISSING: ${track}`);
+  return content;
+}
+
+export function lifeCommon(): LifeCommonContent {
+  return LIFE_COMMON;
+}
+
+export function findLifeEvent(id: string): LifeEvent | undefined {
+  return LIFE_EVENT_BY_ID[id];
+}
+
+/** 五年后的结局：在各轨道里找，返回结局与它所属的轨道。 */
+export function findLifeOutcome(id: string): { outcome: LifeOutcome; track: LifeTrack } | undefined {
+  for (const track of LIFE_TRACK_ORDER) {
+    const outcome = LIFE_TRACKS[track].outcomes.find((item) => item.id === id);
+    if (outcome) return { outcome, track };
+  }
+  return undefined;
 }

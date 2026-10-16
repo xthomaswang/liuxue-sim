@@ -5,7 +5,7 @@ import { EARLY_ENDINGS, ENDING_FLAVORS } from "../content";
 import { MS_TERM_LABELS, UG_TERM_LABELS } from "./constants";
 import { conditionFacts, conditionMet } from "./conditions";
 import type { ConditionContext } from "./conditions";
-import { draw01 } from "./rng";
+import { draw01, pickWeighted } from "./rng";
 import type { Degree, EarlyEnding, EndingFlavor, EpilogueDraw, FinalRoute } from "./types";
 
 export interface EarlyHit {
@@ -64,13 +64,5 @@ export function pickFlavor(
   flavors: readonly EndingFlavor[] = ENDING_FLAVORS,
 ): EndingFlavor | null {
   const candidates = flavors.filter((flavor) => flavor.route === route && conditionMet(flavor.when, ctx));
-  if (candidates.length === 0) return null;
-  const total = candidates.reduce((sum, flavor) => sum + flavor.weight, 0);
-  const r = draw01(seed, `flavor:${route}`) * total;
-  let cumulative = 0;
-  for (const flavor of candidates) {
-    cumulative += flavor.weight;
-    if (cumulative > r) return flavor;
-  }
-  return candidates[candidates.length - 1];
+  return pickWeighted(seed, `flavor:${route}`, candidates, (flavor) => flavor.weight);
 }

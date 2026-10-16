@@ -4,7 +4,8 @@
 import { act, cleanup, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ENDING_CARDS } from "../../content";
-import { setupView, startPreview, timeline } from "../../engine";
+import { setupView, startPreview, summaryView, timeline } from "../../engine";
+import { autoDelay } from "../screens/TimelineScreen";
 import {
   allocateEvenly,
   app,
@@ -142,8 +143,21 @@ describe("整套流程", () => {
       expect(shownEntries()).toEqual(entries.slice(0, index + 1).map((item) => item.id));
       const node = screen.getByTestId(`timeline-entry-${entry.id}`);
       expect(node.textContent).toContain(entry.label);
+      expect(node.getAttribute("data-group")).toBe(entry.group ?? "SCHOOL");
+      // 标签下面是年龄（没有年龄的段不写）。
+      if (typeof entry.age === "number") expect(node.querySelector(".tl-age")?.textContent).toBe(`${entry.age} 岁`);
+      else expect(node.querySelector(".tl-age")).toBeNull();
       for (const line of entry.lines) expect(node.textContent).toContain(line.text);
       expect(stats()).toEqual(entry.statsAfter);
+      // 进入毕业后、五年后之前各有一条分隔；还没到的时候不出现。
+      const firstLife = entries.findIndex((item) => item.group === "LIFE");
+      if (firstLife >= 0 && index >= firstLife) {
+        const leftEarly = entries.some((item) => item.id === "EARLY");
+        expect(screen.getByTestId("timeline-divider-life").textContent).toBe(leftEarly ? "离开学校以后" : "毕业以后");
+      } else {
+        expect(screen.queryByTestId("timeline-divider-life")).toBeNull();
+      }
+      expect(screen.queryByTestId("timeline-divider-outcome") !== null).toBe(entries.slice(0, index + 1).some((item) => item.group === "END"));
       expect(savedReveal(storage).shown).toBe(index + 1);
       expectOnlyTimelineControls();
     }
@@ -161,8 +175,21 @@ describe("整套流程", () => {
     expect(screen.getByTestId("ending-card").getAttribute("data-tier")).toBe(card?.tier);
     expect(screen.getByTestId("card-combo").textContent).toBe(card?.combo);
     expect(screen.getByTestId("ending-card").textContent).toContain(ENDING_CARDS.disclaimer);
-    expect(screen.getByTestId("ending-epilogue").textContent?.length).toBeGreaterThan(5);
-    expect(screen.getByTestId("final-money").textContent).toContain(String(ending.stats.money));
+    // 第四版：有毕业后的五年时，最上面是“五年后”，原来那段五年后的文字不再显示。
+    const summary = summaryView(ending);
+    if (summary.life) {
+      expect(screen.getByTestId("life-outcome").textContent).toBe(summary.life.outcome.name);
+      expect(screen.getByTestId("life-age").textContent).toBe(`${summary.life.age} 岁`);
+      expect(screen.getByTestId("life-path").textContent).toBe(summary.life.trackNames.join(" → "));
+      expect(screen.getByTestId("life-block").getAttribute("data-grade")).toBe(summary.life.outcome.grade);
+      expect(screen.queryByTestId("ending-epilogue")).toBeNull();
+      expect(screen.getByTestId("start-stats").textContent).toContain("离开学校时");
+    } else {
+      expect(screen.getByTestId("ending-epilogue").textContent?.length).toBeGreaterThan(5);
+    }
+    if (typeof summary.gpa === "number") expect(screen.getByTestId("summary-gpa").textContent).toContain(summary.gpa.toFixed(2));
+    const finalMoney = summary.stats.find((item) => item.key === "money")?.value;
+    expect(screen.getByTestId("final-money").textContent).toContain(String(finalMoney));
     expect(screen.getByTestId("summary-talents").querySelectorAll(".rarity").length).toBe(3);
     if (card?.flavor) expect(screen.getByTestId("ending-flavor").textContent).toBe(card.flavor.name);
     if (card?.early) expect(screen.getByTestId("ending-early").textContent).toBe(card.name);
@@ -242,26 +269,34 @@ describe("人生轨迹的三种看法", () => {
       await flush();
     };
 
+    // 每段停留的时间按刚出现那一段的行数算：clamp(700 + 260 × 行数, 1000, 2800)。
+    const entries = timeline(savedEnding(storage));
+    const wait = (shownSoFar: number) => autoDelay(shownSoFar > 0 ? entries[shownSoFar - 1].lines.length : 0);
+
     await click("auto-play");
     expect(screen.getByTestId("auto-play").textContent).toBe("暂停");
     expect(shownEntries().length).toBe(0);
-    await tick(800);
+    await tick(wait(0) - 1);
+    expect(shownEntries().length).toBe(0);
+    await tick(1);
     expect(shownEntries().length).toBe(1);
-    await tick(800);
+    await tick(wait(1) - 1);
+    expect(shownEntries().length).toBe(1);
+    await tick(1);
     expect(shownEntries().length).toBe(2);
 
     // 暂停后不再前进。
     await click("auto-play");
     expect(screen.getByTestId("auto-play").textContent).toBe("自动播放");
-    await tick(5000);
+    await tick(10000);
     expect(shownEntries().length).toBe(2);
 
     // 继续播放直到结尾。
     await click("auto-play");
-    for (let i = 0; i < total; i++) await tick(800);
+    for (let i = 2; i < total; i++) await tick(wait(i));
     expect(shownEntries().length).toBe(total);
     expect(screen.getByTestId("to-summary")).toBeTruthy();
-    await tick(5000);
+    await tick(10000);
     expect(shownEntries().length).toBe(total);
   });
 });

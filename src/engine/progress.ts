@@ -1,17 +1,25 @@
-// 成就与天赋解锁（docs/22 第 7 节、docs/23）：一局结束后，按这一局的结果与既有的跨局进度，
-// 算出本局新得到的成就与新解锁的天赋。纯函数：同一局、同样的既有进度，得到同样的结果。
+// 成就与天赋解锁（docs/22 第 7 节、docs/23；第四版新增的见 docs/24 第 10 节）：一局结束后，按这一局的结果与
+// 既有的跨局进度，算出本局新得到的成就与新解锁的天赋。纯函数：同一局、同样的既有进度，得到同样的结果。
+// “离校时”的属性取 life.startStats（没有毕业后五年的经典模式取最后的四属性）。
 
 import { ACHIEVEMENTS } from "../content";
 import {
-  ENDING_TIER_ORDER, OPPORTUNITY_ORDER, POINT_KEYS, POINT_MAX, UNLOCK_BASE_PERCENT, UNLOCK_PERCENT_PER_ACHIEVEMENT,
+  BUSY_LIFE_HAPPENINGS_MIN, ENDING_TIER_ORDER, OPPORTUNITY_ORDER, POINT_KEYS, POINT_MAX, UNLOCK_BASE_PERCENT,
+  UNLOCK_PERCENT_PER_ACHIEVEMENT,
 } from "./constants";
-import { talentPool } from "./pools";
+import { averageGpa, termGpas } from "./gpa";
+import type { TermGpa } from "./gpa";
+import { findLifeOutcome, talentPool } from "./pools";
 import { drawFor } from "./reducer";
 import { draw01, pickIndex } from "./rng";
 import { talentsByIds } from "./talents";
-import type { ActiveRun, EndingRecord, EndingTierId, ProgressSnapshot, RunRewards, RunState } from "./types";
+import type {
+  ActiveRun, EndingRecord, EndingTierId, LifeOutcome, LifeState, ProgressSnapshot, RunRewards, RunState, Stats,
+} from "./types";
 
 const A_TALENTS_ALL = "A_TALENTS_ALL";
+/** 院长嘉许：本科各学期 GPA 平均的门槛（docs/24 §10）。 */
+const DEANS_LIST_GPA = 3.5;
 const HIGH_TIERS: readonly EndingTierId[] = ["EX", "UR", "SSR", "SR_PLUS", "SR"];
 const TOP_TIERS: readonly EndingTierId[] = ["EX", "UR", "SSR"];
 
@@ -27,7 +35,16 @@ interface Facts {
   ending: EndingRecord;
   progress: ProgressSnapshot;
   graduation: boolean;
+  /** 离开学校时的四属性。 */
+  exit: Stats;
+  /** 毕业后的五年；经典模式为 null。 */
+  life: LifeState | null;
+  /** 五年后的结局；经典模式为 null。 */
+  outcome: LifeOutcome | null;
+  gpas: TermGpa[];
 }
+
+const lifeFlag = (...flags: string[]) => ({ life }: Facts): boolean => !!life && flags.some((flag) => life.flags.includes(flag));
 
 /** 每条成就的判定条件（docs/23 的条件表）。A_TALENTS_ALL 要等解锁结果出来之后单独判定。 */
 const CONDITIONS: Readonly<Record<string, (facts: Facts) => boolean>> = {
@@ -47,12 +64,12 @@ const CONDITIONS: Readonly<Record<string, (facts: Facts) => boolean>> = {
     if (!outcomes || OPPORTUNITY_ORDER.some((key) => outcomes[key] === "OFFERED")) return false;
     return OPPORTUNITY_ORDER.filter((key) => outcomes[key] === "NOT_OFFERED").length >= 2;
   },
-  A_ACADEMICS_100: ({ run }) => run.stats.academics === 100,
-  A_CAREER_100: ({ run }) => run.stats.career === 100,
-  A_RICH: ({ run, graduation }) => graduation && run.stats.money >= 70,
-  A_BROKE_GRAD: ({ run, graduation }) => graduation && run.stats.money === 0,
-  A_FULL_BATTERY: ({ run, graduation }) => graduation && run.stats.wellbeing >= 90,
-  A_EMPTY_BATTERY: ({ run, graduation }) => graduation && run.stats.wellbeing === 0,
+  A_ACADEMICS_100: ({ exit }) => exit.academics === 100,
+  A_CAREER_100: ({ exit }) => exit.career === 100,
+  A_RICH: ({ exit, graduation }) => graduation && exit.money >= 70,
+  A_BROKE_GRAD: ({ exit, graduation }) => graduation && exit.money === 0,
+  A_FULL_BATTERY: ({ exit, graduation }) => graduation && exit.wellbeing >= 90,
+  A_EMPTY_BATTERY: ({ exit, graduation }) => graduation && exit.wellbeing === 0,
   A_NO_WORK: ({ run, graduation }) => graduation && run.focusCounts.WORK === 0,
   A_WORKER: ({ run }) => run.focusCounts.WORK >= 4,
   A_GRINDER: ({ run }) => run.focusCounts.STUDY >= 5,
@@ -76,7 +93,7 @@ const CONDITIONS: Readonly<Record<string, (facts: Facts) => boolean>> = {
     const points = run.profile.points;
     return points !== null && POINT_KEYS.every((key) => points[key] === points.family);
   },
-  A_BUSY_LIFE: ({ run }) => run.history.filter((entry) => entry.kind === "HAPPENING").length >= 7,
+  A_BUSY_LIFE: ({ run }) => run.history.filter((entry) => entry.kind === "HAPPENING").length >= BUSY_LIFE_HAPPENINGS_MIN,
   A_TOP_TIER: ({ ending }) => TOP_TIERS.includes(ending.card.tier),
   A_BAD_END: ({ ending }) => ending.card.tier === "BE",
   A_DREAM: ({ ending }) => ending.card.hidden.some((entry) => entry.id === "H08"),
@@ -87,6 +104,29 @@ const CONDITIONS: Readonly<Record<string, (facts: Facts) => boolean>> = {
   A_TIERS_ALL: ({ ending, progress }) => kindsAfter(progress.tiers, [ending.card.tier], ENDING_TIER_ORDER) >= ENDING_TIER_ORDER.length,
   A_HIDDEN_6: ({ ending, progress }) => kindsAfter(progress.hidden, ending.card.hidden.map((entry) => entry.id)) >= 6,
   A_EARLY_4: ({ ending, progress }) => kindsAfter(progress.early, ending.early ? [ending.early] : []) >= 4,
+  // ---- 第四版（docs/24 §10） ----
+  A_GPA_4: ({ gpas }) => gpas.some((item) => item.gpa >= 4),
+  A_GPA_WARNING: ({ gpas }) => gpas.some((item) => item.gpa < 2),
+  A_DEANS_LIST: ({ run, gpas }) => run.graduations.UG !== null && (averageGpa(gpas.filter((item) => item.stage === "UG")) ?? 0) >= DEANS_LIST_GPA,
+  A_FIVE_YEARS: ({ outcome }) => outcome !== null,
+  A_GREEN_CARD: lifeFlag("GREEN_CARD"),
+  A_H1B_OUT: lifeFlag("H1B_OUT"),
+  A_CANADA: lifeFlag("CANADA"),
+  A_LAID_OFF: lifeFlag("LAID_OFF"),
+  A_HOUSE: lifeFlag("HOUSE"),
+  A_MARRIED: lifeFlag("MARRIED"),
+  A_DR: lifeFlag("PHD_DONE"),
+  A_PHD_QUIT: lifeFlag("PHD_QUIT"),
+  A_CIVIL: lifeFlag("CIVIL_SERVANT"),
+  A_EXIT: lifeFlag("STARTUP_EXIT", "FIRE"),
+  A_RETURNEE: lifeFlag("RETURNED"),
+  A_SWITCH: ({ life }) => !!life && life.tracks.length >= 2,
+  A_ZIGZAG: ({ life }) => !!life && life.tracks.length >= 4,
+  A_COMEBACK: ({ ending, outcome }) => ending.kind === "EARLY" && outcome !== null && (outcome.grade === "SR" || outcome.grade === "SSR"),
+  A_LIFE_SSR: ({ outcome }) => outcome?.grade === "SSR",
+  A_OUTCOMES_10: ({ outcome, progress }) => kindsAfter(progress.outcomes, outcome ? [outcome.id] : []) >= 10,
+  A_LIFE_BROKE: ({ run, outcome }) => outcome !== null && run.stats.money === 0,
+  A_LIFE_ZEN: ({ run, outcome }) => outcome !== null && run.stats.wellbeing >= 90,
 };
 
 /** 引擎里写了条件的成就 id（用于核对与内容清单一致）。 */
@@ -100,7 +140,18 @@ export function evaluateRun(state: RunState, progress: ProgressSnapshot): RunRew
   if (state.phase !== "ENDING" || !state.ending) throw new Error("PROGRESS_NOT_READY: 这一局还没有走到结局");
   const run = state;
   const ending = state.ending;
-  const facts: Facts = { run, ending, progress, graduation: ending.kind === "GRADUATION" };
+  const life = run.life ?? null;
+  const outcome = life?.outcome ? (findLifeOutcome(life.outcome.id)?.outcome ?? null) : null;
+  const facts: Facts = {
+    run,
+    ending,
+    progress,
+    graduation: ending.kind === "GRADUATION",
+    exit: life ? life.startStats : run.stats,
+    life,
+    outcome,
+    gpas: termGpas(run),
+  };
   const already = new Set(progress.achievements ?? []);
 
   const gained: string[] = [];

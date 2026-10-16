@@ -1,18 +1,26 @@
-// 第三版整局自动模拟（docs/22 §3–§5、§7、§10）：七种分点方案各跑一批 seed，天赋取十连抽的前三张，
-// 之后全程由引擎自己的 autoAction 决定。
+// 整局自动模拟（docs/22 §3–§5、§7、§10；第四版的学期细节与毕业后的五年见 docs/24 §13）：七种分点方案各跑一批 seed，
+// 天赋取十连抽的前三张，之后全程（含毕业后的五年）由引擎自己的 autoAction 决定。
 // 硬性检查：每一局都合法地走到结局；reducer 判出的中途结局与按期末状态独立重算的一致；抽样的局
 // simulate 结果相同、存档能读回、轨迹与总结能生成。
 // 其余都是打印出来给调平衡用的统计，频率不做硬断言（内容随时在加）：
 //   SIM_RUNS=4000 npx vitest run src/engine/__tests__/simulation.test.ts --silent=false
+// 第四版内容的可达性（每条暑假、日常、里程碑、生活小事、五年后结局、中途结局、去向结局都在模拟里出现过）只打印；
+// 内容写完后用 SIM_REACH=1 打开对应的断言（带天赋条件的条目另用固定天赋跑）：
+//   SIM_REACH=1 SIM_RUNS=3000 npx vitest run src/engine/__tests__/simulation.test.ts --silent=false
 // 试一组新的触发概率或条件（只改这个测试进程内存里的值，不动内容文件）——数字是 chancePermille，对象可以同时换 when：
 //   SIM_EARLY_OVERRIDES='{"E_STARTUP":50,"E_STRESS":{"chancePermille":400,"when":{"countMin":{"STUDY":3},"statMax":{"wellbeing":15}}}}' \
 //     SIM_RUNS=4000 npx vitest run src/engine/__tests__/simulation.test.ts --silent=false
 
 import { describe, expect, it } from "vitest";
-import { ACHIEVEMENTS, CATALOG, EARLY_ENDINGS, ENDING_FLAVORS, TALENTS } from "../../content";
+import {
+  ACHIEVEMENTS, CATALOG, DAILY_LINES, EARLY_ENDINGS, ENDING_FLAVORS, HAPPENINGS, LIFE_COMMON, LIFE_TRACKS, SUMMERS,
+  TALENTS,
+} from "../../content";
 import { conditionMet } from "../conditions";
-import { AUTO, FOCUS_ORDER } from "../constants";
+import { AUTO, BUSY_LIFE_HAPPENINGS_MIN, FOCUS_ORDER, LIFE_TRACK_ORDER } from "../constants";
+import { dailyPicksFor } from "../daily";
 import { checkEarlyEnding } from "../early";
+import { termGpas } from "../gpa";
 import {
   evaluateRun, focusView, loadSave, mastersOptions, serializeSave, setupView, simulate, startPreview, summaryView,
   timeline,
@@ -59,7 +67,7 @@ type Scenario = (typeof SCENARIOS)[number];
 
 const TIER_ORDER: EndingTierId[] = ["EX", "UR", "SSR", "SR_PLUS", "SR", "R_PLUS", "R", "N", "D", "BE"];
 const ROUTES = ["PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION"] as const;
-const ALLOWED_PHASES = ["HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "ENDING"];
+const ALLOWED_PHASES = ["HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "LIFE", "ENDING"];
 const USER_NAMED = ["E_NITROUS", "E_OVERINDULGE", "E_PLAYBOY", "E_STRESS"];
 
 function assertLegal(state: ActiveRun, label: string): void {
@@ -110,6 +118,22 @@ interface Tally {
   newAchievements: number;
   unlocks: number;
   budgetChanged: number;
+  // ---- 第四版 ----
+  /** 每局的突发小事条数。 */
+  happenings: number[];
+  /** 全部学期的期末 GPA。 */
+  gpas: number[];
+  gpa4Runs: number;
+  gpaLowRuns: number;
+  /** 五年里换过轨道（tracks ≥ 2）、换过三次（≥ 4）的局。 */
+  switched: number;
+  zigzag: number;
+  /** 最后所在的轨道 → 五年后的结局 → 局数。 */
+  outcomes: Map<string, Map<string, number>>;
+  lifeFlags: Map<string, number>;
+  summers: number;
+  milestones: number;
+  lifeEvents: number;
 }
 
 const emptyTally = (): Tally => ({
@@ -117,8 +141,43 @@ const emptyTally = (): Tally => ({
   route: new Map(), tier: new Map(), gradTier: new Map(), hidden: new Map(), achievement: new Map(), masters: 0,
   graduated: 0, ugGraduated: 0, ugNoOffer: 0, ugNoOfferCanMasters: 0, ugCanMasters: 0, ugOffered: { PHD: 0, LOCAL_JOB: 0, HOME_JOB: 0 },
   shortfallTerms: 0, focus: { STUDY: 0, WORK: 0, CAREER: 0, CAMPUS: 0, REST: 0 }, terms: 0, newAchievements: 0, unlocks: 0,
-  budgetChanged: 0,
+  budgetChanged: 0, happenings: [], gpas: [], gpa4Runs: 0, gpaLowRuns: 0, switched: 0, zigzag: 0, outcomes: new Map(),
+  lifeFlags: new Map(), summers: 0, milestones: 0, lifeEvents: 0,
 });
+
+/** 在全部模拟里出现过的第四版内容（以及中途结局、去向结局、突发小事），按类别。 */
+const REACHED = {
+  summer: new Set<string>(),
+  daily: new Set<string>(),
+  milestone: new Set<string>(),
+  event: new Set<string>(),
+  outcome: new Set<string>(),
+  early: new Set<string>(),
+  flavor: new Set<string>(),
+  happening: new Set<string>(),
+};
+function reach(run: ActiveRun): void {
+  for (const entry of run.history) {
+    if (entry.kind === "SUMMER" && entry.summerId) REACHED.summer.add(entry.summerId);
+    if (entry.kind === "HAPPENING" && entry.happeningId) REACHED.happening.add(entry.happeningId);
+    if (entry.kind === "LIFE_EVENT" && entry.lifeEventId) (entry.milestone ? REACHED.milestone : REACHED.event).add(entry.lifeEventId);
+  }
+  for (const pick of dailyPicksFor(run)) REACHED.daily.add(pick.line.id);
+  if (run.life?.outcome) REACHED.outcome.add(run.life.outcome.id);
+  if (run.ending?.early) REACHED.early.add(run.ending.early);
+  if (run.ending?.card.flavor) REACHED.flavor.add(run.ending.card.flavor.id);
+}
+/** 第四版内容的全部条目，按类别。 */
+const ALL_CONTENT = {
+  summer: SUMMERS.map((item) => item.id),
+  daily: DAILY_LINES.map((item) => item.id),
+  milestone: [...LIFE_TRACK_ORDER.flatMap((track) => LIFE_TRACKS[track].milestones), ...LIFE_COMMON.milestones].map((item) => item.id),
+  event: [...LIFE_TRACK_ORDER.flatMap((track) => LIFE_TRACKS[track].events), ...LIFE_COMMON.events].map((item) => item.id),
+  outcome: LIFE_TRACK_ORDER.flatMap((track) => LIFE_TRACKS[track].outcomes).map((item) => item.id),
+  early: EARLY_ENDINGS.map((item) => item.id),
+  flavor: ENDING_FLAVORS.map((item) => item.id),
+  happening: HAPPENINGS.map((item) => item.id),
+};
 
 const emptyProgress = (): ProgressSnapshot => ({ runs: 0, tiers: {}, hidden: {}, early: {}, flavors: {}, achievements: [], unlockedTalents: [] });
 
@@ -158,9 +217,10 @@ function runOne(
     }
     const context = termEndContext(before, after);
     if (!context) return;
-    // 接线检查：reducer 判出的中途结局必须与按期末状态独立重算的一致
+    // 接线检查：reducer 判出的中途结局必须与按期末状态独立重算的一致（这一步里刚写下的那个）
     const expected = checkEarlyEnding(seed, context)?.ending.id ?? null;
-    const actual = after.phase === "ENDING" && after.ending?.kind === "EARLY" ? after.ending.early : null;
+    const fresh = before.phase !== "SETUP" && before.ending === null;
+    const actual = fresh && after.ending?.kind === "EARLY" ? after.ending.early : null;
     if (expected !== actual) throw new Error(`${label} ${context.stage}:${context.term}：中途结局应为 ${expected}，实际 ${actual}`);
     if (!tally) return;
     tally.terms += 1;
@@ -196,7 +256,25 @@ function runOne(
     tally.newAchievements += rewards.achievements.length;
     for (const id of rewards.achievements) bump(tally.achievement, id);
     if (rewards.unlockedTalent) tally.unlocks += 1;
+    // 第四版
+    tally.happenings.push(end.history.filter((entry) => entry.kind === "HAPPENING").length);
+    const gpas = termGpas(end).map((item) => item.gpa);
+    tally.gpas.push(...gpas);
+    if (gpas.some((gpa) => gpa >= 4)) tally.gpa4Runs += 1;
+    if (gpas.some((gpa) => gpa < 2)) tally.gpaLowRuns += 1;
+    const life = end.life;
+    if (!life?.outcome) throw new Error(`${label}：没有走完毕业后的五年`);
+    if (life.tracks.length >= 2) tally.switched += 1;
+    if (life.tracks.length >= 4) tally.zigzag += 1;
+    const byTrack = tally.outcomes.get(life.outcome.track) ?? new Map<string, number>();
+    bump(byTrack, life.outcome.id);
+    tally.outcomes.set(life.outcome.track, byTrack);
+    for (const flag of life.flags) bump(tally.lifeFlags, flag);
+    tally.summers += end.history.filter((entry) => entry.kind === "SUMMER").length;
+    tally.milestones += end.history.filter((entry) => entry.kind === "LIFE_EVENT" && entry.milestone).length;
+    tally.lifeEvents += end.history.filter((entry) => entry.kind === "LIFE_EVENT" && !entry.milestone).length;
   }
+  reach(end);
   return { state: end, log, input: { talents, points } };
 }
 
@@ -359,8 +437,74 @@ describe(`自动模拟：${SCENARIOS.length} 种分点各 ${RUNS} 局（真实�
       `读硕士（占全部局）${all.map((tally, i) => `${SCENARIOS[i].name} ${pct(tally.masters, tally.runs)}`).join("、")}；` +
       `“钱烧完了” ${all.map((tally, i) => `${SCENARIOS[i].name} ${broke(tally)}`).join("、")}`,
     );
+    // ---- 第四版（docs/24 §13 的验收数）----
+    const quantile = (values: number[], q: number) => {
+      const sorted = [...values].sort((a, b) => a - b);
+      return sorted.length === 0 ? NaN : sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))];
+    };
+    out.push(table("第四版：在校的细节与毕业后的五年", ["项目", ...names], [
+      ["中途结局合计", ...all.map((tally) => pct([...tally.early.values()].reduce((sum, n) => sum + n, 0), tally.runs))],
+      ["学期 GPA 中位数", ...all.map((tally) => quantile(tally.gpas, 0.5).toFixed(2))],
+      ["学期 GPA P10 / P90", ...all.map((tally) => `${quantile(tally.gpas, 0.1).toFixed(2)} / ${quantile(tally.gpas, 0.9).toFixed(2)}`)],
+      ["有学期拿到 4.00 的局", ...all.map((tally) => pct(tally.gpa4Runs, tally.runs))],
+      ["有学期低于 2.00 的局", ...all.map((tally) => pct(tally.gpaLowRuns, tally.runs))],
+      ["五年里换过轨道的局", ...all.map((tally) => pct(tally.switched, tally.runs))],
+      ["换过三次轨道的局", ...all.map((tally) => pct(tally.zigzag, tally.runs, 2))],
+      ["每局突发小事 P50 / P90", ...all.map((tally) => `${quantile(tally.happenings, 0.5)} / ${quantile(tally.happenings, 0.9)}`)],
+      [`突发小事 ≥ ${BUSY_LIFE_HAPPENINGS_MIN} 的局`, ...all.map((tally) => pct(tally.happenings.filter((n) => n >= BUSY_LIFE_HAPPENINGS_MIN).length, tally.runs))],
+      ["每局暑假事件", ...all.map((tally) => (tally.summers / tally.runs).toFixed(2))],
+      ["每局里程碑 / 生活小事", ...all.map((tally) => `${(tally.milestones / tally.runs).toFixed(2)} / ${(tally.lifeEvents / tally.runs).toFixed(2)}`)],
+      ["读了硕士（占全部局）", ...all.map((tally) => pct(tally.masters, tally.runs))],
+    ]));
+    for (const track of LIFE_TRACK_ORDER) {
+      const pooled = new Map<string, number>();
+      for (const tally of all) for (const [id, n] of tally.outcomes.get(track) ?? []) bump(pooled, id, n);
+      const total = [...pooled.values()].reduce((sum, n) => sum + n, 0);
+      const fallback = LIFE_TRACKS[track].outcomes.find((item) => item.fallback)?.id;
+      out.push(table(`五年后的结局：最后在“${LIFE_TRACKS[track].name}”（全部分点合计 ${total} 局）`, ["id", "名称", "稀有度", "占这条轨道", ...names], LIFE_TRACKS[track].outcomes.map((item) => [
+        item.id + (item.id === fallback ? "（兜底）" : ""), item.name, item.grade, pct(pooled.get(item.id) ?? 0, total),
+        ...all.map((tally) => pct(tally.outcomes.get(track)?.get(item.id) ?? 0, [...(tally.outcomes.get(track)?.values() ?? [])].reduce((sum, n) => sum + n, 0))),
+      ])));
+    }
+    const flagIds = [...new Set(all.flatMap((tally) => [...tally.lifeFlags.keys()]))].sort();
+    out.push(table("人生标记（有这个标记的局）", ["标记", ...names], flagIds.map((flag) => [flag, ...all.map((tally) => pct(tally.lifeFlags.get(flag) ?? 0, tally.runs))])));
+    const unreached = (Object.keys(ALL_CONTENT) as Array<keyof typeof ALL_CONTENT>).map((key) => {
+      const missing = ALL_CONTENT[key].filter((id) => !REACHED[key].has(id));
+      return [key, `${ALL_CONTENT[key].length - missing.length} / ${ALL_CONTENT[key].length}`, missing.length > 0 ? missing.join("、") : "无"];
+    });
+    out.push(table("可达性（这些局里出现过的 / 内容条数；没出现过的列在最后，带天赋条件的要用固定天赋另跑）", ["类别", "出现过", "没出现过的"], unreached));
     console.log(out.join("\n"));
     expect(out.length).toBeGreaterThan(10);
+  }, TIMEOUT);
+});
+
+describe("第四版内容的可达性（docs/24 §13）", () => {
+  it.skipIf(process.env.SIM_REACH !== "1")("每一条暑假、日常、里程碑、生活小事、五年后结局、中途结局、去向结局都能在模拟里出现；每条轨道的结局分布不过分集中", () => {
+    const all = tallies();
+    // 带天赋条件的条目：用固定天赋另跑（锁定的先解锁，再继承它，让它排在十连抽的第一张）
+    const referenced = new Set<string>();
+    const collect = (when: EndingCondition | undefined) => {
+      for (const id of when?.talentsAny ?? []) referenced.add(id);
+    };
+    for (const item of [...SUMMERS, ...DAILY_LINES, ...HAPPENINGS, ...EARLY_ENDINGS, ...ENDING_FLAVORS]) collect(item.when);
+    for (const track of LIFE_TRACK_ORDER) for (const item of [...LIFE_TRACKS[track].milestones, ...LIFE_TRACKS[track].events, ...LIFE_TRACKS[track].outcomes]) collect(item.when);
+    for (const item of [...LIFE_COMMON.milestones, ...LIFE_COMMON.events]) collect(item.when);
+    for (const talent of referenced) {
+      const locked = TALENTS.find((item) => item.id === talent)?.locked ? [talent] : [];
+      for (let i = 0; i < Math.max(200, Math.floor(RUNS / 3)); i++) runOne(9_000_000 + i, SCENARIOS[i % SCENARIOS.length], null, { unlockedTalents: locked, inheritedTalent: talent });
+    }
+    const missing = (Object.keys(ALL_CONTENT) as Array<keyof typeof ALL_CONTENT>).flatMap((key) => ALL_CONTENT[key].filter((id) => !REACHED[key].has(id)).map((id) => `${key}:${id}`));
+    expect(missing, "模拟里从没出现过的内容").toEqual([]);
+    // 每条轨道里单个结局不超过这条轨道局数的 30%（兜底不超过 35%）
+    for (const track of LIFE_TRACK_ORDER) {
+      const pooled = new Map<string, number>();
+      for (const tally of all) for (const [id, n] of tally.outcomes.get(track) ?? []) bump(pooled, id, n);
+      const total = [...pooled.values()].reduce((sum, n) => sum + n, 0);
+      if (total < 200) continue; // 这条轨道的局太少，比例没有意义
+      for (const item of LIFE_TRACKS[track].outcomes) {
+        expect((pooled.get(item.id) ?? 0) / total, `${track} ${item.id}`).toBeLessThanOrEqual(item.fallback ? 0.35 : 0.3);
+      }
+    }
   }, TIMEOUT);
 });
 
@@ -400,6 +544,8 @@ describe(`连续玩 30 局（${PLAYERS} 个玩家，${SCENARIOS.length} 种分�
         for (const hidden of ending.card.hidden) progress.hidden[hidden.id] = (progress.hidden[hidden.id] ?? 0) + 1;
         if (ending.early) progress.early[ending.early] = (progress.early[ending.early] ?? 0) + 1;
         if (ending.card.flavor) progress.flavors[ending.card.flavor.id] = (progress.flavors[ending.card.flavor.id] ?? 0) + 1;
+        const outcomeId = state.life?.outcome?.id;
+        if (outcomeId) progress.outcomes = { ...progress.outcomes, [outcomeId]: (progress.outcomes?.[outcomeId] ?? 0) + 1 };
         if (checkpoints.includes(n)) {
           achievementsAt.get(n)?.push(progress.achievements.length);
           unlockedAt.get(n)?.push(progress.unlockedTalents.length);

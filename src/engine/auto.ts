@@ -3,7 +3,7 @@
 // 存档照样能从 seed 重放校验。所有决定都用 draw01(seed, key)，同样的开局永远得到同样的一生。
 
 import { baseReadinessFor, finalReadiness } from "./admission";
-import { AUTO, OFFER_COUNT, POINT_MAX } from "./constants";
+import { AUTO, FOCUS_ORDER, LIFE_AUTO, OFFER_COUNT, POINT_MAX } from "./constants";
 import { applyAction, talentPickProblem } from "./reducer";
 import { draw01, pickIndex } from "./rng";
 import {
@@ -13,7 +13,7 @@ import {
 import { findTalent } from "./pools";
 import { currentEvent, focusView, mastersOptions, routeOptions } from "./views";
 import type {
-  Action, ActiveRun, Aspiration, ChoiceId, EngineContext, EventView, FocusView, MastersOption, Opportunity, Points,
+  Action, ActiveRun, Aspiration, ChoiceId, EngineContext, EventView, Focus, FocusView, MastersOption, Opportunity, Points,
   RouteOption, RunState, SetupRun, StartPreview, Talent,
 } from "./types";
 
@@ -116,6 +116,40 @@ export function autoPlan(run: ActiveRun, view: FocusView): string {
   return open[open.length - 1].plan.id;
 }
 
+/** 毕业后每年重心的权重（docs/24 §4.3）：同学期安排，只是钱紧的门槛换成毕业后的。 */
+export function lifeFocusWeight(focus: Focus, p: Points, money: number, wellbeing: number): number {
+  switch (focus) {
+    case "STUDY":
+      return 2 + p.academics / 2;
+    case "CAREER":
+      return 2 + p.career / 2;
+    case "CAMPUS":
+      return 2 + p.wellbeing / 2;
+    case "WORK":
+      return (
+        1 + (POINT_MAX - p.family) / 4 +
+        (money < LIFE_AUTO.WORK_TIGHT_BELOW ? LIFE_AUTO.WORK_TIGHT_BONUS : 0) +
+        (money < LIFE_AUTO.WORK_BROKE_BELOW ? LIFE_AUTO.WORK_BROKE_BONUS : 0)
+      );
+    case "REST":
+      return 1 + (wellbeing < AUTO.PLAN_REST_EXHAUSTED_BELOW ? AUTO.PLAN_REST_EXHAUSTED_BONUS : wellbeing < AUTO.PLAN_REST_TIRED_BELOW ? AUTO.PLAN_REST_TIRED_BONUS : 0);
+  }
+}
+
+/** 毕业后这一年的重心：按 STUDY、CAREER、CAMPUS、WORK、REST 的顺序累计，取第一项累计值严格大于 r 的。 */
+export function autoLifeFocus(run: ActiveRun): Focus {
+  const p = pointsOf(run);
+  const year = (run.life?.year ?? 0) + 1;
+  const weights = FOCUS_ORDER.map((focus) => lifeFocusWeight(focus, p, run.stats.money, run.stats.wellbeing));
+  const r = draw01(run.seed, `auto:life:${year}`) * weights.reduce((sum, weight) => sum + weight, 0);
+  let cumulative = 0;
+  for (let i = 0; i < FOCUS_ORDER.length; i++) {
+    cumulative += weights[i];
+    if (cumulative > r) return FOCUS_ORDER[i];
+  }
+  return FOCUS_ORDER[FOCUS_ORDER.length - 1];
+}
+
 const ROUTE_ORDER: Readonly<Record<Aspiration, readonly Opportunity[]>> = {
   DISCOVERY: ["PHD", "LOCAL_JOB", "HOME_JOB"],
   INDEPENDENCE: ["LOCAL_JOB", "HOME_JOB", "PHD"],
@@ -180,6 +214,8 @@ export function autoAction(state: RunState, _ctx: EngineContext): Action | null 
       return { type: "REVEAL_GRADUATION" };
     case "GRAD_RESULTS":
       return autoGraduation(state, routeOptions(state), mastersOptions(state));
+    case "LIFE":
+      return { type: "LIVE_YEAR", focus: autoLifeFocus(state) };
     case "ENDING":
       return null;
   }
@@ -200,8 +236,8 @@ export function simulate(
   const log: Action[] = [];
   let current: RunState = state;
   let action: Action | null = { type: "CONFIRM_SETUP", talents: [...input.talents], points: { ...input.points } };
-  // 最长的一局（两年硕士）不到 50 步；上限只是防止内容或规则出错时空转。
-  for (let guard = 0; action !== null && guard < 200; guard++) {
+  // 最长的一局（两年硕士加毕业后五年）不到 60 步；上限只是防止内容或规则出错时空转。
+  for (let guard = 0; action !== null && guard < 300; guard++) {
     const result = applyAction(current, { ...action, revision: current.revision }, ctx);
     if (!result.ok) throw new Error(`SIMULATE_REJECTED: ${action.type} 被拒绝（${result.error.code}）${result.error.message}`);
     log.push(action);

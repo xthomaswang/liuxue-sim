@@ -2,132 +2,24 @@
 // 去向结局的抽取。内容随时在加，这里不写死条数与顺序——每条内容都按它自己的 when 构造满足与不满足的情形。
 
 import { describe, expect, it } from "vitest";
-import { CATALOG, EARLY_ENDINGS, ENDING_CARDS, ENDING_FLAVORS, TALENTS } from "../../content";
+import { CATALOG, EARLY_ENDINGS, ENDING_CARDS, ENDING_FLAVORS } from "../../content";
 import { conditionFacts, conditionMet, shortfallStreak, zeroWellbeingStreak } from "../conditions";
 import type { ConditionContext } from "../conditions";
-import { ASPIRATION_ORDER, ENDING_TIER_ORDER, MS_TERM_LABELS, UG_TERM_LABELS } from "../constants";
+import { MS_TERM_LABELS, UG_TERM_LABELS } from "../constants";
 import { checkEarlyEnding, findEarlyEnding, pickFlavor, termLabel } from "../early";
 import { earlyEndingCard } from "../endingCard";
-import { endingView, simulate } from "../index";
-import type {
-  ActiveRun, EarlyEnding, EndingCondition, EndingFlavor, EngineContext, FinalRoute, Focus, HistoryEntry, OfferTier,
-  Points, RuntimeSchool, Stats,
-} from "../index";
+import { autoAction, endingView } from "../index";
+import { lastTermOf, termAge } from "../life";
+import type { ActiveRun, EarlyEnding, EndingCondition, EndingFlavor, EngineContext, FinalRoute, Focus, RunState } from "../index";
 import { draw01 } from "../rng";
+import { entry, historyWith, satisfying, school, violations } from "./conditionCases";
 import {
-  asActive, autoInput, catalog, classicPolicy, ctx, play, simulateObserved, startClassic, termEndContext, tryAct,
+  act, asActive, autoInput, classicPolicy, ctx, play, simulateObserved, startClassic, termEndContext, tryAct,
 } from "./helpers";
 
 const REAL: EngineContext = { catalog: CATALOG };
-const STATS = ["money", "academics", "career", "wellbeing"] as const;
 const FOCUSES: Focus[] = ["STUDY", "WORK", "CAREER", "CAMPUS", "REST"];
-const POINTS = ["family", "academics", "career", "wellbeing"] as const;
-const OFFER_TIERS: OfferTier[] = ["S", "A", "B", "C", "D", "U"];
 const ROUTES: FinalRoute[] = ["PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION"];
-const zero = (): Stats => ({ money: 0, academics: 0, career: 0, wellbeing: 0 });
-
-function entry(kind: HistoryEntry["kind"], term: number, extra: Partial<HistoryEntry> = {}): HistoryEntry {
-  return {
-    kind, stage: "UG", termIndex: term, revision: term, actionId: `t-${term}`, beforeStats: zero(), requestedDelta: zero(),
-    appliedDelta: zero(), afterStats: { money: 10, academics: 10, career: 10, wellbeing: 10 }, ...extra,
-  };
-}
-
-/** 一段历史：最近 shortfall 个学期期末资金短缺、最近 zeroWellbeing 个学期期末身心为 0；之前的学期一切正常。 */
-function historyWith(shortfall: number, zeroWellbeing: number): HistoryEntry[] {
-  const terms = Math.max(shortfall, zeroWellbeing) + 1;
-  const history: HistoryEntry[] = [];
-  for (let term = 1; term <= terms; term++) {
-    const short = term > terms - shortfall;
-    const empty = term > terms - zeroWellbeing;
-    history.push(entry("STIPEND", term), entry("FOCUS", term));
-    history.push(entry("UPKEEP", term, { upkeep: { cost: 12, paid: short ? 5 : 12, shortfall: short ? 7 : 0, stress: short ? 4 : 0 } }));
-    history.push(entry("GROWTH", term, { afterStats: { money: 10, academics: 10, career: 10, wellbeing: empty ? 0 : 10 } }));
-  }
-  return history;
-}
-
-const school = (state: string, tier: OfferTier): RuntimeSchool => ({ ...catalog.schools[0], state, tier });
-
-/** 按一条 when 构造一个恰好满足它的上下文：写了的取边界值，没写的取不会碍事的中间值。 */
-function satisfying(when: EndingCondition): ConditionContext {
-  const stats = zero();
-  for (const key of STATS) stats[key] = when.statMin?.[key] ?? Math.min(when.statMax?.[key] ?? 50, 50);
-  const counts = { STUDY: 0, WORK: 0, CAREER: 0, CAMPUS: 0, REST: 0 };
-  for (const focus of FOCUSES) counts[focus] = when.countMin?.[focus] ?? 0;
-  const points: Points = { family: 5, academics: 5, career: 5, wellbeing: 5 };
-  for (const key of POINTS) points[key] = when.pointsMin?.[key] ?? Math.min(when.pointsMax?.[key] ?? 5, 5);
-  return {
-    stage: when.stage ?? "UG",
-    term: when.termMin ?? Math.min(when.termMax ?? 3, 3),
-    stats,
-    counts,
-    points,
-    flags: [...(when.flagsAll ?? [])],
-    talents: when.talentsAny ? [when.talentsAny[0]] : [],
-    history: historyWith(when.shortfallStreak ?? 0, when.zeroWellbeingStreak ?? 0),
-    school: school(when.schoolStates?.[0] ?? "ZZ", when.schoolTiers?.[0] ?? "B"),
-    aspiration: when.aspirations?.[0] ?? "DISCOVERY",
-    transitionMode: when.transitionMode ?? null,
-    tier: when.tiers?.[0] ?? "R",
-  };
-}
-
-/** 对 when 里写了的每一项，各给出一个“只把这一项改到不满足”的上下文。 */
-function violations(when: EndingCondition): Array<{ label: string; context: ConditionContext }> {
-  const base = satisfying(when);
-  const out: Array<{ label: string; context: ConditionContext }> = [];
-  const push = (label: string, patch: Partial<ConditionContext>) => out.push({ label, context: { ...base, ...patch } });
-  if (when.stage !== undefined) push("stage", { stage: when.stage === "UG" ? "MS" : "UG" });
-  if (when.termMin !== undefined) push("termMin", { term: when.termMin - 1 });
-  if (when.termMax !== undefined) push("termMax", { term: when.termMax + 1 });
-  for (const key of STATS) {
-    const min = when.statMin?.[key];
-    const max = when.statMax?.[key];
-    if (min !== undefined && min > 0) push(`statMin.${key}`, { stats: { ...base.stats, [key]: min - 1 } });
-    if (max !== undefined && max < 100) push(`statMax.${key}`, { stats: { ...base.stats, [key]: max + 1 } });
-  }
-  for (const focus of FOCUSES) {
-    const min = when.countMin?.[focus];
-    const max = when.countMax?.[focus];
-    if (min !== undefined && min > 0) push(`countMin.${focus}`, { counts: { ...base.counts, [focus]: min - 1 } });
-    if (max !== undefined) push(`countMax.${focus}`, { counts: { ...base.counts, [focus]: max + 1 } });
-  }
-  for (const key of POINTS) {
-    const min = when.pointsMin?.[key];
-    const max = when.pointsMax?.[key];
-    if (min !== undefined && min > 0 && base.points) push(`pointsMin.${key}`, { points: { ...base.points, [key]: min - 1 } });
-    if (max !== undefined && max < 10 && base.points) push(`pointsMax.${key}`, { points: { ...base.points, [key]: max + 1 } });
-    if (min !== undefined || max !== undefined) push(`points.${key}（经典模式没有点数）`, { points: null });
-  }
-  if (when.flagsAll?.length) push("flagsAll", { flags: when.flagsAll.slice(1) });
-  if (when.talentsAny) push("talentsAny", { talents: TALENTS.map((talent) => talent.id).filter((id) => !when.talentsAny?.includes(id)).slice(0, 3) });
-  if (when.shortfallStreak) push("shortfallStreak", { history: historyWith(when.shortfallStreak - 1, when.zeroWellbeingStreak ?? 0) });
-  if (when.zeroWellbeingStreak) push("zeroWellbeingStreak", { history: historyWith(when.shortfallStreak ?? 0, when.zeroWellbeingStreak - 1) });
-  if (when.schoolStates) {
-    push("schoolStates", { school: school("XX", base.school?.tier ?? "B") });
-    push("schoolStates（还没有学校）", { school: null });
-  }
-  if (when.schoolTiers) {
-    const other = OFFER_TIERS.find((tier) => !when.schoolTiers?.includes(tier));
-    if (other) push("schoolTiers", { school: school(base.school?.state ?? "ZZ", other) });
-  }
-  if (when.aspirations) {
-    const other = ASPIRATION_ORDER.find((aspiration) => !when.aspirations?.includes(aspiration));
-    if (other) push("aspirations", { aspiration: other });
-  }
-  if (when.transitionMode !== undefined) {
-    push("transitionMode", { transitionMode: when.transitionMode === "NO_OFFER" ? "SELF_CHOSEN" : "NO_OFFER" });
-    push("transitionMode（不是过渡期）", { transitionMode: null });
-  }
-  if (when.tiers) {
-    const other = ENDING_TIER_ORDER.find((tier) => !when.tiers?.includes(tier));
-    if (other) push("tiers", { tier: other });
-    push("tiers（没有等级）", { tier: undefined });
-  }
-  return out;
-}
-
 /** 找一个让 draw01(seed, key) 落在阈值之内（或之外）的 seed。 */
 function seedWhere(key: string, test: (roll: number) => boolean): number {
   for (let seed = 1; seed < 200000; seed++) if (test(draw01(seed, key))) return seed;
@@ -345,7 +237,9 @@ describe("中途结局与 reducer 的接线", () => {
         if (!context) return;
         termEnds += 1;
         const expected = checkEarlyEnding(seed, context);
-        const actual = after.phase === "ENDING" && after.ending?.kind === "EARLY" ? after.ending.early : null;
+        // 这一步里刚写下的中途结局（之后进入离校后的五年，结局记录一直带着）
+        const fresh = before.phase !== "SETUP" && before.ending === null;
+        const actual = fresh && after.ending?.kind === "EARLY" ? after.ending.early : null;
         expect(actual, `seed ${seed} ${context.stage}:${context.term}`).toBe(expected?.ending.id ?? null);
         if (!expected) return;
         // 结局记录与卡片
@@ -355,11 +249,16 @@ describe("中途结局与 reducer 的接线", () => {
         });
         expect(after.ending?.card.flavor).toBeNull();
         expect(after.ending?.card.hidden).toEqual([]);
-        // 停在这个学期：没有发下一学期的资助，也没有这一学段的毕业快照
+        // 停在这个学期：没有发下一学期的资助，也没有这一学段的毕业快照；直接进入离校后的五年（docs/24 §4.1）
         const last = after.history[after.history.length - 1];
         expect(last).toMatchObject({ kind: "GROWTH", stage: context.stage, termIndex: context.term });
         expect(after.stats).toEqual(context.stats);
-        expect(after).toMatchObject({ phase: "ENDING", stage: context.stage, termIndex: context.term });
+        expect(after).toMatchObject({ phase: "LIFE", stage: "LIFE", termIndex: 0 });
+        const track = expected.ending.lifeTrack ?? "DROPOUT";
+        expect(after.life).toEqual({
+          track, tracks: [track], year: 0, startAge: termAge(context.stage, context.term), startStats: context.stats,
+          flags: [], focusCounts: { STUDY: 0, CAREER: 0, CAMPUS: 0, WORK: 0, REST: 0 }, outcome: null,
+        });
         expect(after.graduations[context.stage]).toBeNull();
       });
       const end = asActive(state);
@@ -368,7 +267,7 @@ describe("中途结局与 reducer 的接线", () => {
       seen.add(end.ending.early ?? "?");
       expect(endingView(end)).toBeNull();
       // 结局之后任何操作都不再被接受
-      for (const action of [{ type: "CHOOSE_PLAN", planId: "REST" }, { type: "REVEAL_GRADUATION" }, { type: "CHOOSE_ROUTE", route: "TRANSITION" }] as const) {
+      for (const action of [{ type: "CHOOSE_PLAN", planId: "REST" }, { type: "REVEAL_GRADUATION" }, { type: "CHOOSE_ROUTE", route: "TRANSITION" }, { type: "LIVE_YEAR", focus: "REST" }] as const) {
         const result = tryAct(end, action);
         expect(result.ok ? "OK" : result.error.code).toBe("WRONG_PHASE");
       }
@@ -414,7 +313,7 @@ function flavorContext(run: ActiveRun): ConditionContext {
   if (!ending || !checkpoint) throw new Error("不是毕业结局");
   return {
     stage: ending.degree,
-    term: run.termIndex,
+    term: lastTermOf(run, ending.degree),
     stats: checkpoint.frozenStats,
     counts: checkpoint.frozenFocusCounts,
     points: run.profile.points,
@@ -423,6 +322,7 @@ function flavorContext(run: ActiveRun): ConditionContext {
     history: run.history,
     school: run.school,
     aspiration: run.profile.aspiration,
+    economy: run.profile.economy,
     transitionMode: ending.transitionMode,
     tier: ending.card.tier,
   };
@@ -494,8 +394,12 @@ describe("去向结局（22 §5.2）", () => {
     for (let seed = 1; seed <= 1200; seed++) {
       const { setup, input } = autoInput(seed, REAL);
       let beforeRoute: ActiveRun | null = null;
-      const { state } = simulateObserved(setup, input, REAL, (before, action) => {
-        if (action.type === "CHOOSE_ROUTE" && before.phase !== "SETUP") beforeRoute = before;
+      let afterRoute: ActiveRun | null = null;
+      const { state } = simulateObserved(setup, input, REAL, (before, action, after) => {
+        if (action.type === "CHOOSE_ROUTE" && before.phase !== "SETUP") {
+          beforeRoute = before;
+          afterRoute = after;
+        }
       });
       const run = asActive(state);
       const ending = run.ending;
@@ -511,12 +415,15 @@ describe("去向结局（22 §5.2）", () => {
       expect(ending.card.flavor, `seed ${seed}`).toEqual({ id: content?.id, name: content?.name, roast: content?.roast, text: content?.text });
       expect(content?.route).toBe(ending.route);
       if (expected) seen.add(expected);
-      // 选定去向这一步只写结局：四属性、历史、安排次数都不变
+      // 选定去向这一步只写结局（并进入毕业后的五年）：四属性、历史、安排次数都不变
       const prior = beforeRoute as ActiveRun | null;
-      if (!prior) throw new Error("没有记录到选择去向的那一步");
-      expect(run.stats).toEqual(prior.stats);
-      expect(run.history).toEqual(prior.history);
-      expect(run.focusCounts).toEqual(prior.focusCounts);
+      const chosen = afterRoute as ActiveRun | null;
+      if (!prior || !chosen) throw new Error("没有记录到选择去向的那一步");
+      expect(chosen.stats).toEqual(prior.stats);
+      expect(chosen.history).toEqual(prior.history);
+      expect(chosen.focusCounts).toEqual(prior.focusCounts);
+      expect(chosen.life?.startStats).toEqual(prior.stats);
+      expect(chosen.ending).toEqual(ending);
     }
     expect(graduated).toBeGreaterThan(400);
     expect([...routes].sort()).toEqual(["HOME_JOB", "LOCAL_JOB", "PHD", "TRANSITION"]);
@@ -527,11 +434,14 @@ describe("去向结局（22 §5.2）", () => {
     if (unseen.length > 0) console.log(`这 1200 局里没出现的去向结局（只是提示，频率见 simulation.test）：${unseen.join("、")}`);
   });
 
-  it("去向结局不参与别的判定：把内容临时换成只剩兜底的几条，整局除了 flavor 之外一字不差", () => {
+  it("去向结局不参与在校期间的判定：把内容临时换成只剩兜底的几条，离校那一刻除了 flavor 之外一字不差", () => {
+    // 毕业后的内容可以用 flavors 条件，所以只比到离校那一刻（选定去向之后、过第一年之前）
     const seeds = Array.from({ length: 200 }, (_, i) => 3000 + i);
     const run = (seed: number): ActiveRun => {
       const { setup, input } = autoInput(seed, REAL);
-      return asActive(simulate(setup, input, REAL).state);
+      let state: RunState = act(setup, { type: "CONFIRM_SETUP", ...input }, REAL);
+      for (let action = autoAction(state, REAL); action && state.phase !== "LIFE"; action = autoAction(state, REAL)) state = act(state, action, REAL);
+      return asActive(state);
     };
     const originals = seeds.map(run);
     const saved = ENDING_FLAVORS.splice(0, ENDING_FLAVORS.length);

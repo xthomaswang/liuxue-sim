@@ -57,13 +57,13 @@
     "id": "A_ACADEMICS_100",
     "name": "学业拉满",
     "grade": "R",
-    "text": "结局时学业积累 100。"
+    "text": "离开学校时学业积累 100。"
   },
   {
     "id": "A_CAREER_100",
     "name": "职业拉满",
     "grade": "R",
-    "text": "结局时职业积累 100。"
+    "text": "离开学校时职业积累 100。"
   },
   {
     "id": "A_RICH",
@@ -159,7 +159,7 @@
     "id": "A_BUSY_LIFE",
     "name": "事儿真多",
     "grade": "R",
-    "text": "一局里遇到 7 条以上突发小事。"
+    "text": "一局里遇到 12 条以上突发小事。"
   },
   {
     "id": "A_TOP_TIER",
@@ -226,5 +226,137 @@
     "name": "天赋全开",
     "grade": "SSR",
     "text": "解锁全部锁定的稀有天赋。"
+  },
+  {
+    "id": "A_GPA_4",
+    "name": "满绩",
+    "grade": "R",
+    "text": "有一个学期期末 GPA 4.00。"
+  },
+  {
+    "id": "A_GPA_WARNING",
+    "name": "学术警告",
+    "grade": "R",
+    "text": "有一个学期期末 GPA 低于 2.00。"
+  },
+  {
+    "id": "A_DEANS_LIST",
+    "name": "院长嘉许",
+    "grade": "SR",
+    "text": "读到本科毕业，本科平均 GPA 不低于 3.50。"
+  },
+  {
+    "id": "A_FIVE_YEARS",
+    "name": "五年之后",
+    "grade": "N",
+    "text": "看到五年后的结局。"
+  },
+  {
+    "id": "A_GREEN_CARD",
+    "name": "绿卡到手",
+    "grade": "SR",
+    "text": "离开学校后拿到了绿卡。"
+  },
+  {
+    "id": "A_H1B_OUT",
+    "name": "三振出局",
+    "grade": "R",
+    "text": "H1B 连着三年没抽中。"
+  },
+  {
+    "id": "A_CANADA",
+    "name": "润去枫叶国",
+    "grade": "R",
+    "text": "离开学校后去了加拿大。"
+  },
+  {
+    "id": "A_LAID_OFF",
+    "name": "被优化",
+    "grade": "N",
+    "text": "离开学校后的五年里被裁过一次。"
+  },
+  {
+    "id": "A_HOUSE",
+    "name": "上车",
+    "grade": "R",
+    "text": "离开学校后买了房。"
+  },
+  {
+    "id": "A_MARRIED",
+    "name": "成家",
+    "grade": "N",
+    "text": "离开学校后结了婚。"
+  },
+  {
+    "id": "A_DR",
+    "name": "终于是博士了",
+    "grade": "SR",
+    "text": "博士毕业。"
+  },
+  {
+    "id": "A_PHD_QUIT",
+    "name": "及时止损",
+    "grade": "R",
+    "text": "博士读到一半退学。"
+  },
+  {
+    "id": "A_CIVIL",
+    "name": "上岸",
+    "grade": "R",
+    "text": "考公上岸。"
+  },
+  {
+    "id": "A_EXIT",
+    "name": "提前退休",
+    "grade": "SSR",
+    "text": "创业被收购，或者财务自由提前退休。"
+  },
+  {
+    "id": "A_RETURNEE",
+    "name": "海归",
+    "grade": "N",
+    "text": "从国外回国发展。"
+  },
+  {
+    "id": "A_SWITCH",
+    "name": "换条路走",
+    "grade": "N",
+    "text": "离开学校后的五年里换过一次轨道。"
+  },
+  {
+    "id": "A_ZIGZAG",
+    "name": "折腾人生",
+    "grade": "SR",
+    "text": "离开学校后的五年里换过三次轨道。"
+  },
+  {
+    "id": "A_COMEBACK",
+    "name": "东山再起",
+    "grade": "SR",
+    "text": "中途离场之后，五年后的结局是 SR 或 SSR。"
+  },
+  {
+    "id": "A_LIFE_SSR",
+    "name": "人生赢家",
+    "grade": "SSR",
+    "text": "五年后的结局是 SSR。"
+  },
+  {
+    "id": "A_OUTCOMES_10",
+    "name": "阅尽千帆",
+    "grade": "SR",
+    "text": "累计见过 10 种五年后的结局。"
+  },
+  {
+    "id": "A_LIFE_BROKE",
+    "name": "五年白干",
+    "grade": "R",
+    "text": "五年后资金为 0。"
+  },
+  {
+    "id": "A_LIFE_ZEN",
+    "name": "岁月静好",
+    "grade": "R",
+    "text": "五年后身心状态 90 以上。"
   }
 ]

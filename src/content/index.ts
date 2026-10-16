@@ -1,9 +1,11 @@
 // 静态内容的唯一入口。JSON 由 scripts/extract-content.ts（事件、文案、天赋、学期安排、突发小事）
 // 和 scripts/schools（学校目录）生成，endingCards.json 为手写（见 docs/14）。运行时不解析 Markdown。
+// 第四版（docs/24）的暑假、日常、GPA 说法、毕业后各轨道是手写 JSON（格式见 scripts/check-v4-content.ts）。
 
 import type {
   Achievement,
   Aspiration,
+  DailyLine,
   EarlyEnding,
   EndingFlavor,
   Economy,
@@ -13,19 +15,25 @@ import type {
   Expectation,
   FinalRoute,
   Focus,
+  GpaBand,
   Happening,
   HiddenEndingId,
+  LifeEvent,
+  LifeTrack,
+  LifeTrackContent,
   MastersProgram,
   MoneyBand,
   PlanCard,
   RuntimeCatalog,
   StatKey,
   StoryEvent,
+  SummerEvent,
   Talent,
   Trait,
   WellbeingBand,
 } from "../engine/types";
 import achievementsJson from "./achievements.json";
+import dailyJson from "./daily.json";
 import earlyEndingsJson from "./earlyEndings.json";
 import endingCardsJson from "./endingCards.json";
 import endingFlavorsJson from "./endingFlavors.json";
@@ -35,9 +43,17 @@ import highschoolJson from "./events/highschool.json";
 import mastersJson from "./events/masters.json";
 import randomJson from "./events/random.json";
 import variantsJson from "./events/variants.json";
+import gpaJson from "./gpa.json";
 import happeningsJson from "./happenings.json";
+import lifeCommonJson from "./life/COMMON.json";
+import lifeDropoutJson from "./life/DROPOUT.json";
+import lifeHomeJobJson from "./life/HOME_JOB.json";
+import lifeLocalJobJson from "./life/LOCAL_JOB.json";
+import lifePhdJson from "./life/PHD.json";
+import lifeTransitionJson from "./life/TRANSITION.json";
 import plansJson from "./plans.json";
 import catalogJson from "./schools/catalog.runtime.json";
+import summersJson from "./summers.json";
 import talentsJson from "./talents.json";
 import textsJson from "./texts.json";
 
@@ -83,6 +99,13 @@ export interface Texts {
     familyResponse: Record<Expectation, Record<FamilyRouteGroup, string>>;
     epilogue: Record<RouteVariantKey, string>;
   };
+}
+
+/** 毕业后跨轨道的内容（src/content/life/COMMON.json）：只有里程碑和生活小事。 */
+export interface LifeCommonContent {
+  track: "COMMON";
+  milestones: LifeEvent[];
+  events: LifeEvent[];
 }
 
 export interface EndingTierContent {
@@ -140,6 +163,35 @@ export const EARLY_ENDINGS = earlyEndingsJson as unknown as EarlyEnding[];
 export const ENDING_FLAVORS = endingFlavorsJson as unknown as EndingFlavor[];
 /** 成就清单（docs/23），数组顺序即图册里的展示顺序。 */
 export const ACHIEVEMENTS = achievementsJson as unknown as Achievement[];
+
+// ---------- 第四版（docs/24） ----------
+
+/** 暑假里的事（§2.2），数组顺序即候选顺序。 */
+export const SUMMERS = summersJson as unknown as SummerEvent[];
+/** 日常（§2.3），只是文字，数组顺序即候选顺序。 */
+export const DAILY_LINES = dailyJson as unknown as DailyLine[];
+/** 期末 GPA 那一行的说法（§2.4），按 min 从高到低。 */
+export const GPA_BANDS = gpaJson as unknown as GpaBand[];
+/** 毕业后的五条轨道（§4.4）。 */
+export const LIFE_TRACKS: Readonly<Record<LifeTrack, LifeTrackContent>> = {
+  PHD: lifePhdJson as unknown as LifeTrackContent,
+  LOCAL_JOB: lifeLocalJobJson as unknown as LifeTrackContent,
+  HOME_JOB: lifeHomeJobJson as unknown as LifeTrackContent,
+  TRANSITION: lifeTransitionJson as unknown as LifeTrackContent,
+  DROPOUT: lifeDropoutJson as unknown as LifeTrackContent,
+};
+/** 跨轨道的里程碑与生活小事（§4.2）。 */
+export const LIFE_COMMON = lifeCommonJson as unknown as LifeCommonContent;
+
+export const SUMMER_BY_ID: Readonly<Record<string, SummerEvent>> = Object.fromEntries(SUMMERS.map((item) => [item.id, item]));
+export const DAILY_BY_ID: Readonly<Record<string, DailyLine>> = Object.fromEntries(DAILY_LINES.map((item) => [item.id, item]));
+/** 全部毕业后的里程碑与生活小事（各轨道与公共的），按 id。 */
+export const LIFE_EVENT_BY_ID: Readonly<Record<string, LifeEvent>> = Object.fromEntries(
+  [...Object.values(LIFE_TRACKS).flatMap((track) => [...track.milestones, ...track.events]), ...LIFE_COMMON.milestones, ...LIFE_COMMON.events].map(
+    (item) => [item.id, item],
+  ),
+);
+
 /** 随构建打包的学校目录快照。引擎函数都把目录作为参数接收，这里只是默认值。 */
 export const CATALOG = catalogJson as unknown as RuntimeCatalog;
 

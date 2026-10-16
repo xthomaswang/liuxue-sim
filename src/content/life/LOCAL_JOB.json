@@ -1,0 +1,2326 @@
+{
+  "track": "LOCAL_JOB",
+  "name": "留美工作",
+  "base": {
+    "delta": {
+      "money": 5,
+      "academics": -1,
+      "career": 1,
+      "wellbeing": -2
+    },
+    "texts": [
+      "工资到手先交房租，剩下的分给了 Costco。",
+      "这一年你开了很多会，大部分本可以是一封邮件。",
+      "绩效自评写了三页，出现最多的词是“推进中”。",
+      "周末的固定节目，是排队吃一顿早午餐。",
+      "房东又涨了一次租，理由是周边都涨了。",
+      "工资条上最长的一行，是各种税。",
+      "你的日历被会议填满，午饭挪到了下午三点。",
+      "每天打开电脑，先看有没有全员邮件。",
+      "同一个需求改了三版，最后上线的是第一版。",
+      "年底评估拿了个“符合预期”，你觉得也符合预期。"
+    ]
+  },
+  "plans": [
+    {
+      "focus": "STUDY",
+      "name": "下班学新技术",
+      "delta": {
+        "money": -1,
+        "academics": 5,
+        "career": 2,
+        "wellbeing": -4
+      }
+    },
+    {
+      "focus": "CAREER",
+      "name": "卷绩效冲晋升",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 5,
+        "wellbeing": -5
+      }
+    },
+    {
+      "focus": "CAMPUS",
+      "name": "周末约饭社交",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 5
+      }
+    },
+    {
+      "focus": "WORK",
+      "name": "加班攒首付",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -5
+      }
+    },
+    {
+      "focus": "REST",
+      "name": "请假出去玩",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 7
+      }
+    }
+  ],
+  "milestones": [
+    {
+      "id": "LM_LOCAL_JOB_H1B_KOI",
+      "text": "H1B 中签了。你没声张，默默转发了一条锦鲤。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 8
+      },
+      "when": {
+        "talentsAny": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsNone": [
+          "H1B",
+          "H1B_OUT",
+          "GREEN_CARD",
+          "CANADA"
+        ]
+      },
+      "chancePermille": 700,
+      "setFlags": [
+        "H1B"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_H1B",
+      "text": "H1B 中签邮件到了。你截了图，发给了家里每一个人。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 8
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsNone": [
+          "H1B",
+          "H1B_OUT",
+          "GREEN_CARD",
+          "CANADA"
+        ]
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "H1B"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_H1B_OUT",
+      "text": "第三次抽签也没中。三振出局，身份进入了倒计时。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": -8
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "H1B_MISS2"
+        ],
+        "lifeFlagsNone": [
+          "H1B",
+          "H1B_OUT",
+          "GREEN_CARD",
+          "CANADA"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "H1B_OUT"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_H1B_MISS2",
+      "text": "第二次抽签又没中。你开始研究抽签那天该穿什么颜色。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "H1B_MISS1"
+        ],
+        "lifeFlagsNone": [
+          "H1B",
+          "H1B_OUT",
+          "GREEN_CARD",
+          "CANADA"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "H1B_MISS2"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_H1B_MISS1",
+      "text": "第一次 H1B 抽签没中。HR 安慰你：别灰心，明年还能抽。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "H1B",
+          "H1B_OUT",
+          "GREEN_CARD",
+          "CANADA"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "H1B_MISS1"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_MAPLE_PR",
+      "text": "枫叶卡批下来了。从此抽签这件事，与你再无关系。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 8
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CANADA"
+        ],
+        "lifeFlagsNone": [
+          "MAPLE_PR"
+        ]
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "MAPLE_PR"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_OUT_PHD",
+      "text": "三振出局之后，你申请了一个博士项目。学生身份，续上了。",
+      "delta": {
+        "money": -4,
+        "academics": 4,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "statMin": {
+          "academics": 60
+        },
+        "lifeFlagsAll": [
+          "H1B_OUT"
+        ],
+        "lifeFlagsNone": [
+          "CANADA",
+          "PHD_FOR_VISA",
+          "PHD_QUIT",
+          "PHD_DONE"
+        ]
+      },
+      "chancePermille": 120,
+      "setFlags": [
+        "PHD_FOR_VISA"
+      ],
+      "setTrack": "PHD"
+    },
+    {
+      "id": "LM_LOCAL_JOB_OUT_VANCOUVER",
+      "text": "公司把你调去了温哥华办公室。不用再抽签了，伞得多买一把。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 4
+      },
+      "when": {
+        "flavors": [
+          "F_BAY_CODER",
+          "F_WEST_CODER",
+          "F_SEATTLE"
+        ],
+        "lifeFlagsAll": [
+          "H1B_OUT"
+        ],
+        "lifeFlagsNone": [
+          "CANADA",
+          "PHD_FOR_VISA"
+        ]
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "CANADA",
+        "VANCOUVER"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_OUT_TORONTO",
+      "text": "公司把你调去了多伦多办公室。不用再抽签了，羽绒服得买新的。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "H1B_OUT"
+        ],
+        "lifeFlagsNone": [
+          "CANADA",
+          "PHD_FOR_VISA"
+        ]
+      },
+      "chancePermille": 420,
+      "setFlags": [
+        "CANADA",
+        "TORONTO"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_OUT_HOME",
+      "text": "身份到期前一个月，你把锅碗瓢盆挂上二手群，订了回国机票。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "H1B_OUT"
+        ],
+        "lifeFlagsNone": [
+          "CANADA",
+          "PHD_FOR_VISA"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "RETURNED"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_LOCAL_JOB_GREEN_CARD",
+      "text": "绿卡批下来了。你盯着那张卡看了很久，然后把它锁进了抽屉。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 10
+      },
+      "when": {
+        "yearMin": 4,
+        "lifeFlagsAll": [
+          "H1B"
+        ],
+        "lifeFlagsNone": [
+          "GREEN_CARD"
+        ]
+      },
+      "chancePermille": 150,
+      "setFlags": [
+        "GREEN_CARD"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_FIRE",
+      "text": "期权解禁那天，你把表格算了三遍，然后递了辞呈。",
+      "delta": {
+        "money": 8,
+        "academics": 0,
+        "career": -6,
+        "wellbeing": 10
+      },
+      "when": {
+        "yearMin": 4,
+        "statMin": {
+          "money": 85
+        },
+        "lifeFlagsAll": [
+          "PROMOTED"
+        ],
+        "lifeFlagsAny": [
+          "H1B",
+          "GREEN_CARD",
+          "CANADA"
+        ],
+        "lifeFlagsNone": [
+          "FIRE",
+          "RETURNED"
+        ]
+      },
+      "chancePermille": 150,
+      "setFlags": [
+        "FIRE"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_STAFF",
+      "text": "你又升了一级，开始负责“方向”。具体指什么，你还在想。",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 6,
+        "wellbeing": -3
+      },
+      "when": {
+        "yearMin": 4,
+        "statMin": {
+          "career": 85
+        },
+        "lifeFlagsAll": [
+          "PROMOTED"
+        ],
+        "lifeFlagsNone": [
+          "STAFF",
+          "FIRE",
+          "RETURNED",
+          "PHD_FOR_VISA"
+        ]
+      },
+      "chancePermille": 220,
+      "setFlags": [
+        "STAFF"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_PROMOTED",
+      "text": "你升职了。头衔前面多了个 Senior，日历上的会多了一倍。",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 5,
+        "wellbeing": -2
+      },
+      "when": {
+        "yearMin": 2,
+        "statMin": {
+          "career": 60
+        },
+        "lifeFlagsNone": [
+          "PROMOTED",
+          "FIRE",
+          "RETURNED",
+          "PHD_FOR_VISA"
+        ]
+      },
+      "chancePermille": 250,
+      "setFlags": [
+        "PROMOTED"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_JOB_HOP",
+      "text": "你跳槽了。涨薪的幅度，刚好跑赢了房租的涨幅。",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": 1
+      },
+      "when": {
+        "yearMin": 2,
+        "statMin": {
+          "career": 55
+        },
+        "lifeFlagsNone": [
+          "JOB_HOP",
+          "LAID_OFF",
+          "FIRE",
+          "RETURNED",
+          "PHD_FOR_VISA"
+        ]
+      },
+      "chancePermille": 160,
+      "setFlags": [
+        "JOB_HOP"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_IPO",
+      "text": "公司上市了。你的期权终于不是废纸了，至少不全是。",
+      "delta": {
+        "money": 12,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {
+        "yearMin": 2,
+        "lifeFlagsNone": [
+          "IPO",
+          "LAID_OFF",
+          "FIRE",
+          "RETURNED",
+          "PHD_FOR_VISA"
+        ]
+      },
+      "chancePermille": 40,
+      "setFlags": [
+        "IPO"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_HOUSE_FAMILY",
+      "text": "家里打来一笔首付，你在这里买了房。爸妈只有一个要求：常回家。",
+      "delta": {
+        "money": -6,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {
+        "economies": [
+          "HIGH"
+        ],
+        "yearMin": 2,
+        "statMin": {
+          "money": 40
+        },
+        "lifeFlagsAny": [
+          "H1B",
+          "GREEN_CARD",
+          "CANADA"
+        ],
+        "lifeFlagsNone": [
+          "HOUSE",
+          "RETURNED"
+        ]
+      },
+      "chancePermille": 180,
+      "setFlags": [
+        "HOUSE"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_HOUSE_BAY",
+      "text": "你在湾区上了车：首付掏空了六个钱包，房子比你爸妈还老。",
+      "delta": {
+        "money": -12,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "flavors": [
+          "F_BAY_CODER",
+          "F_WEST_CODER"
+        ],
+        "yearMin": 3,
+        "statMin": {
+          "money": 85
+        },
+        "lifeFlagsAny": [
+          "H1B",
+          "GREEN_CARD"
+        ],
+        "lifeFlagsNone": [
+          "HOUSE",
+          "RETURNED"
+        ]
+      },
+      "chancePermille": 250,
+      "setFlags": [
+        "HOUSE"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_HOUSE",
+      "text": "你买了房。签完一摞文件，你正式成了一个有房贷的人。",
+      "delta": {
+        "money": -12,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 5
+      },
+      "when": {
+        "yearMin": 3,
+        "statMin": {
+          "money": 70
+        },
+        "lifeFlagsAny": [
+          "H1B",
+          "GREEN_CARD",
+          "CANADA"
+        ],
+        "lifeFlagsNone": [
+          "HOUSE",
+          "RETURNED"
+        ]
+      },
+      "chancePermille": 180,
+      "setFlags": [
+        "HOUSE"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_BURNOUT",
+      "text": "周日晚上一想到周一就心慌。你请了两周假，承认自己倦怠了。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -4,
+        "wellbeing": 4
+      },
+      "when": {
+        "yearMin": 2,
+        "statMax": {
+          "wellbeing": 20
+        },
+        "lifeFlagsNone": [
+          "BURNOUT",
+          "FIRE"
+        ]
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "BURNOUT"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_LAYOFF",
+      "text": "裁员潮到了你们组。周二早上，你的工卡刷不开门了。",
+      "delta": {
+        "money": -4,
+        "academics": 0,
+        "career": -6,
+        "wellbeing": -8
+      },
+      "when": {
+        "yearMin": 2,
+        "lifeFlagsNone": [
+          "LAID_OFF",
+          "FIRE",
+          "RETURNED",
+          "PHD_FOR_VISA"
+        ]
+      },
+      "chancePermille": 90,
+      "setFlags": [
+        "LAID_OFF"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_LAYOFF_HOME",
+      "text": "被裁后，国内猎头的电话打了进来。你订了回国的单程票。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "LAID_OFF"
+        ],
+        "lifeFlagsNone": [
+          "REHIRED",
+          "RETURNED",
+          "FIRE",
+          "GREEN_CARD",
+          "MAPLE_PR"
+        ]
+      },
+      "chancePermille": 220,
+      "setFlags": [
+        "RETURNED"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_LOCAL_JOB_LAYOFF_GAP",
+      "text": "简历投了两百份，回音寥寥。你决定先回家歇一阵再说。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "LAID_OFF"
+        ],
+        "lifeFlagsNone": [
+          "REHIRED",
+          "RETURNED",
+          "FIRE",
+          "GREEN_CARD",
+          "MAPLE_PR"
+        ]
+      },
+      "chancePermille": 180,
+      "setFlags": [
+        "RETURNED"
+      ],
+      "setTrack": "TRANSITION"
+    },
+    {
+      "id": "LM_LOCAL_JOB_REHIRED_H1B",
+      "text": "六十天宽限期的倒数第二天，你拿到了新 offer。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 2
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsAll": [
+          "LAID_OFF",
+          "H1B"
+        ],
+        "lifeFlagsNone": [
+          "REHIRED",
+          "RETURNED",
+          "GREEN_CARD"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "REHIRED"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_REHIRED_OPT",
+      "text": "OPT 的失业额度快用完时，你终于拿到了下一份 offer。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 2
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsAll": [
+          "LAID_OFF"
+        ],
+        "lifeFlagsNone": [
+          "REHIRED",
+          "RETURNED",
+          "H1B",
+          "GREEN_CARD",
+          "CANADA"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "REHIRED"
+      ]
+    },
+    {
+      "id": "LM_LOCAL_JOB_REHIRED",
+      "text": "投了几十份简历，三个月后，你在另一家公司领到了新工牌。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "LAID_OFF"
+        ],
+        "lifeFlagsNone": [
+          "REHIRED",
+          "RETURNED"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "REHIRED"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "LE_LOCAL_JOB_WISHING_WELL",
+      "text": "你开始往每个许愿池里扔硬币，许的都是同一个愿。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsNone": [
+          "H1B",
+          "H1B_OUT",
+          "GREEN_CARD",
+          "CANADA"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_CHECK",
+      "text": "回国探亲被 check，你在家远程上了两个月夜班。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": -4
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsAll": [
+          "H1B"
+        ],
+        "lifeFlagsNone": [
+          "GREEN_CARD"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_RFE",
+      "text": "律师转来一封补件通知，说问题不大。你连着三晚没睡好。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsAll": [
+          "H1B"
+        ],
+        "lifeFlagsNone": [
+          "GREEN_CARD"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_PRIORITY_DATE",
+      "text": "绿卡排期又倒退了。你把排期表设成了手机壁纸。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "yearMin": 3,
+        "lifeFlagsAll": [
+          "H1B"
+        ],
+        "lifeFlagsNone": [
+          "GREEN_CARD"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_TRANSFER",
+      "text": "跳槽要转 H1B。等批准的那几周，你每天查三遍状态。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsAll": [
+          "JOB_HOP",
+          "H1B"
+        ],
+        "lifeFlagsNone": [
+          "GREEN_CARD"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_STAMP",
+      "text": "回国前要约签证面签，日历上的空位比演唱会门票还难抢。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "lifeFlagsAll": [
+          "H1B"
+        ],
+        "lifeFlagsNone": [
+          "GREEN_CARD"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_SPRING_RITUAL",
+      "text": "又到春天，你每天刷新邮箱的次数，比刷新闻还多。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "talentsNone": [
+          "T_VISA_KOI"
+        ],
+        "flavors": [
+          "F_STATUS_ANXIETY"
+        ],
+        "lifeFlagsNone": [
+          "H1B",
+          "H1B_OUT",
+          "GREEN_CARD",
+          "CANADA"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_COSTCO_CARD",
+      "text": "你办了 Costco 会员卡，这是你在这里最稳定的一张卡。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 6
+    },
+    {
+      "id": "LE_LOCAL_JOB_AVOCADO_BOX",
+      "text": "从 Costco 搬回一箱牛油果，三天后它们同时熟透了。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_TJ",
+      "text": "Trader Joe's 的速冻炒饭，成了你一周五天的午饭。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_AVOCADO_TOAST",
+      "text": "早午餐的牛油果吐司很贵，你一边吃一边算首付。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "HOUSE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_TESLA",
+      "text": "你贷款提了一辆 Tesla，从此停车场的话题都能接上了。",
+      "delta": {
+        "money": -6,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 4
+      },
+      "when": {
+        "statMin": {
+          "money": 40
+        }
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_HIKING",
+      "text": "周末跟同事去 hiking，爬到山顶，大家都掏出手机回消息。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_LUNCH",
+      "text": "同事 lunch 聊了一小时：房价、股票，还有谁要被裁。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_SICHUAN",
+      "text": "公司附近开了家川菜馆，你成了老板最熟的客人。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_TAX",
+      "text": "报税季你研究了一个周末的表格，退的税够吃一顿火锅。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_REMOTE",
+      "text": "公司宣布可以远程办公，你搬去了房租便宜一半的城市。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "REMOTE",
+          "HOUSE",
+          "FIRE"
+        ]
+      },
+      "weight": 4,
+      "setFlags": [
+        "REMOTE"
+      ]
+    },
+    {
+      "id": "LE_LOCAL_JOB_RTO",
+      "text": "公司要求回办公室上班，一周五天，打卡挂钩绩效。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "REMOTE"
+        ],
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_ONCALL",
+      "text": "轮到你值班，凌晨三点被报警叫醒，原因是有人改了一行配置。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_REORG",
+      "text": "组织架构又调整了，一年里你换了三个老板。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_BONUS",
+      "text": "年终奖发得不错，你给自己换了一把人体工学椅。",
+      "delta": {
+        "money": 5,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_STOCK_DROP",
+      "text": "股价跌了一半，你的股票补贴也跟着缩了水。",
+      "delta": {
+        "money": -5,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_MOVE",
+      "text": "房东把房子卖了，你一个月内搬了家，打包了四十个纸箱。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "HOUSE"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_HOA",
+      "text": "HOA 来信说你家草坪高了两厘米，限期修剪。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HOUSE"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_MORTGAGE",
+      "text": "房贷利率又涨了，你把月供打印出来贴在了冰箱上。",
+      "delta": {
+        "money": -4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HOUSE"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_LOCAL_JOB_HARDWARE_STORE",
+      "text": "买房后的第一个周末，你在建材超市逛了五个小时。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HOUSE"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_LOCAL_JOB_THIRTY_FIVE",
+      "text": "组里来了个比你小五岁的新人，你第一次认真想了想三十五岁。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -3
+      },
+      "when": {
+        "yearMin": 3,
+        "lifeFlagsNone": [
+          "PROMOTED",
+          "FIRE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_PARENTS",
+      "text": "爸妈来探亲，三个月里把你家冰箱塞满了饺子。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 5
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_THANKSGIVING",
+      "text": "感恩节同事请你去家里吃火鸡，你带了一盘饺子。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_GYM",
+      "text": "你办了一张健身卡，去了三次，之后每月照扣。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_LEETCODE",
+      "text": "你又开始刷题了。没打算跳槽，就是心里不踏实。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_RETIREMENT",
+      "text": "你终于搞懂了退休账户，算出自己离退休还有四十年。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CANADA",
+          "FIRE"
+        ]
+      },
+      "weight": 3
+    },
+    {
+      "id": "LE_LOCAL_JOB_DMV",
+      "text": "去车管所换驾照排了四个小时，比面试还磨人。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_PROJECT_KILLED",
+      "text": "你做了一年的项目被砍了，周报里只剩一句“已归档”。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -4,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_SHIPPED",
+      "text": "你负责的功能上线了，用户的第一条反馈是：找不到在哪。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_INTERN",
+      "text": "你开始带实习生，TA 问的问题，你去年也问过。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_HOTPOT",
+      "text": "周末在家开火锅局，烟雾报警器比客人先到。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_ROAD_TRIP",
+      "text": "长周末自驾去国家公园，手机没信号，你睡了个整觉。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 5
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_SUPER_BOWL",
+      "text": "超级碗派对上，你假装看懂了规则，跟着大家一起喊。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 3
+    },
+    {
+      "id": "LE_LOCAL_JOB_SALARY_QUESTION",
+      "text": "春节视频，亲戚问你一年挣多少，换算成人民币后集体沉默。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_NEW_YEAR_EVE",
+      "text": "除夕照常上班，晚上你一个人包了一盘饺子。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_RAISE",
+      "text": "绩效评了个“超出预期”，涨薪的幅度没有超出预期。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_LOCAL_JOB_OMAKASE",
+      "text": "同事带你吃了一顿 omakase，账单让你回味了很久。",
+      "delta": {
+        "money": -4,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_LOCAL_JOB_BAY_RENT",
+      "text": "湾区的房租又涨了，你搬到了离公司一小时车程的地方。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {
+        "flavors": [
+          "F_BAY_CODER",
+          "F_WEST_CODER"
+        ],
+        "lifeFlagsNone": [
+          "HOUSE",
+          "CANADA",
+          "REMOTE"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_BAY_HOUSE_HUNT",
+      "text": "在湾区看了三十套房，最便宜的那套是车库改的。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "flavors": [
+          "F_BAY_CODER",
+          "F_WEST_CODER"
+        ],
+        "lifeFlagsNone": [
+          "HOUSE",
+          "CANADA"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_BAY_TRAFFIC",
+      "text": "湾区的高速堵了一小时，你在车里开完了两个会。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -3
+      },
+      "when": {
+        "flavors": [
+          "F_BAY_CODER",
+          "F_WEST_CODER"
+        ],
+        "lifeFlagsNone": [
+          "CANADA",
+          "FIRE",
+          "REMOTE"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_LOCAL_JOB_BAY_BOBA",
+      "text": "湾区的奶茶店比国内还密，你办了三家的会员卡。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "flavors": [
+          "F_BAY_CODER",
+          "F_WEST_CODER"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_NYC_SUBWAY",
+      "text": "地铁又停在了隧道里，你在黑暗中回完了所有邮件。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -3
+      },
+      "when": {
+        "flavors": [
+          "F_NYC_WORKER",
+          "F_WALL_STREET"
+        ],
+        "lifeFlagsNone": [
+          "CANADA",
+          "FIRE",
+          "REMOTE"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_NYC_RENT",
+      "text": "纽约的房租又涨了，你的卧室小到放不下第二把椅子。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "flavors": [
+          "F_NYC_WORKER",
+          "F_WALL_STREET"
+        ],
+        "lifeFlagsNone": [
+          "HOUSE",
+          "CANADA"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_NYC_BAGEL",
+      "text": "楼下贝果店的老板记住了你的口味，这是你在纽约最稳的人脉。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "flavors": [
+          "F_NYC_WORKER",
+          "F_WALL_STREET"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_WALL_ST_NIGHT",
+      "text": "凌晨两点改完第二十版表格，你在出租车后座睡着了。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -5
+      },
+      "when": {
+        "flavors": [
+          "F_WALL_STREET"
+        ],
+        "lifeFlagsNone": [
+          "CANADA",
+          "FIRE"
+        ]
+      },
+      "weight": 9
+    },
+    {
+      "id": "LE_LOCAL_JOB_SEATTLE_RAIN",
+      "text": "西雅图下了一冬天的雨，你买了一盏模拟日光的台灯。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "flavors": [
+          "F_SEATTLE"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_SEATTLE_SUMMER",
+      "text": "西雅图的夏天终于来了，全组下午都请假去爬山。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 5
+      },
+      "when": {
+        "flavors": [
+          "F_SEATTLE"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_TEXAS_BBQ",
+      "text": "德州烤肉排了两小时队，你觉得值，同事说你被同化了。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "flavors": [
+          "F_TEXAS"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_TEXAS_REFERRAL",
+      "text": "湾区的同学听说了德州的房价，连夜找你要内推。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 2
+      },
+      "when": {
+        "flavors": [
+          "F_TEXAS"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_LOCAL_JOB_TEXAS_HEAT",
+      "text": "德州的夏天，车里热到能烤饼干，你真的试了一次。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "flavors": [
+          "F_TEXAS"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_LOCAL_JOB_MIDWEST_SNOW",
+      "text": "一场暴雪把你困在家里三天，你终于追完了那部剧。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 2
+      },
+      "when": {
+        "flavors": [
+          "F_MIDWEST"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_MIDWEST_FOOD",
+      "text": "方圆五十英里只有一家中餐馆，老板已经认得你的车。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "flavors": [
+          "F_MIDWEST"
+        ],
+        "lifeFlagsNone": [
+          "CANADA"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_PPT_FLIGHTS",
+      "text": "这一年你飞了二十个城市，第十七版方案是在机场改完的。",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -4
+      },
+      "when": {
+        "flavors": [
+          "F_PPT_WORKER"
+        ],
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_LAB_TEACHER",
+      "text": "实验室新来的博士生管你叫老师，你没纠正。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 2
+      },
+      "when": {
+        "flavors": [
+          "F_LAB_TECH"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_RESERVE_BOX",
+      "text": "工位上的私人物品你又精简了一遍，现在一个背包就能装走。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -2
+      },
+      "when": {
+        "flavors": [
+          "F_LAYOFF_RESERVE"
+        ],
+        "lifeFlagsNone": [
+          "FIRE"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_TAILWIND",
+      "text": "学弟学妹又来问经验，你请他们喝了咖啡，还是没说清楚。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 2
+      },
+      "when": {
+        "flavors": [
+          "F_TAILWIND"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_TORONTO_WINTER",
+      "text": "多伦多的冬天零下二十度，你买了第一件过膝羽绒服。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "TORONTO"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_VANCOUVER_RAIN",
+      "text": "温哥华下了一冬天的雨，房价倒是一天也没停过涨。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "VANCOUVER"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_CANADA_PAY",
+      "text": "你发现加拿大的工资打了折，物价没打。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CANADA"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_CANADA_TIMS",
+      "text": "楼下的 Tim Hortons 比星巴克还多，你也开始叫它 Timmies。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CANADA"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_LOCAL_JOB_CANADA_SORRY",
+      "text": "在加拿大待久了，被人踩了脚，你也会先说一声 sorry。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CANADA"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_LOCAL_JOB_CANADA_HOCKEY",
+      "text": "同事拉你去看冰球，你没看清球在哪，但学会了一起骂裁判。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CANADA"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_EX_PHD",
+      "text": "新同事听说你读过博，开会时总把最难的问题丢给你。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "PHD_QUIT"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_EX_ADVISOR",
+      "text": "前导师给你的朋友圈点了个赞，你盯着那颗心看了很久。",
+      "delta": {
+        "money": 0,
+        "academics": 1,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "PHD_QUIT"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_FIRST_PAYCHECK",
+      "text": "第一次领到全职工资，你对着那串数字数了好几遍零。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "PHD_QUIT"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_SECOND_TRY",
+      "text": "绕了一大圈，你又回到美国上班。工牌和同学的一样，只是晚了几年。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "REAPPLIED"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_LOCAL_JOB_DATE_COSTCO",
+      "text": "周末和对象逛 Costco，推车装满了，才想起冰箱没地方放。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "DATING"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_DAYCARE",
+      "text": "同事说托儿所的学费比房租还贵，你和对象对视了一眼。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "MARRIED"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LE_LOCAL_JOB_PET_VET",
+      "text": "宠物看一次病的账单，比你自己的体检还贵。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "PET"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_LOCAL_JOB_FIRE_FISHING",
+      "text": "退休后你开始钓鱼，第一个月钓上来的鱼还没有鱼饵贵。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "FIRE"
+        ]
+      },
+      "weight": 9
+    },
+    {
+      "id": "LE_LOCAL_JOB_FIRE_STANDUP",
+      "text": "辞职后的第三个月，你有点想念站会了，就一点点。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "FIRE"
+        ]
+      },
+      "weight": 7
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "LO_LOCAL_JOB_FIRE",
+      "name": "财务自由",
+      "roast": "还没到三十，先研究起了钓鱼竿。",
+      "text": "期权兑现之后，你把账算了很多遍，确认够花。现在你每天睡到自然醒，最大的烦恼是下午去哪家咖啡店。",
+      "hint": "升职、攒钱，再加一点期权的运气。",
+      "grade": "SSR",
+      "when": {
+        "lifeFlagsAll": [
+          "FIRE"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_LOCAL_JOB_GREEN_CARD",
+      "name": "绿卡在手",
+      "roast": "终于可以随便跳槽了，但你没跳。",
+      "text": "排了几年的队，绿卡终于寄到了。你把它和护照锁进同一个抽屉。抽签季来了又走，再也与你无关。",
+      "hint": "先抽中签，再熬过排期。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "GREEN_CARD"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_LOCAL_JOB_HOUSE",
+      "name": "有房一族",
+      "roast": "房子是你的，也是银行的。",
+      "text": "你在这里买了房。周末修草坪、修水管、修栅栏，物业的来信比工作邮件还准时。",
+      "hint": "攒够首付，上车。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "HOUSE"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_LOCAL_JOB_STAFF",
+      "name": "定海神针",
+      "roast": "活儿越干越少，会越开越多。",
+      "text": "你又升了一级，开始负责“方向”。新人把你写的文档当教材，你的日历被别人的问题填满了。",
+      "hint": "升了职，又升了一次。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "STAFF"
+        ]
+      },
+      "weight": 7
+    },
+    {
+      "id": "LO_LOCAL_JOB_MAPLE_PR",
+      "name": "枫叶卡在手",
+      "roast": "美国抽签三次，加拿大打分一次。",
+      "text": "三次没抽中之后你去了加拿大，现在枫叶卡也到手了。冬天很长，房价很高，但你再也不用在春天刷邮箱。",
+      "hint": "南边没抽中，北边拿到了身份。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "MAPLE_PR"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_LOCAL_JOB_CANADA",
+      "name": "枫叶国打工人",
+      "roast": "身份不靠抽签了，靠攒分。",
+      "text": "H1B 三振出局之后，你去了加拿大。工资打了折，冬天加了长，好在下一张身份不用抽签，只要攒分。",
+      "hint": "三次没抽中，往北走。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "CANADA"
+        ],
+        "lifeFlagsNone": [
+          "MAPLE_PR"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_LOCAL_JOB_EX_PHD",
+      "name": "退学转码人",
+      "roast": "论文没写完，代码写了几万行。",
+      "text": "你从博士项目退学，转了码。工资是补助的好几倍，只是偶尔夜里，还会梦见没开完的组会。",
+      "hint": "读博读到一半，转了码。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "PHD_QUIT"
+        ]
+      },
+      "weight": 9
+    },
+    {
+      "id": "LO_LOCAL_JOB_LATE_LANDING",
+      "name": "迟到的上岸",
+      "roast": "晚了一步，但也到了。",
+      "text": "毕业那年你停了一下，后来还是回到美国上了班。工牌拿到手那天，你在停车场里坐了很久。",
+      "hint": "毕业时先过渡了一阵，后来在美国上岸。",
+      "grade": "R",
+      "when": {
+        "routes": [
+          "TRANSITION"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_LOCAL_JOB_COMEBACK",
+      "name": "裁员后重启",
+      "roast": "被裁一次，简历上又多了一行。",
+      "text": "裁员潮里你丢过一次工作，三个月后又找到了下一份。从此工位上不放私人物品，纸箱一直留着。",
+      "hint": "被裁过，又爬了起来。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "LAID_OFF",
+          "REHIRED"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_LOCAL_JOB_HOPPER",
+      "name": "跳槽涨薪党",
+      "roast": "忠诚不涨工资，跳槽涨。",
+      "text": "你算明白了：涨薪靠跳。新公司的工牌换了颜色，同事还是那些同事，只是换了栋楼。",
+      "hint": "跳过槽，钱包也鼓了。",
+      "grade": "R",
+      "when": {
+        "statMin": {
+          "money": 50
+        },
+        "lifeFlagsAll": [
+          "JOB_HOP"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_LOCAL_JOB_REMOTE",
+      "name": "远程打工人",
+      "roast": "上班穿睡衣，开会开美颜。",
+      "text": "你在离公司很远的地方租了大房子，每天穿着睡衣开会。公司催回办公室的邮件，你都标成了稍后阅读。",
+      "hint": "公司说可以远程，你当真了。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "REMOTE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_LOCAL_JOB_WAITING",
+      "name": "排期等待者",
+      "roast": "绿卡排期，比你的职业规划还长。",
+      "text": "签是抽中了，绿卡还在排期。你每个月查一次排期表，像查天气预报，也像查彩票。",
+      "hint": "抽中了签，还在排队。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "H1B"
+        ],
+        "lifeFlagsNone": [
+          "GREEN_CARD"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_LOCAL_JOB_COSTCO",
+      "name": "Costco中产",
+      "roast": "会员卡，是你最稳定的身份。",
+      "text": "周末逛 Costco，工作日吃 Trader Joe's。你有存款、有车、有固定的早午餐店，日子稳得像一张会员卡。",
+      "hint": "钱够花，人也还行。",
+      "grade": "N",
+      "when": {
+        "statMin": {
+          "money": 55,
+          "wellbeing": 40
+        },
+        "lifeFlagsNone": [
+          "HOUSE",
+          "CANADA",
+          "FIRE"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_LOCAL_JOB_BURNOUT",
+      "name": "电量告急",
+      "roast": "工资在涨，电量在掉。",
+      "text": "这五年你一直在冲，冲到周日晚上会心慌。假请过了，工位换过了，下一步你打算先睡一觉再说。",
+      "hint": "工作把人耗空了。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "BURNOUT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_LOCAL_JOB_BROKE",
+      "name": "高薪月光族",
+      "roast": "工资不低，就是留不住。",
+      "text": "你的工资在同学里不算低，可房租、车贷、外卖和 Costco 一起分走了它。月底查余额，像拆盲盒。",
+      "hint": "挣得不少，存得不多。",
+      "grade": "N",
+      "when": {
+        "statMax": {
+          "money": 25
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_LOCAL_JOB_ANXIOUS",
+      "name": "三十五岁预备役",
+      "roast": "离三十五岁还早，焦虑先到了。",
+      "text": "组里的新人越来越年轻，升职名单上一直没有你。你开始在周末刷题，不为跳槽，只为心安。",
+      "hint": "五年没升过职，心里有点慌。",
+      "grade": "N",
+      "when": {
+        "statMax": {
+          "wellbeing": 40
+        },
+        "lifeFlagsNone": [
+          "PROMOTED",
+          "FIRE"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_LOCAL_JOB_DEFAULT",
+      "name": "留美打工人",
+      "roast": "工位、通勤、周末，周而复始。",
+      "text": "五年过去，你在这里有了固定的工位、固定的超市和固定的早午餐店。说不上好或不好，日子就这么过着。",
+      "hint": "留美五年最普通的样子。",
+      "grade": "N",
+      "when": {},
+      "weight": 3,
+      "fallback": true
+    }
+  ]
+}

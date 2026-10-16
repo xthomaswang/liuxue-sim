@@ -6,7 +6,7 @@ import {
   SHORTFALL_STRESS_DIVISOR, STAT_KEYS, STAT_MAX, STAT_MIN,
 } from "./constants";
 import { draw01 } from "./rng";
-import type { ArcId, Economy, EfficiencyFactor, FocusCounts, Stats } from "./types";
+import type { ActiveRun, ArcId, Economy, EfficiencyFactor, FocusCounts, HistoryEntry, HistoryKind, Stats } from "./types";
 
 export function clamp(value: number, lo: number = STAT_MIN, hi: number = STAT_MAX): number {
   return Math.min(hi, Math.max(lo, value));
@@ -39,6 +39,41 @@ export function applyDelta(stats: Stats, requested: Stats): { after: Stats; appl
     applied[key] = after[key] - stats[key];
   }
   return { after, applied };
+}
+
+/**
+ * 在草稿上记一次原子变化：应用（截断后的）变化、写一条历史。reducer 与毕业后的五年共用。
+ * meta 是触发它的操作被接受时的 revision 与操作 id。
+ */
+export function appendHistory(
+  draft: ActiveRun,
+  kind: HistoryKind,
+  requested: Stats,
+  meta: { revision: number; actionId: string },
+  extra: Partial<HistoryEntry> = {},
+): HistoryEntry {
+  const before = copyStats(draft.stats);
+  const { after, applied } = applyDelta(before, requested);
+  const entry: HistoryEntry = {
+    kind,
+    stage: draft.stage,
+    termIndex: draft.termIndex,
+    revision: meta.revision,
+    actionId: meta.actionId,
+    beforeStats: before,
+    requestedDelta: copyStats(requested),
+    appliedDelta: applied,
+    afterStats: copyStats(after),
+    ...extra,
+  };
+  draft.stats = after;
+  draft.history.push(entry);
+  return entry;
+}
+
+/** 四属性逐项相加（不截断）。 */
+export function addStats(a: Stats, b: Stats): Stats {
+  return { money: a.money + b.money, academics: a.academics + b.academics, career: a.career + b.career, wellbeing: a.wellbeing + b.wellbeing };
 }
 
 export function totalFocus(counts: FocusCounts): number {

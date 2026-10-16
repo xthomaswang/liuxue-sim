@@ -1,21 +1,27 @@
-// 状态机（docs/06 第 1、5、6 节；第二版流程见 docs/16）。applyAction 是唯一的状态转移入口：
-// 先校验 revision、phase、事件 ID 与资金，再在一份拷贝上完成全部更新；失败时原状态原样返回。
+// 状态机（docs/06 第 1、5、6 节；第二版流程见 docs/16，第四版的暑假、期中小事与毕业后的五年见 docs/24）。
+// applyAction 是唯一的状态转移入口：先校验 revision、phase、事件 ID 与资金，再在一份拷贝上完成全部更新；
+// 失败时原状态原样返回。第四版新增的内容只在正式玩法（standard）里出现，经典模式与第一版完全相同。
 
 import { EVENT_BY_ID } from "../content";
 import { baseReadinessFor, poolCounts, resolveAdmission, sampleOffers } from "./admission";
+import { conditionMet } from "./conditions";
+import type { ConditionContext } from "./conditions";
 import {
-  ALL_TIERS, CONTENT_VERSION, CORE_EVENT_IDS, ECONOMY_ORDER, HIGH_SCHOOL_EVENT_IDS, MASTERS_PLANS,
-  MASTERS_PROGRAM_ORDER, MIN_POOL_SIZE, OPPORTUNITY_ORDER, POINT_MAX, RULES_VERSION, TALENT_PICK_CLASSIC,
-  TALENT_PICK_STANDARD, UG_TERMS,
+  ALL_TIERS, CONTENT_VERSION, CORE_EVENT_IDS, ECONOMY_ORDER, FOCUS_ORDER, HIGH_SCHOOL_EVENT_IDS, MASTERS_PLANS,
+  MASTERS_PROGRAM_ORDER, MIN_POOL_SIZE, MS_SUMMER_AFTER_TERM, OPPORTUNITY_ORDER, POINT_MAX, RULES_VERSION,
+  SUMMER_SECOND_PROBABILITY, TALENT_PICK_CLASSIC, TALENT_PICK_STANDARD, UG_SUMMER_AFTER_TERMS, UG_TERMS,
 } from "./constants";
 import { checkEarlyEnding } from "./early";
 import { computeEndingCard, earlyEndingCard } from "./endingCard";
 import { freezeGraduation, mastersBlockers, offeredList, revealGraduation } from "./graduation";
+import { enterLife, graduationAge, liveYear, termAge } from "./life";
 import {
-  basePlans, classicTalents, happeningPool, nodeCandidates, planPool, randomEventPool, talentOrder, talentPool,
+  basePlans, classicTalents, happeningPool, nodeCandidates, planPool, randomEventPool, summerPool, talentOrder,
+  talentPool,
 } from "./pools";
+import { draw01, pickWeighted } from "./rng";
 import {
-  applyDelta, arcSlotForTerm, arcWeights, copyStats, pickArc, planVector, upkeep, zeroFocusCounts, zeroStats,
+  appendHistory, arcSlotForTerm, arcWeights, pickArc, planVector, upkeep, zeroFocusCounts, zeroStats,
 } from "./rules";
 import type { PlanVector } from "./rules";
 import {
@@ -26,9 +32,9 @@ import type { TalentTotals } from "./talents";
 import { mainSlotEvent, rollHappening, termSlate } from "./terms";
 import type { TermSlate } from "./terms";
 import type {
-  Action, ActionResult, ActiveRun, CatalogCheck, Command, Degree, Economy, EngineContext, EngineErrorCode,
+  Action, ActionResult, ActiveRun, CatalogCheck, Command, Degree, Economy, EngineContext, EngineErrorCode, Focus,
   HistoryEntry, HistoryKind, MastersProgram, OfferTier, PlanCard, RunMode, RunState, RuntimeCatalog, RuntimeSchool,
-  SetupRun, SetupView, Stats, StoryEvent, Talent,
+  SetupRun, SetupView, Stage, Stats, StoryEvent, SummerSlot, Talent,
 } from "./types";
 
 class EngineFailure extends Error {
@@ -188,6 +194,39 @@ function usedHappeningIds(state: ActiveRun): string[] {
   return ids;
 }
 
+function usedSummerIds(state: ActiveRun): string[] {
+  const ids: string[] = [];
+  for (const entry of state.history) if (entry.kind === "SUMMER" && entry.summerId) ids.push(entry.summerId);
+  return ids;
+}
+
+/** 某学段某学期选的安排类别；还没选为 null。 */
+export function termFocus(state: Pick<ActiveRun, "history">, stage: Degree, term: number): Focus | null {
+  const entry = state.history.find((item) => item.kind === "FOCUS" && item.stage === stage && item.termIndex === term);
+  return entry?.focus ?? null;
+}
+
+/**
+ * 在校期间此刻的条件上下文（docs/24 §6）：四属性、安排次数、标记、历史都取此刻；stage/term 与本学期的安排由调用方给。
+ * 所有上下文都带点数、天赋、学校、愿望与家境档。
+ */
+export function schoolContext(state: ActiveRun, stage: Degree, term: number, focus: Focus | null): ConditionContext {
+  return {
+    stage,
+    term,
+    stats: state.stats,
+    counts: state.focusCounts,
+    points: state.profile.points,
+    flags: state.flags,
+    talents: state.profile.talents,
+    history: state.history,
+    school: state.school,
+    aspiration: state.profile.aspiration,
+    economy: state.profile.economy,
+    focus,
+  };
+}
+
 /** 当前 phase 下唯一合法的事件 ID；不在事件阶段返回 null。 */
 export function expectedEventId(state: ActiveRun): string | null {
   if (state.phase === "HIGH_SCHOOL_EVENT") {
@@ -229,24 +268,39 @@ interface Step {
 }
 
 function record(step: Step, kind: HistoryKind, requested: Stats, extra: Partial<HistoryEntry> = {}): HistoryEntry {
+  return appendHistory(step.draft, kind, requested, { revision: step.revision, actionId: step.actionId }, extra);
+}
+
+/** 突发小事（docs/24 §2.1）：开学一次（此刻还没有本学期的安排）、期中一次（本学期的安排已定）。 */
+function happeningAt(step: Step, mid: boolean): void {
   const { draft } = step;
-  const before = copyStats(draft.stats);
-  const { after, applied } = applyDelta(before, requested);
-  const entry: HistoryEntry = {
-    kind,
-    stage: draft.stage,
-    termIndex: draft.termIndex,
-    revision: step.revision,
-    actionId: step.actionId,
-    beforeStats: before,
-    requestedDelta: copyStats(requested),
-    appliedDelta: applied,
-    afterStats: copyStats(after),
-    ...extra,
-  };
-  draft.stats = after;
-  draft.history.push(entry);
-  return entry;
+  if (draft.mode !== "standard" || (draft.stage !== "UG" && draft.stage !== "MS")) return;
+  const focus = mid ? termFocus(draft, draft.stage, draft.termIndex) : null;
+  const happening = rollHappening(draft.seed, draft.stage, draft.termIndex, happeningPool(), usedHappeningIds(draft), {
+    mid,
+    context: schoolContext(draft, draft.stage, draft.termIndex, focus),
+  });
+  if (happening) record(step, "HAPPENING", happening.effects, { happeningId: happening.id });
+}
+
+/**
+ * 暑假（docs/24 §2.2）：第一件必有，第二件按概率；候选是这一类暑假里本局没出现过、条件满足的，按权重抽。
+ * 历史里记在刚结束的那个学期（出国前记 HS、0）；条件的学段与学期取刚结束的学期（出国前为 UG、0）。
+ */
+function summerAt(step: Step, slot: SummerSlot, conditionStage: Degree, focus: Focus | null): void {
+  const { draft } = step;
+  const keyStage: Stage = draft.stage;
+  const term = draft.termIndex;
+  const used = usedSummerIds(draft);
+  for (let k = 0; k < 2; k++) {
+    if (k > 0 && !(draw01(draft.seed, `summer:roll:${keyStage}:${term}:${k}`) < SUMMER_SECOND_PROBABILITY[slot])) break;
+    const context = schoolContext(draft, conditionStage, term, focus);
+    const candidates = summerPool().filter((item) => item.slot === slot && !used.includes(item.id) && conditionMet(item.when, context));
+    const picked = pickWeighted(draft.seed, `summer:pick:${keyStage}:${term}:${k}`, candidates, (item) => item.weight);
+    if (!picked) break;
+    record(step, "SUMMER", picked.effects, { summerId: picked.id });
+    used.push(picked.id);
+  }
 }
 
 /** 学期开始：发资助；standard 模式再看有没有突发小事；进入选安排。 */
@@ -254,10 +308,7 @@ function beginTerm(step: Step): void {
   const { draft } = step;
   if (draft.stage !== "UG" && draft.stage !== "MS") fail("WRONG_PHASE", "当前不在学期中。");
   record(step, "STIPEND", { ...zeroStats(), money: effectiveStipend(draft.profile, step.totals) });
-  if (draft.mode === "standard") {
-    const happening = rollHappening(draft.seed, draft.stage, draft.termIndex, happeningPool(), usedHappeningIds(draft));
-    if (happening) record(step, "HAPPENING", happening.effects, { happeningId: happening.id });
-  }
+  happeningAt(step, false);
   draft.phase = "FOCUS";
 }
 
@@ -273,20 +324,10 @@ function endTerm(step: Step): void {
     upkeep: { cost: result.cost, paid: result.paid, shortfall: result.shortfall, stress: result.stress },
   });
   record(step, "GROWTH", effectiveGrowth(totals));
+  const focus = termFocus(draft, draft.stage, draft.termIndex);
   if (draft.mode === "standard") {
     // 中途结局（docs/22 §4）：期末结算之后、进入下一学期或毕业之前检查；经典模式没有。
-    const hit = checkEarlyEnding(draft.seed, {
-      stage: draft.stage,
-      term: draft.termIndex,
-      stats: draft.stats,
-      counts: draft.focusCounts,
-      points: draft.profile.points,
-      flags: draft.flags,
-      talents: draft.profile.talents,
-      history: draft.history,
-      school: draft.school,
-      aspiration: draft.profile.aspiration,
-    });
+    const hit = checkEarlyEnding(draft.seed, schoolContext(draft, draft.stage, draft.termIndex, focus));
     if (hit) {
       draft.ending = {
         kind: "EARLY",
@@ -297,11 +338,17 @@ function endTerm(step: Step): void {
         entryMode: null,
         card: earlyEndingCard(hit),
       };
-      draft.phase = "ENDING";
+      // 第四版：离校之后照样过五年，轨道由中途结局决定（缺省 DROPOUT）。
+      enterLife(draft, hit.ending.lifeTrack ?? "DROPOUT", termAge(draft.stage, draft.termIndex));
       return;
     }
   }
   if (draft.termIndex < termCountOf(draft)) {
+    // 暑假（只在正式玩法）：本科大一下、大二下、大三下之后，两年制硕士的硕一下之后。暑假不检查中途结局。
+    if (draft.mode === "standard") {
+      if (draft.stage === "UG" && UG_SUMMER_AFTER_TERMS.includes(draft.termIndex)) summerAt(step, "UG", "UG", focus);
+      if (draft.stage === "MS" && draft.mastersYears === 2 && draft.termIndex === MS_SUMMER_AFTER_TERM) summerAt(step, "MS", "MS", focus);
+    }
     draft.termIndex += 1;
     beginTerm(step);
     return;
@@ -444,6 +491,9 @@ function chooseEvent(step: Step, action: Extract<Action, { type: "CHOOSE_EVENT" 
     return;
   }
 
+  // 期中的突发小事（docs/24 §2.1）：主线槽事件结算之后、支线事件之前；只在正式玩法。
+  if (phase === "CORE_EVENT") happeningAt(step, true);
+
   if (phase === "CORE_EVENT" && draft.stage === "UG") {
     const slot = arcSlotForTerm(draft.termIndex);
     if (slot) {
@@ -470,6 +520,8 @@ function chooseSchool(step: Step, action: Extract<Action, { type: "CHOOSE_SCHOOL
   const school = draft.offers.find((item) => item.unitid === action.unitid);
   if (!school) fail("SCHOOL_NOT_OFFERED", "只能在收到的三所 offer 里选择。");
   draft.school = { ...school, rank: school.rank ? { ...school.rank } : null };
+  // 出国前的夏天（docs/24 §2.2）：选定学校之后、大一上开始之前；历史里记在 HS、0。
+  if (draft.mode === "standard") summerAt(step, "DEPARTURE", "UG", null);
   draft.stage = "UG";
   draft.termIndex = 1;
   draft.highSchoolNode = null;
@@ -538,7 +590,16 @@ function chooseRoute(step: Step, action: Extract<Action, { type: "CHOOSE_ROUTE" 
       transitionMode,
     }),
   };
-  draft.phase = "ENDING";
+  // 第四版：毕业之后不马上结束，按去向过五年（经典模式照旧在这里结束）。
+  if (draft.mode === "standard") enterLife(draft, route, graduationAge(degree, draft.mastersYears));
+  else draft.phase = "ENDING";
+}
+
+function liveOneYear(step: Step, action: Extract<Action, { type: "LIVE_YEAR" }>): void {
+  const { draft } = step;
+  if (draft.phase !== "LIFE" || !draft.life) fail("WRONG_PHASE", "现在不是毕业后的年份。");
+  if (!FOCUS_ORDER.includes(action.focus)) fail("INVALID_ACTION", "这一年的重心无效。");
+  liveYear(draft, action.focus, step.totals, { revision: step.revision, actionId: step.actionId });
 }
 
 function enterMasters(step: Step, action: Extract<Action, { type: "ENTER_MASTERS" }>): void {
@@ -597,6 +658,9 @@ function transition(state: RunState, command: Command, ctx: EngineContext): RunS
       break;
     case "ENTER_MASTERS":
       enterMasters(step, command);
+      break;
+    case "LIVE_YEAR":
+      liveOneYear(step, command);
       break;
     default:
       fail("INVALID_ACTION", "未知操作。");

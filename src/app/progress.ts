@@ -18,6 +18,8 @@ export interface ProgressState {
   early: Record<string, ProgressEntry>;
   /** 去向结局（docs/22 §5.2），如“湾区码农”。 */
   flavors: Record<string, ProgressEntry>;
+  /** 五年后的结局（docs/24 §9）。仍是 version 2：旧进度没有这一项时按空处理，不清空任何人的图册。 */
+  outcomes: Record<string, ProgressEntry>;
   achievements: Record<string, { seed: number; at: string }>;
   /** 已解锁的锁定天赋 id。 */
   unlockedTalents: string[];
@@ -39,6 +41,7 @@ export function emptyProgress(): ProgressState {
     hidden: {},
     early: {},
     flavors: {},
+    outcomes: {},
     achievements: {},
     unlockedTalents: [],
     inherit: null,
@@ -102,6 +105,7 @@ export function parseProgress(text: string | null): ProgressState | null {
       hidden: readEntries(raw.hidden),
       early: readEntries(raw.early),
       flavors: readEntries(raw.flavors),
+      outcomes: readEntries(raw.outcomes),
       achievements,
       unlockedTalents: readStrings(raw.unlockedTalents),
       inherit: typeof raw.inherit === "string" ? raw.inherit : null,
@@ -142,6 +146,7 @@ export function snapshotOf(progress: ProgressState): ProgressSnapshot {
     hidden: counts(progress.hidden),
     early: counts(progress.early),
     flavors: counts(progress.flavors),
+    outcomes: counts(progress.outcomes),
     achievements: Object.keys(progress.achievements),
     unlockedTalents: [...progress.unlockedTalents],
   };
@@ -154,7 +159,7 @@ function bump(entry: ProgressEntry | undefined, seed: number, at: string): Progr
 /** 把一局记入进度。这一局已结算过则原样返回同一个对象。 */
 export function settleRun(
   progress: ProgressState,
-  run: { runId: string; seed: number; card: EndingCard; rewards: RunRewards; at: string },
+  run: { runId: string; seed: number; card: EndingCard; outcomeId: string | null; rewards: RunRewards; at: string },
 ): ProgressState {
   if (progress.rewardedRuns.includes(run.runId)) return progress;
   const { card, rewards } = run;
@@ -166,6 +171,8 @@ export function settleRun(
   if (card.early) early[card.early] = bump(early[card.early], run.seed, run.at);
   const flavors = { ...progress.flavors };
   if (card.flavor) flavors[card.flavor.id] = bump(flavors[card.flavor.id], run.seed, run.at);
+  const outcomes = { ...progress.outcomes };
+  if (run.outcomeId) outcomes[run.outcomeId] = bump(outcomes[run.outcomeId], run.seed, run.at);
   const achievements = { ...progress.achievements };
   for (const id of rewards.achievements) {
     if (!achievements[id]) achievements[id] = { seed: run.seed, at: run.at };
@@ -181,6 +188,7 @@ export function settleRun(
     hidden,
     early,
     flavors,
+    outcomes,
     achievements,
     unlockedTalents,
     rewardedRuns: [...progress.rewardedRuns, run.runId].slice(-MAX_REMEMBERED_RUNS),

@@ -1,0 +1,1208 @@
+{
+  "track": "TRANSITION",
+  "name": "过渡期",
+  "base": {
+    "delta": {
+      "money": -4,
+      "academics": 0,
+      "career": 0,
+      "wellbeing": 0
+    },
+    "texts": [
+      "你的简历改了二十版，最满意的是字体。",
+      "这一年你把附近的咖啡馆都坐了一遍。",
+      "你开始认真研究自己到底想做什么。",
+      "朋友圈里大家都很忙，你很安静。",
+      "你学会了做三菜一汤。",
+      "日子过得很慢，存款掉得很快。",
+      "招聘软件提醒你：有人看过你的简历。只是看过。",
+      "你的日程表很空，焦虑排得很满。"
+    ]
+  },
+  "plans": [
+    {
+      "focus": "STUDY",
+      "name": "二战备考",
+      "delta": {
+        "money": -1,
+        "academics": 6,
+        "career": 0,
+        "wellbeing": -4
+      }
+    },
+    {
+      "focus": "CAREER",
+      "name": "海投简历",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 6,
+        "wellbeing": -5
+      }
+    },
+    {
+      "focus": "CAMPUS",
+      "name": "到处见朋友",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 5
+      }
+    },
+    {
+      "focus": "WORK",
+      "name": "打零工",
+      "delta": {
+        "money": 7,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -5
+      }
+    },
+    {
+      "focus": "REST",
+      "name": "家里蹲",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 8
+      }
+    }
+  ],
+  "milestones": [
+    {
+      "id": "LM_TRANSITION_CIVIL_GENE",
+      "text": "你在家刷了三个月题，考公首战告捷，家里放了一挂鞭。",
+      "delta": {
+        "money": 0,
+        "academics": 3,
+        "career": 2,
+        "wellbeing": 6
+      },
+      "when": {
+        "talentsAny": [
+          "T_CIVIL_GENE"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "academics": 65
+        },
+        "yearMin": 2
+      },
+      "chancePermille": 320,
+      "setFlags": [
+        "CIVIL_SERVANT",
+        "RETURNED"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_CIVIL",
+      "text": "你考公考编轮着考，终于有一份编制先到了。上岸！",
+      "delta": {
+        "money": 0,
+        "academics": 3,
+        "career": 2,
+        "wellbeing": 6
+      },
+      "when": {
+        "talentsNone": [
+          "T_CIVIL_GENE"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "academics": 65
+        },
+        "yearMin": 2
+      },
+      "chancePermille": 80,
+      "setFlags": [
+        "CIVIL_SERVANT",
+        "RETURNED"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_CONNECTIONS",
+      "text": "舅舅打了几个电话，你下个月去一家国企报到。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 2
+      },
+      "when": {
+        "pointsMin": {
+          "family": 7
+        },
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "yearMax": 4
+      },
+      "chancePermille": 120,
+      "setFlags": [
+        "RETURNED"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_JOB_HOME",
+      "text": "第一百零一份简历终于有了回音，你拿到了国内的 offer。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 4
+      },
+      "when": {
+        "statMin": {
+          "career": 40
+        },
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "yearMax": 4
+      },
+      "chancePermille": 70,
+      "setFlags": [
+        "RETURNED"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_JOB_SMALL",
+      "text": "一家小公司的老板跟你聊了半小时，说明天就能来上班。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": 2
+      },
+      "when": {
+        "statMax": {
+          "money": 20
+        },
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "yearMax": 4
+      },
+      "chancePermille": 120,
+      "setFlags": [
+        "RETURNED"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_JOB_US_OPT",
+      "text": "OPT 倒计时的最后几周，你终于签下了一份美国的 offer。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 5,
+        "wellbeing": 4
+      },
+      "when": {
+        "routes": [
+          "TRANSITION"
+        ],
+        "yearMax": 2,
+        "statMin": {
+          "career": 50
+        },
+        "lifeFlagsNone": [
+          "RETURNED",
+          "CIVIL_SERVANT"
+        ]
+      },
+      "chancePermille": 100,
+      "setTrack": "LOCAL_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_JOB_US_AGAIN",
+      "text": "你在美国找到了下一份工作，搬家的纸箱还没扔就又用上了。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsAny": [
+          "H1B",
+          "PHD_DONE",
+          "PHD_QUIT"
+        ],
+        "lifeFlagsNone": [
+          "RETURNED",
+          "H1B_OUT",
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "career": 50
+        },
+        "yearMax": 4
+      },
+      "chancePermille": 200,
+      "setTrack": "LOCAL_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_REAPPLY_PHD",
+      "text": "二战的结果来了：一个带全奖的博士录取，你又要当学生了。",
+      "delta": {
+        "money": 0,
+        "academics": 5,
+        "career": 2,
+        "wellbeing": 5
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "REAPPLIED"
+        ],
+        "lifeFlagsNone": [
+          "TR_REAPPLY_DONE"
+        ],
+        "statMin": {
+          "academics": 75
+        }
+      },
+      "chancePermille": 250,
+      "setFlags": [
+        "TR_REAPPLY_DONE"
+      ],
+      "setTrack": "PHD"
+    },
+    {
+      "id": "LM_TRANSITION_REAPPLY_MS",
+      "text": "二战读了一个一年制硕士，毕业时在美国找到了工作。",
+      "delta": {
+        "money": -10,
+        "academics": 4,
+        "career": 5,
+        "wellbeing": 0
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "REAPPLIED"
+        ],
+        "lifeFlagsNone": [
+          "TR_REAPPLY_DONE",
+          "RETURNED"
+        ],
+        "statMin": {
+          "money": 15
+        }
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "TR_REAPPLY_DONE"
+      ],
+      "setTrack": "LOCAL_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_REAPPLY_MS_HOME",
+      "text": "你又出去读了个一年制硕士，回国时简历厚了一页。",
+      "delta": {
+        "money": -10,
+        "academics": 4,
+        "career": 4,
+        "wellbeing": 0
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "REAPPLIED",
+          "RETURNED"
+        ],
+        "lifeFlagsNone": [
+          "TR_REAPPLY_DONE"
+        ],
+        "statMin": {
+          "money": 15
+        }
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "TR_REAPPLY_DONE"
+      ],
+      "setTrack": "HOME_JOB"
+    },
+    {
+      "id": "LM_TRANSITION_REAPPLY_FAIL",
+      "text": "二战的结果出来了，还是熟悉的“经过慎重考虑”。",
+      "delta": {
+        "money": 0,
+        "academics": 2,
+        "career": 0,
+        "wellbeing": -6
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "REAPPLIED"
+        ],
+        "lifeFlagsNone": [
+          "TR_REAPPLY_DONE"
+        ]
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "TR_REAPPLY_DONE"
+      ]
+    },
+    {
+      "id": "LM_TRANSITION_REAPPLY_PLANNED",
+      "text": "你按计划开始二战，这次一口气申了二十所学校。",
+      "delta": {
+        "money": -4,
+        "academics": 4,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "flavors": [
+          "F_SECOND_ROUND"
+        ],
+        "lifeFlagsNone": [
+          "REAPPLIED"
+        ],
+        "yearMax": 4
+      },
+      "chancePermille": 700,
+      "setFlags": [
+        "REAPPLIED"
+      ]
+    },
+    {
+      "id": "LM_TRANSITION_REAPPLY",
+      "text": "你决定二战申请，文书改到第十版，推荐人换了一位。",
+      "delta": {
+        "money": -3,
+        "academics": 4,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "REAPPLIED",
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "academics": 60
+        },
+        "yearMax": 4
+      },
+      "chancePermille": 120,
+      "setFlags": [
+        "REAPPLIED"
+      ]
+    },
+    {
+      "id": "LM_TRANSITION_FREELANCE",
+      "text": "你开始在网上接单做设计，甲方改了十二版，最后选了第一版。",
+      "delta": {
+        "money": 5,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "SIDE_HUSTLE"
+        ]
+      },
+      "chancePermille": 120,
+      "setFlags": [
+        "SIDE_HUSTLE"
+      ]
+    },
+    {
+      "id": "LM_TRANSITION_GAP_YEAR",
+      "text": "你背上包出了门，三个月走了七个国家，回来时说话带着三种口音。",
+      "delta": {
+        "money": -10,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 10
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "TR_GAP"
+        ],
+        "statMin": {
+          "money": 30
+        }
+      },
+      "chancePermille": 180,
+      "setFlags": [
+        "TR_GAP"
+      ]
+    },
+    {
+      "id": "LM_TRANSITION_HOMEBODY",
+      "text": "你正式成了全职儿女：负责买菜、做饭和陪爸妈散步。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": 5
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "TR_HOMEBODY"
+        ],
+        "pointsMin": {
+          "family": 4
+        },
+        "statMax": {
+          "money": 30
+        }
+      },
+      "chancePermille": 220,
+      "setFlags": [
+        "TR_HOMEBODY"
+      ]
+    },
+    {
+      "id": "LM_TRANSITION_RECOVER",
+      "text": "离开工位后的某个周日晚上，你第一次没有因为明天而失眠。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 10
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "BURNOUT"
+        ],
+        "lifeFlagsNone": [
+          "TR_RECOVERED"
+        ]
+      },
+      "chancePermille": 400,
+      "setFlags": [
+        "TR_RECOVERED"
+      ]
+    },
+    {
+      "id": "LM_TRANSITION_LANDED",
+      "text": "年底你收到一封不以“很遗憾”开头的邮件，入职定在了明年。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 4,
+        "wellbeing": 5
+      },
+      "when": {
+        "yearMin": 5,
+        "statMin": {
+          "career": 45
+        },
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "chancePermille": 350,
+      "setFlags": [
+        "TR_LANDED"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "LE_TRANSITION_MASS_APPLY",
+      "text": "你一周投了五十份简历，收到三封自动回复。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 6
+    },
+    {
+      "id": "LE_TRANSITION_GHOSTED",
+      "text": "终面聊得很开心，然后就再也没有消息了。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -4
+      },
+      "when": {},
+      "weight": 6
+    },
+    {
+      "id": "LE_TRANSITION_STOOD_UP",
+      "text": "约好的视频面试，面试官没上线，第二天说岗位招满了。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {},
+      "weight": 6
+    },
+    {
+      "id": "LE_TRANSITION_REFERRAL",
+      "text": "一位校友帮你内推，你的简历终于被真人看了一眼。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": 1
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_PERSONALITY_TEST",
+      "text": "网申的性格测评做了四十分钟，结论是你不适合这个岗位。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_INTERVIEW_ENGLISH",
+      "text": "面试官让你用英文自我介绍，然后用中文告诉你回去等消息。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_LOWBALL",
+      "text": "你拿到一个 offer，月薪还不够付房租，你拒了。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -1
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_HEADHUNTER",
+      "text": "猎头加了你的微信，给你推荐了一份保险销售。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_FAMILY_MEETING",
+      "text": "爸妈开了一次家庭会议，议题只有一个：你。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -4
+      },
+      "when": {},
+      "weight": 6
+    },
+    {
+      "id": "LE_TRANSITION_FAMILY_GROUP",
+      "text": "你妈把你的简历转发到了家族群，附言：谁有路子。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_POCKET_MONEY",
+      "text": "你爸偷偷往你卡里转了一笔钱，备注是“饭钱”。",
+      "delta": {
+        "money": 5,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_NEIGHBOR",
+      "text": "小区门口的大爷每天问你：今天不上班啊？",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_SLEEP_IN",
+      "text": "你每天睡到中午，醒来时家里人已经吃完午饭了。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_CHORES",
+      "text": "你包揽了家务，家里人夸你比上学时懂事多了。",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_MILK_TEA_JOB",
+      "text": "你在奶茶店打零工，学会了手摇三十种饮品。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_TUTOR",
+      "text": "你接了一份家教，学生家长比学生还认真听课。",
+      "delta": {
+        "money": 4,
+        "academics": 1,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_CODING_CAMP",
+      "text": "你报了个转码班，十二周后会写“Hello World”了。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": 0
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_CERTIFICATE",
+      "text": "你考了一个证，证书很好看，招聘要求里没提它。",
+      "delta": {
+        "money": -2,
+        "academics": 2,
+        "career": 0,
+        "wellbeing": 0
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_BALANCE",
+      "text": "你打开银行 App，余额的位数又少了一位。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_OLD_FRIEND",
+      "text": "老同学约你吃饭，你们聊了一晚上，谁也没提工作。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_PEER_PRESSURE",
+      "text": "朋友圈里有人升职、有人结婚，你点完赞放下了手机。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_VOLUNTEER",
+      "text": "你在社区当了志愿者，阿姨们已经把你当成接班人。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_EXAM_DRILL",
+      "text": "你在家刷了一个月行测题，看见图形推理就头疼。",
+      "delta": {
+        "money": 0,
+        "academics": 3,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 6,
+      "setFlags": [
+        "TR_EXAM"
+      ]
+    },
+    {
+      "id": "LE_TRANSITION_BLIND_DATE",
+      "text": "相亲对象问你在哪高就，你说在“调整状态”。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "DATING",
+          "MARRIED"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_DUMPLINGS",
+      "text": "你学会了包饺子，这是你这一年最拿得出手的成果。",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_PORTFOLIO",
+      "text": "你给自己做了一个作品集网站，访客主要是你自己。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 0
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_GUITAR",
+      "text": "你把十年没碰的吉他翻出来，弹会了一首歌。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_REC_LETTER",
+      "text": "你给推荐人发了第三封邮件，教授终于回了一句“OK”。",
+      "delta": {
+        "money": 0,
+        "academics": 2,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "REAPPLIED"
+        ],
+        "lifeFlagsNone": [
+          "TR_REAPPLY_DONE"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_TRANSITION_UNPAID",
+      "text": "一个甲方拖了三个月尾款，最后只付了一半。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "SIDE_HUSTLE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_BIG_ORDER",
+      "text": "你接到一个大单，熬了两个通宵，换来一个月的生活费。",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "SIDE_HUSTLE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_GAP_PHOTO",
+      "text": "你旅行时拍的照片被一个旅游号转载了，署名是“网络图片”。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "TR_GAP"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_TRANSITION_GAP_HOSTEL",
+      "text": "你在青旅认识了一群人，大家都说自己在“间隔年”。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "TR_GAP"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_TRANSITION_LONG_SLEEP",
+      "text": "不用上班以后，你一口气睡了三天，醒来觉得自己又是个人了。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 5
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "BURNOUT"
+        ]
+      },
+      "weight": 5
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "LO_TRANSITION_DEFAULT",
+      "name": "资深海待",
+      "roast": "海待的“待”，是等待的待。",
+      "text": "你还在等一个合适的机会。行李箱成了储物柜，简历更新到了第三十版，日子倒也不算难过。",
+      "hint": "什么都没定下来的五年。",
+      "grade": "N",
+      "when": {},
+      "weight": 2,
+      "fallback": true
+    },
+    {
+      "id": "LO_TRANSITION_FULLTIME_CHILD",
+      "name": "全职儿女",
+      "roast": "家里的 KPI 只有一个：好好吃饭。",
+      "text": "这几年你买菜、做饭、陪爸妈散步，小区里的阿姨都认识你。家里人说不着急，你也慢慢不急了。",
+      "hint": "在家里找到了一份长期工作。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "TR_HOMEBODY"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_TRANSITION_LANDED",
+      "name": "终于上岸",
+      "roast": "迟到的 offer 也是 offer。",
+      "text": "简历投了一轮又一轮，你终于等到了入职通知。报到前一晚你失眠了，这次是因为兴奋。",
+      "hint": "坚持到最后一年的人。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "TR_LANDED"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_TRANSITION_FREELANCER",
+      "name": "自由职业",
+      "roast": "朝九晚五没有了，朝九晚九有了。",
+      "text": "你没再找坐班的工作，靠接单养活了自己。工作地点是咖啡馆，工作时间是甲方醒着的时候。",
+      "hint": "自己给自己发工资。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "SIDE_HUSTLE"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_TRANSITION_GAP_BLOGGER",
+      "name": "间隔年博主",
+      "roast": "别人间隔一年，你间隔成了职业。",
+      "text": "那趟旅行之后你一直在路上，视频的背景每周换一个国家。粉丝问你什么时候回去上班，你说这就是上班。",
+      "hint": "旅行和流量，一个都不能少。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "TR_GAP",
+          "INFLUENCER"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_TRANSITION_TRAVELER",
+      "name": "旅居青年",
+      "roast": "护照比简历先写满。",
+      "text": "你又出发了几次，每次都说是最后一次。存款花得差不多时，你学会了在青旅换宿打工。",
+      "hint": "出门旅行，然后没回来。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "TR_GAP"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_TRANSITION_LANDLORD",
+      "name": "回家收租",
+      "roast": "待业是假的，收租是真的。",
+      "text": "过渡期过了五年，你的收入一直很稳定：每月一号，租客准时转账。你说自己在做资产管理。",
+      "hint": "家里的房子比简历有用。",
+      "grade": "SR",
+      "when": {
+        "talentsAny": [
+          "T_LANDLORD"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_TRANSITION_REAPPLY_VETERAN",
+      "name": "二战老兵",
+      "roast": "每年秋天，你都在写文书。",
+      "text": "你申了一轮又一轮，招生官的拒信你能背出三种开头。今年的材料已经准备好了，你说这是最后一次。",
+      "hint": "申请季的老熟人。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "REAPPLIED"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_TRANSITION_SERIAL_FOUNDER",
+      "name": "连续创业者",
+      "roast": "公司倒了，PPT 还在。",
+      "text": "第一家公司没撑下来，你在家里的书房开始了第二个项目。投资人还没找到，商业计划书已经写到了第九版。",
+      "hint": "创过业，还想再创。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "CM_STARTUP_DEAD"
+        ]
+      },
+      "weight": 3
+    },
+    {
+      "id": "LO_TRANSITION_EX_CEO",
+      "name": "前 CEO",
+      "roast": "名片上的头衔，比公司活得久。",
+      "text": "公司注销那天，你在朋友圈写了一篇长文复盘，点赞的人比员工还多。现在你在家研究下一个风口。",
+      "hint": "创业失败之后，还没找到下一份工作。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "CM_STARTUP_DEAD"
+        ]
+      },
+      "weight": 3
+    },
+    {
+      "id": "LO_TRANSITION_HEALED",
+      "name": "满血复活",
+      "roast": "不上班以后，发际线回来了。",
+      "text": "离开那份工作之后，你花了很长时间把自己养回来。现在你早睡早起、按时吃饭，周日晚上也不再心慌。",
+      "hint": "先把自己修好。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "BURNOUT"
+        ],
+        "statMin": {
+          "wellbeing": 50
+        }
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_TRANSITION_IDLE_RICH",
+      "name": "富贵闲人",
+      "roast": "无业，但不缺钱。",
+      "text": "你不再需要找工作了。每天睡到自然醒，研究咖啡和天气，偶尔被问在哪高就，你说退休了。",
+      "hint": "钱的问题解决了。",
+      "grade": "SSR",
+      "when": {
+        "lifeFlagsAny": [
+          "FIRE",
+          "STARTUP_EXIT"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_TRANSITION_EXAM_FOREVER",
+      "name": "考公钉子户",
+      "roast": "行测题刷到能背，编制还在路上。",
+      "text": "你每年都报名考公，申论写得越来越像样，面试名单上却总差一个名字。今年的准考证已经打印好了，和往年的放在同一个文件夹里。",
+      "hint": "上岸之前，都在岸边。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "TR_EXAM"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_TRANSITION_HAPPY_POOR",
+      "name": "穷开心",
+      "roast": "钱包很瘦，心情很胖。",
+      "text": "存款没几个钱，你却过得挺开心：早上跑步，下午看书，晚上和朋友在路边摊吃烤串。你说人生不是只有一种活法。",
+      "hint": "没钱，但不缺快乐。",
+      "grade": "R",
+      "when": {
+        "statMin": {
+          "wellbeing": 60
+        },
+        "statMax": {
+          "money": 20
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_TRANSITION_FLEX_EMPLOYED",
+      "name": "灵活就业",
+      "roast": "统计口径上，你属于灵活就业。",
+      "text": "被裁之后，你没急着找下一份工作。社保自己交，零活偶尔接，简历偶尔投，日子过得比上班时松快一点。",
+      "hint": "被优化之后的另一种活法。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "LAID_OFF"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_TRANSITION_NAKED_QUIT",
+      "name": "裸辞一族",
+      "roast": "辞职信写得潇洒，余额掉得也潇洒。",
+      "text": "裸辞时你说只休息三个月，现在已经记不清是第几个三个月了。简历上那段空白，你准备写成“个人成长”。",
+      "hint": "辞职容易，上岸难。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "BURNOUT"
+        ],
+        "lifeFlagsNone": [
+          "LAID_OFF"
+        ],
+        "statMax": {
+          "wellbeing": 49
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_TRANSITION_BROKE",
+      "name": "啃老专业户",
+      "roast": "存款清零，饭碗还在爸妈手里。",
+      "text": "这几年下来，存款一点点花光了。你开始在饭桌上主动洗碗，用勤快换一点理直气壮。",
+      "hint": "钱比耐心先用完。",
+      "grade": "N",
+      "when": {
+        "statMax": {
+          "money": 5
+        }
+      },
+      "weight": 5
+    }
+  ]
+}

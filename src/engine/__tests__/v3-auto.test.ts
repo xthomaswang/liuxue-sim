@@ -2,7 +2,7 @@
 // 每一种自动决定都对照按文档伪代码原样写的参考实现；轨迹与总结对照历史记录。
 
 import { describe, expect, it } from "vitest";
-import { EARLY_ENDINGS, TEXTS } from "../../content";
+import { EARLY_ENDINGS, EVENT_BY_ID, LIFE_TRACKS, TEXTS } from "../../content";
 import { autoChoice, autoGraduation, autoPlan, planWeight } from "../auto";
 import { MS_TERM_LABELS, UG_TERM_LABELS, UPKEEP_DEFAULT } from "../constants";
 import {
@@ -11,6 +11,9 @@ import {
 } from "../index";
 import type { Action, ActiveRun, ChoiceId, EventView, Focus, FocusView, Opportunity, Points, RunState } from "../index";
 import { draw01, pickIndex } from "../rng";
+import { dailyPicksFor } from "../daily";
+import { averageGpa, termGpas } from "../gpa";
+import { lastTermOf } from "../life";
 import { totalsFor } from "../talents";
 import { statRating } from "../timeline";
 import {
@@ -590,19 +593,20 @@ function checkTexts(lines: string[], label: string): void {
   }
 }
 
-describe("人生轨迹（22 §5.1）", () => {
+describe("人生轨迹（22 §5.1、24 §7）", () => {
   it("开局阶段没有轨迹", () => {
     expect(timeline(start(1))).toEqual([]);
   });
 
-  it("整局的分段、标签、每段结束时的属性都与历史记录一致；所有文字都是成品", () => {
+  it("整局的分段、标签、年龄、分组、每段结束时的属性都与历史记录一致；学期内的行序；所有文字都是成品", () => {
     const kinds = new Set<string>();
     const lineKinds = new Set<string>();
     for (const seed of range(1, 250)) {
       const { setup, input } = autoInput(seed);
       const run = asActive(simulate(setup, input, ctx).state);
       const ending = run.ending;
-      if (!ending) throw new Error("没有结局");
+      const life = run.life;
+      if (!ending || !life?.outcome) throw new Error("没有走完五年");
       kinds.add(ending.kind);
       const segments = timeline(run);
       const label = `seed ${seed}`;
@@ -610,80 +614,139 @@ describe("人生轨迹（22 §5.1）", () => {
       expect(new Set(ids).size, label).toBe(ids.length);
       checkTexts(segments.flatMap((segment) => [segment.label, ...segment.lines.map((line) => line.text)]), label);
       for (const line of segments.flatMap((segment) => segment.lines)) lineKinds.add(line.kind);
+      const summersAt = (stage: string, term: number) => run.history.filter((entry) => entry.kind === "SUMMER" && entry.stage === stage && entry.termIndex === term);
 
-      // 期望的分段顺序：高三、申请季、各学期、毕业（硕士同理），最后是“后来”或“中途结局”
+      // 期望的分段顺序（24 §7.1）：高三、申请季、出国前的夏天、各学期与暑假、毕业（硕士同理）、中途结局、毕业后的每一年、五年后
       const expected: string[] = ["HS", "ADMISSION"];
+      if (summersAt("HS", 0).length > 0) expected.push("SUMMER:HS:0");
       for (const degree of ["UG", "MS"] as const) {
-        const terms = [...new Set(run.history.filter((entry) => entry.stage === degree && entry.kind !== "MASTERS_FEE").map((entry) => entry.termIndex))].sort((a, b) => a - b);
-        for (const term of terms) expected.push(`${degree}:${term}`);
+        const terms = [...new Set(run.history.filter((entry) => entry.stage === degree && entry.kind !== "MASTERS_FEE" && entry.kind !== "SUMMER").map((entry) => entry.termIndex))].sort((a, b) => a - b);
+        for (const term of terms) {
+          expected.push(`${degree}:${term}`);
+          if (summersAt(degree, term).length > 0) expected.push(`SUMMER:${degree}:${term}`);
+        }
         if (run.graduations[degree]) expected.push(`GRAD:${degree}`);
       }
-      expected.push(ending.kind === "EARLY" ? "EARLY" : "FLAVOR");
+      if (ending.kind === "EARLY") expected.push("EARLY");
+      expected.push("LIFE:1", "LIFE:2", "LIFE:3", "LIFE:4", "LIFE:5", "OUTCOME");
       expect(ids, label).toEqual(expected);
+      // 暑假只在出国前、大一下／大二下／大三下之后、两年制硕士的硕一下之后
+      for (const id of ids.filter((item) => item.startsWith("SUMMER:"))) expect(["SUMMER:HS:0", "SUMMER:UG:2", "SUMMER:UG:4", "SUMMER:UG:6", "SUMMER:MS:2"], label).toContain(id);
 
       const byId = new Map(segments.map((segment) => [segment.id, segment]));
-      const hs = run.history.filter((entry) => entry.stage === "HS");
-      expect(byId.get("HS")).toMatchObject({ label: "高三", statsAfter: hs[hs.length - 1].afterStats });
+      const hsEvents = run.history.filter((entry) => entry.stage === "HS" && entry.kind === "EVENT");
+      expect(byId.get("HS")).toMatchObject({ label: "高三", age: 17, group: "SCHOOL", statsAfter: hsEvents[hsEvents.length - 1].afterStats });
       expect(byId.get("HS")?.lines.map((line) => line.kind)).toEqual(["EVENT", "EVENT"]);
-      expect(byId.get("ADMISSION")).toMatchObject({ label: "申请季", statsAfter: hs[hs.length - 1].afterStats });
+      expect(byId.get("ADMISSION")).toMatchObject({ label: "申请季", age: 17, group: "SCHOOL", statsAfter: hsEvents[hsEvents.length - 1].afterStats });
       expect(byId.get("ADMISSION")?.lines.map((line) => line.kind)).toEqual(["ADMISSION", "ADMISSION", "SCHOOL"]);
       expect(byId.get("ADMISSION")?.lines[2].text).toContain(run.school?.nameZh ?? run.school?.name ?? "");
+      for (const segment of segments.filter((item) => item.id.startsWith("SUMMER:"))) {
+        const [, stage, term] = segment.id.split(":");
+        const entries = summersAt(stage, Number(term));
+        expect(segment.group).toBe("SUMMER");
+        expect(segment.lines.map((line) => ({ kind: line.kind, delta: line.delta }))).toEqual(entries.map((entry) => ({ kind: "SUMMER", delta: entry.appliedDelta })));
+        expect(segment.statsAfter).toEqual(entries[entries.length - 1].afterStats);
+        const ages: Record<string, [string, number]> = {
+          "SUMMER:HS:0": ["出国前的夏天", 18], "SUMMER:UG:2": ["大一暑假", 19], "SUMMER:UG:4": ["大二暑假", 20], "SUMMER:UG:6": ["大三暑假", 21], "SUMMER:MS:2": ["硕一暑假", 23],
+        };
+        expect([segment.label, segment.age]).toEqual(ages[segment.id]);
+      }
 
+      const daily = dailyPicksFor(run);
+      const gpas = termGpas(run);
       for (const degree of ["UG", "MS"] as const) {
         const labels = degree === "UG" ? UG_TERM_LABELS : MS_TERM_LABELS;
         for (const segment of segments.filter((item) => item.id.startsWith(`${degree}:`))) {
           const term = Number(segment.id.split(":")[1]);
-          const entries = run.history.filter((entry) => entry.stage === degree && entry.termIndex === term && entry.kind !== "MASTERS_FEE");
+          const entries = run.history.filter((entry) => entry.stage === degree && entry.termIndex === term && entry.kind !== "MASTERS_FEE" && entry.kind !== "SUMMER");
           expect(segment.label, label).toBe(labels[term - 1]);
+          expect(segment.age, label).toBe((degree === "UG" ? 18 : 22) + Math.floor((term - 1) / 2));
+          expect(segment.group).toBe("SCHOOL");
           expect(segment.statsAfter, `${label} ${segment.id}`).toEqual(entries[entries.length - 1].afterStats);
-          // 行的顺序就是发生的顺序：突发小事、安排、事件；期末短缺时最后加一行
-          const want = entries.flatMap((entry) => {
-            if (entry.kind === "HAPPENING") return [{ kind: "HAPPENING", delta: entry.appliedDelta }];
-            if (entry.kind === "FOCUS") return [{ kind: "PLAN", delta: entry.appliedDelta }];
-            if (entry.kind === "EVENT") return [{ kind: "EVENT", delta: entry.appliedDelta }];
-            if (entry.kind === "UPKEEP" && (entry.upkeep?.shortfall ?? 0) > 0) return [{ kind: "SHORTFALL", delta: entry.appliedDelta }];
-            return [];
-          });
+          // 行序（24 §7.2）：寒假 → 开学小事 → 安排 → 日常 → 主线事件 → 期中小事 → 日常 → 支线事件 → 资金短缺 → 期末 GPA
+          const plan = entries.findIndex((entry) => entry.kind === "FOCUS");
+          const arc = (entry: (typeof entries)[number]) => entry.kind === "EVENT" && EVENT_BY_ID[entry.eventId ?? ""]?.kind === "arc";
+          const dailyOf = (slot: "WINTER" | 0 | 1) => daily.filter((pick) => pick.stage === degree && pick.term === term && pick.slot === slot).map(() => ({ kind: "DAILY", delta: null }));
+          const want = [
+            ...dailyOf("WINTER"),
+            ...entries.filter((entry, index) => entry.kind === "HAPPENING" && index < plan).map((entry) => ({ kind: "HAPPENING", delta: entry.appliedDelta })),
+            { kind: "PLAN", delta: entries[plan].appliedDelta },
+            ...dailyOf(0),
+            ...entries.filter((entry) => entry.kind === "EVENT" && !arc(entry)).map((entry) => ({ kind: "EVENT", delta: entry.appliedDelta })),
+            ...entries.filter((entry, index) => entry.kind === "HAPPENING" && index > plan).map((entry) => ({ kind: "HAPPENING", delta: entry.appliedDelta })),
+            ...dailyOf(1),
+            ...entries.filter(arc).map((entry) => ({ kind: "EVENT", delta: entry.appliedDelta })),
+            ...entries.filter((entry) => entry.kind === "UPKEEP" && (entry.upkeep?.shortfall ?? 0) > 0).map((entry) => ({ kind: "SHORTFALL", delta: entry.appliedDelta })),
+            { kind: "GPA", delta: null },
+          ];
           expect(segment.lines.map((line) => ({ kind: line.kind, delta: line.delta })), `${label} ${segment.id}`).toEqual(want);
-          expect(segment.lines.filter((line) => line.kind === "PLAN")).toHaveLength(1);
+          const gpa = gpas.find((item) => item.stage === degree && item.term === term);
+          expect(segment.lines[segment.lines.length - 1].text).toContain(gpa?.gpa.toFixed(2) ?? "?");
         }
         const graduation = run.graduations[degree];
         const grad = byId.get(`GRAD:${degree}`);
         if (!graduation || !grad) continue;
-        expect(grad.label).toBe(degree === "UG" ? "本科毕业" : "硕士毕业");
-        expect(grad.lines.slice(0, 3).map((line) => line.kind)).toEqual(["OPPORTUNITY", "OPPORTUNITY", "OPPORTUNITY"]);
-        expect(grad.lines).toHaveLength(4);
+        expect(grad).toMatchObject({ label: degree === "UG" ? "本科毕业" : "硕士毕业", age: degree === "UG" ? 22 : 22 + (run.mastersYears ?? 0), group: "SCHOOL" });
+        // 平均 GPA 一行、三路机会、去向
+        expect(grad.lines.map((line) => line.kind).slice(0, 4)).toEqual(["GPA", "OPPORTUNITY", "OPPORTUNITY", "OPPORTUNITY"]);
+        expect(grad.lines).toHaveLength(5);
         if (graduation.resolution === "MASTERS") {
           const fee = run.history.find((entry) => entry.kind === "MASTERS_FEE");
-          expect(grad.lines[3]).toMatchObject({ kind: "MASTERS", delta: fee?.appliedDelta });
+          expect(grad.lines[4]).toMatchObject({ kind: "MASTERS", delta: fee?.appliedDelta });
           expect(grad.statsAfter).toEqual(fee?.afterStats);
         } else {
-          expect(grad.lines[3]).toMatchObject({ kind: "ROUTE", delta: null });
+          expect(grad.lines[4]).toMatchObject({ kind: "ROUTE", delta: null });
           expect(grad.statsAfter).toEqual(graduation.frozenStats);
         }
       }
 
-      const last = segments[segments.length - 1];
-      expect(last.statsAfter, label).toEqual(run.stats);
+      // 离校之后（24 §7.3）：每年 基础 → 重心 → 里程碑 → 生活小事 →（换轨）；毕业的第 1 年先写去向结局
+      const leftTerm = lastTermOf(run, ending.degree);
+      const startAge = ending.kind === "EARLY" ? (ending.degree === "UG" ? 18 : 22) + Math.floor((leftTerm - 1) / 2) : ending.degree === "UG" ? 22 : 22 + (run.mastersYears ?? 0);
+      expect(life.startAge, label).toBe(startAge);
       if (ending.kind === "EARLY") {
         const early = EARLY_ENDINGS.find((item) => item.id === ending.early);
-        expect(last).toMatchObject({ id: "EARLY", label: "中途结局" });
-        expect(last.lines).toHaveLength(1);
-        expect(last.lines[0]).toMatchObject({ kind: "EARLY_END", delta: null });
-        expect(last.lines[0].text).toContain(early?.name ?? "?");
-        expect(ids).not.toContain("FLAVOR");
-      } else {
-        expect(last).toMatchObject({ id: "FLAVOR", label: "后来" });
-        expect(last.lines).toEqual([{ kind: "FLAVOR", text: `后来，人们叫你：${ending.card.flavor?.name}。`, delta: null }]);
+        expect(byId.get("EARLY")).toMatchObject({ label: "中途结局", age: startAge, group: "SCHOOL", statsAfter: life.startStats });
+        expect(byId.get("EARLY")?.lines).toEqual([{ kind: "EARLY_END", text: `留学在这里提前结束——${early?.name}。${early?.text}`, delta: null }]);
       }
+      for (let year = 1; year <= 5; year++) {
+        const segment = byId.get(`LIFE:${year}`);
+        const entries = run.history.filter((entry) => entry.stage === "LIFE" && entry.termIndex === year);
+        expect(segment, `${label} LIFE:${year}`).toMatchObject({ label: `${ending.kind === "EARLY" ? "离校" : "毕业"}第 ${year} 年`, age: startAge + year, group: "LIFE" });
+        expect(segment?.statsAfter).toEqual(entries[entries.length - 1].afterStats);
+        const kindsOfYear = segment?.lines.map((line) => line.kind) ?? [];
+        const head = year === 1 && ending.kind === "GRADUATION" ? ["FLAVOR"] : [];
+        const events = entries.filter((entry) => entry.kind === "LIFE_EVENT");
+        const thisTrack = entries[0].track;
+        const nextTrack = year < 5 ? run.history.find((entry) => entry.kind === "LIFE_BASE" && entry.termIndex === year + 1)?.track : life.track;
+        expect(kindsOfYear, `${label} LIFE:${year}`).toEqual([
+          ...head,
+          "LIFE_BASE",
+          "LIFE_PLAN",
+          ...events.filter((entry) => entry.milestone).map(() => "MILESTONE"),
+          ...events.filter((entry) => !entry.milestone).map(() => "LIFE_EVENT"),
+          ...(nextTrack !== thisTrack ? ["ROUTE"] : []),
+        ]);
+        expect(entries.map((entry) => entry.kind)).toEqual(["LIFE_BASE", "LIFE_PLAN", ...events.map(() => "LIFE_EVENT")]);
+        // 里程碑都排在生活小事前面
+        const firstEvent = events.findIndex((entry) => !entry.milestone);
+        if (firstEvent >= 0) expect(events.slice(firstEvent).every((entry) => !entry.milestone)).toBe(true);
+        if (head.length > 0) expect(segment?.lines[0].text).toBe(`毕业后，你成了：${ending.card.flavor?.name}。${ending.card.flavor?.text}`);
+      }
+      const last = segments[segments.length - 1];
+      expect(last).toMatchObject({ id: "OUTCOME", label: "五年后", age: startAge + 5, group: "END", statsAfter: run.stats });
+      expect(last.lines).toHaveLength(1);
+      expect(last.lines[0].kind).toBe("OUTCOME");
+      expect(last.lines[0].text.startsWith("五年后，你成了：")).toBe(true);
+      expect(ids).not.toContain("FLAVOR");
     }
     expect([...kinds].sort()).toEqual(["EARLY", "GRADUATION"]);
-    for (const kind of ["EVENT", "PLAN", "HAPPENING", "SHORTFALL", "ADMISSION", "SCHOOL", "OPPORTUNITY", "ROUTE", "MASTERS", "EARLY_END", "FLAVOR"]) {
+    for (const kind of ["EVENT", "PLAN", "HAPPENING", "SHORTFALL", "ADMISSION", "SCHOOL", "OPPORTUNITY", "ROUTE", "MASTERS", "EARLY_END", "FLAVOR", "SUMMER", "DAILY", "GPA", "LIFE_BASE", "LIFE_PLAN", "OUTCOME"]) {
       expect(lineKinds, kind).toContain(kind);
     }
   });
 
-  it("没走完的局也能给出到目前为止的轨迹：每一步之后的分段都是最终轨迹的前缀，已经写下的行不会变", () => {
+  it("没走完的局也能给出到目前为止的轨迹：每一步之后的分段都是最终轨迹的前缀，结束了的段不会再变", () => {
     for (const seed of range(300, 40)) {
       const { setup, input } = autoInput(seed);
       const trail: ActiveRun[] = [];
@@ -698,14 +761,11 @@ describe("人生轨迹（22 §5.1）", () => {
         }
         expect(partial.map((segment) => segment.id), label).toEqual(final.slice(0, partial.length).map((segment) => segment.id));
         checkTexts(partial.flatMap((segment) => segment.lines.map((line) => line.text)), label);
-        // 最后一段可能还在进行中；之前的各段已经定稿
+        // 最后一段可能还在进行中（学期结算之后才插入日常与 GPA）；之前的各段已经定稿
         for (let i = 0; i < partial.length - 1; i++) {
           if (partial[i].id.startsWith("GRAD:")) continue; // 毕业段在揭晓、确定去向时逐步补全
           expect(partial[i], `${label} ${partial[i].id}`).toEqual(final[i]);
         }
-        const open = partial[partial.length - 1];
-        const done = final[partial.length - 1];
-        if (!open.id.startsWith("GRAD:")) expect(done.lines.slice(0, open.lines.length), label).toEqual(open.lines);
       }
     }
   });
@@ -721,20 +781,42 @@ describe("人生轨迹（22 §5.1）", () => {
       const segments = timeline(end);
       const grad = segments.find((segment) => segment.id === "GRAD:UG");
       const fee = end.history.find((entry) => entry.kind === "MASTERS_FEE");
-      expect(grad?.lines[3]).toMatchObject({ kind: "MASTERS", delta: fee?.appliedDelta });
-      expect(grad?.lines[3].text).toContain(TEXTS.mastersProgram[fee?.program ?? "MS_1Y"].name);
+      const line = grad?.lines.find((item) => item.kind === "MASTERS");
+      expect(grad?.lines[grad.lines.length - 1]).toBe(line);
+      expect(line).toMatchObject({ kind: "MASTERS", delta: fee?.appliedDelta });
+      expect(line?.text).toContain(TEXTS.mastersProgram[fee?.program ?? "MS_1Y"].name);
       const outcomes = end.graduations.UG?.outcomes;
       const hasJob = outcomes?.LOCAL_JOB === "OFFERED" || outcomes?.HOME_JOB === "OFFERED";
       phrasing.add(hasJob);
-      expect(grad?.lines[3].text.startsWith(hasJob ? "手里的机会先都不接" : "手里没有工作机会")).toBe(true);
+      expect(line?.text.startsWith(hasJob ? "手里的机会先都不接" : "手里没有工作机会")).toBe(true);
       const first = segments.find((segment) => segment.id === "MS:1");
-      expect(first?.label).toBe("硕一上");
-      expect(first?.lines.some((line) => line.kind === "MASTERS")).toBe(false);
-      checkTexts(segments.flatMap((segment) => [segment.label, ...segment.lines.map((line) => line.text)]), `seed ${seed}`);
+      expect(first).toMatchObject({ label: "硕一上", age: 22 });
+      expect(first?.lines.some((item) => item.kind === "MASTERS")).toBe(false);
+      checkTexts(segments.flatMap((segment) => [segment.label, ...segment.lines.map((item) => item.text)]), `seed ${seed}`);
       expect(segments[segments.length - 1].statsAfter).toEqual(end.stats);
+      // 硕士毕业的年龄与离校年龄：22 + 年制
+      if (end.ending?.kind === "GRADUATION" && end.ending.degree === "MS") {
+        expect(segments.find((segment) => segment.id === "GRAD:MS")?.age).toBe(22 + (end.mastersYears ?? 0));
+        expect(end.life?.startAge).toBe(22 + (end.mastersYears ?? 0));
+      }
     }
     expect(seen).toBeGreaterThanOrEqual(15);
     expect(phrasing.size).toBe(2); // 手里有工作机会与没有工作机会两种说法都出现过
+  });
+
+  it("经典模式没有暑假、日常、GPA 与毕业后的五年：去向结局那一段照旧叫“后来”", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const end = asActive(play(startClassic(seed, (["LOW", "MID", "HIGH"] as const)[seed % 3]), classicPolicy({ focus: "STUDY", event: seed % 2 === 0 ? "A" : "B" })).state);
+      const segments = timeline(end);
+      const ids = segments.map((segment) => segment.id);
+      expect(ids.some((id) => id.startsWith("SUMMER:") || id.startsWith("LIFE:") || id === "OUTCOME")).toBe(false);
+      expect(segments.flatMap((segment) => segment.lines).some((line) => line.kind === "DAILY" || line.kind === "GPA")).toBe(false);
+      const last = segments[segments.length - 1];
+      expect(last).toMatchObject({ id: "FLAVOR", label: "后来", age: null, group: "END" });
+      expect(last.lines).toEqual([{ kind: "FLAVOR", text: `后来，人们叫你：${end.ending?.card.flavor?.name}。`, delta: null }]);
+      expect(end.life).toBeUndefined();
+      expect(end.phase).toBe("ENDING");
+    }
   });
 });
 
@@ -764,6 +846,19 @@ describe("人生总结（22 §5.3）", () => {
       seen[summary.kind] += 1;
       expect(summary.kind).toBe(ending.kind);
       expect(summary).toMatchObject({ seed, school: run.school, points: input.points, card: ending.card });
+      // 第四版：平均 GPA 与五年后；有五年后时 stats 是五年后的四属性
+      expect(summary.gpa).toBe(averageGpa(termGpas(run)));
+      expect(summary.gpa).not.toBeNull();
+      const life = run.life;
+      if (!life?.outcome) throw new Error("没有走完五年");
+      expect(summary.life).toMatchObject({
+        age: life.startAge + 5,
+        track: life.track,
+        trackName: LIFE_TRACKS[life.track].name,
+        trackNames: life.tracks.map((track) => LIFE_TRACKS[track].name),
+      });
+      expect(summary.life?.outcome.id).toBe(life.outcome.id);
+      expect(summary.life?.startStats.map((item) => item.value)).toEqual(STATS.map((key) => life.startStats[key]));
       expect(summary.stats.map((item) => [item.key, item.value, item.rating])).toEqual(STATS.map((key) => [key, run.stats[key], statRating(run.stats[key])]));
       expect(summary.focusSummary.map((item) => item.count).reduce((sum, n) => sum + n, 0)).toBe(Object.values(run.focusCounts).reduce((sum, n) => sum + n, 0));
       for (const item of summary.focusSummary) expect(item.count).toBe(run.focusCounts[item.focus]);
@@ -775,7 +870,7 @@ describe("人生总结（22 §5.3）", () => {
         const labels = ending.degree === "UG" ? UG_TERM_LABELS : MS_TERM_LABELS;
         expect(summary).toMatchObject({
           title: early.title, text: early.text, epilogue: early.epilogue, keyExperience: null, opportunities: [],
-          label: `${labels[run.termIndex - 1]} · 中途`,
+          label: `${labels[lastTermOf(run, ending.degree) - 1]} · 中途`,
         });
         expect(summary.card).toMatchObject({ early: early.id, name: early.name, tier: early.tier, flavor: null });
       } else {
@@ -793,10 +888,10 @@ describe("人生总结（22 §5.3）", () => {
     expect(seen.EARLY).toBeGreaterThan(20);
   });
 
-  it("经典模式走到结局也有总结（没有点数）", () => {
+  it("经典模式走到结局也有总结（没有点数、GPA 与五年后）", () => {
     const end = play(startClassic(13, "LOW"), classicPolicy({ focus: "STUDY", event: "A" })).state;
     const summary = summaryView(end);
-    expect(summary).toMatchObject({ kind: "GRADUATION", points: null });
+    expect(summary).toMatchObject({ kind: "GRADUATION", points: null, gpa: null, life: null });
     expect(summary.card.early).toBeNull();
     expect(timeline(end).length).toBeGreaterThan(5);
   });

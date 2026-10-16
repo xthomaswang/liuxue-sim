@@ -22,3 +22,19 @@ export function pickIndex(seed: number, key: string, length: number): number {
   if (length <= 0) throw new Error("EMPTY_POOL");
   return Math.floor(draw01(seed, key) * length);
 }
+
+/**
+ * 按权重抽一项：r = draw01(seed, key) × 权重之和，按数组顺序累加，取第一项累计值严格大于 r 的
+ * （浮点极端情况取最后一项）。候选为空返回 null。去向结局、暑假、日常、毕业后的事与结局都用它。
+ */
+export function pickWeighted<T>(seed: number, key: string, items: readonly T[], weightOf: (item: T) => number): T | null {
+  if (items.length === 0) return null;
+  const total = items.reduce((sum, item) => sum + weightOf(item), 0);
+  const r = draw01(seed, key) * total;
+  let cumulative = 0;
+  for (const item of items) {
+    cumulative += weightOf(item);
+    if (cumulative > r) return item;
+  }
+  return items[items.length - 1];
+}

@@ -2,14 +2,15 @@
 // 第二版玩法（天赋、学期安排、主线槽、突发小事）以 docs/16 为准，第三版（分点、自动决定、中途结局、成就）以 docs/22、23 为准。
 // 版本号：规则或内容有会改变结果的修改时必须提升，旧存档据此判为不兼容。
 // 3.0.0 = docs/22 第三版玩法（只选天赋和分点，其余自动模拟；中途结局；成就与天赋解锁）。
+// 4.0.0 = docs/24 第四版（期中突发小事、暑假、日常、期末 GPA；毕业或离校之后再过五年）。
 
 import type {
-  ArcId, Aspiration, Economy, EndingTierId, Expectation, Focus, MastersProgram, Opportunity, OfferTier, Stats,
-  StatKey, Strategy, TalentRarity,
+  ArcId, Aspiration, Economy, EndingTierId, Expectation, Focus, LifeTrack, MastersProgram, Opportunity, OfferTier,
+  Stats, StatKey, Strategy, SummerSlot, TalentRarity,
 } from "./types";
 
-export const RULES_VERSION = "3.0.0";
-export const CONTENT_VERSION = "3.0.0";
+export const RULES_VERSION = "4.0.0";
+export const CONTENT_VERSION = "4.0.0";
 export const SAVE_FORMAT = "liuxue-sim-save";
 
 // ---------- 固定顺序 ----------
@@ -123,8 +124,10 @@ export const CLASSIC_TALENT_IDS: readonly string[] = [
 export const RANDOM_EVENT_PROBABILITY = 0.45;
 export const RANDOM_EVENT_FIRST_TERM = 2;
 export const RANDOM_EVENT_LAST_TERM = 7;
-/** 每学期开头出现突发小事的概率。 */
-export const HAPPENING_PROBABILITY = 0.6;
+/** 每学期开头（资助到账之后）出现突发小事的概率（第四版从 0.6 调到 0.7，docs/24 §2.1）。 */
+export const HAPPENING_PROBABILITY = 0.7;
+/** 第四版：期中（主线槽事件之后、支线事件之前）再出现一件突发小事的概率。 */
+export const MID_HAPPENING_PROBABILITY = 0.45;
 
 // ---------- 07：结局 ----------
 
@@ -227,5 +230,68 @@ export const STAT_RATINGS: ReadonlyArray<{ from: number; label: string }> = [
 ];
 export const UG_TERM_LABELS: readonly string[] = ["大一上", "大一下", "大二上", "大二下", "大三上", "大三下", "大四上", "大四下"];
 export const MS_TERM_LABELS: readonly string[] = ["硕一上", "硕一下", "硕二上", "硕二下"];
+/** “事儿真多”：一局里遇到这么多条突发小事（第四版每学期开学、期中各可能一条，门槛随之调高，docs/24 §10）。 */
+export const BUSY_LIFE_HAPPENINGS_MIN = 12;
 export const UNLOCK_BASE_PERCENT = 20;
 export const UNLOCK_PERCENT_PER_ACHIEVEMENT = 20;
+
+// ---------- 24 §2：暑假、日常、期末 GPA（只在正式玩法） ----------
+
+/** 暑假的第二件事发生的概率（第一件必有）。 */
+export const SUMMER_SECOND_PROBABILITY: Readonly<Record<SummerSlot, number>> = { DEPARTURE: 0.6, UG: 0.4, MS: 0.4 };
+/** 本科在这些学期期末之后放暑假（大一下、大二下、大三下）。 */
+export const UG_SUMMER_AFTER_TERMS: readonly number[] = [2, 4, 6];
+/** 两年制硕士在硕一下期末之后放暑假。 */
+export const MS_SUMMER_AFTER_TERM = 2;
+export const UG_SUMMER_LABELS: Readonly<Record<number, string>> = { 2: "大一暑假", 4: "大二暑假", 6: "大三暑假" };
+export const MS_SUMMER_LABEL = "硕一暑假";
+export const DEPARTURE_SUMMER_LABEL = "出国前的夏天";
+
+/** 下学期开头那一条寒假日常出现的概率；每学期另有两条日常。 */
+export const DAILY_WINTER_PROBABILITY = 0.7;
+export const DAILY_PER_TERM = 2;
+
+/**
+ * 期末 GPA（docs/24 §2.4），以 0.01 为单位算：
+ * BASE + PER_ACADEMIC × 期末学业 + 本学期安排的加减 + 身心太低的扣分 + 天赋 gpa 之和 + (u − 0.5) × NOISE，
+ * 四舍五入后截到 80–400。文档的初值是 190、2.1、学习 +15、打工 −12、NOISE 40；按 §13 的验收（均衡分点：学期 GPA 中位数
+ * 3.1–3.5、有学期 4.00 的局 5%–25%、有学期低于 2.00 的局 2%–15%）调成了下面的值：学业常常到 100，斜率要小一些、
+ * 噪声要大一些，才能让 4.00 不那么多、低于 2.00 的也能出现。
+ */
+export const GPA = {
+  BASE: 196,
+  PER_ACADEMIC: 1.8,
+  FOCUS: { STUDY: 10, CAREER: -5, CAMPUS: 0, WORK: -20, REST: 3 } as Readonly<Record<Focus, number>>,
+  WELLBEING_CRASH_BELOW: 15,
+  WELLBEING_CRASH: -30,
+  WELLBEING_LOW_BELOW: 30,
+  WELLBEING_LOW: -12,
+  NOISE: 90,
+  MIN: 80,
+  MAX: 400,
+} as const;
+
+// ---------- 24 §3：年龄 ----------
+
+export const AGE_HIGH_SCHOOL = 17;
+export const AGE_DEPARTURE = 18;
+/** 本科第 t 学期 18 + ⌊(t−1)/2⌋；本科毕业 22。 */
+export const AGE_UG_START = 18;
+export const AGE_UG_GRADUATION = 22;
+/** 硕士第 t 学期 22 + ⌊(t−1)/2⌋；硕士毕业 22 + 年制。 */
+export const AGE_MS_START = 22;
+
+// ---------- 24 §4：毕业后的五年 ----------
+
+export const LIFE_YEARS = 5;
+export const LIFE_MILESTONES_PER_YEAR = 3;
+/** 每年的生活小事：一件，另有这个概率再多一件。 */
+export const LIFE_SECOND_EVENT_PROBABILITY = 0.5;
+export const LIFE_TRACK_ORDER: readonly LifeTrack[] = ["PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION", "DROPOUT"];
+/** 毕业后每年选重心（docs/24 §4.3）：钱紧的门槛换成毕业后的。 */
+export const LIFE_AUTO = {
+  WORK_TIGHT_BELOW: 20,
+  WORK_TIGHT_BONUS: 10,
+  WORK_BROKE_BELOW: 10,
+  WORK_BROKE_BONUS: 10,
+} as const;

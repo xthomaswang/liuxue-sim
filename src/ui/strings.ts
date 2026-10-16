@@ -92,6 +92,10 @@ export const S = {
 
   // 人生轨迹
   timelineEmpty: "点“继续”，看这一生怎么过。",
+  ageLabel: (age: number) => `${age} 岁`,
+  dividerLife: "毕业以后",
+  dividerLifeEarly: "离开学校以后",
+  dividerOutcome: "五年过去",
   revealNext: "继续",
   autoPlay: "自动播放",
   autoPause: "暂停",
@@ -100,6 +104,12 @@ export const S = {
 
   // 人生总结
   flavorLead: "后来，人们叫你",
+  flavorLeadThen: "毕业那年，人们叫你",
+  earlyLeadThen: "当年",
+  lifeHeading: "五年后",
+  lifePath: (names: readonly string[]) => names.join(" → "),
+  startStats: "离开学校时",
+  gpaLabel: "在校平均 GPA",
   cardHeading: "结局卡",
   cardDrawLine: (label: string, percent: number, roll: string, success: boolean) =>
     `${label}：概率 ${percent}%，抽签值 ${roll}，${success ? "命中" : "未命中"}`,
@@ -130,6 +140,7 @@ export const S = {
   galleryHidden: "隐藏结局",
   galleryEarly: "中途结局",
   galleryFlavors: "去向结局",
+  galleryOutcomes: "五年后",
   galleryAchievements: "成就",
   galleryTalents: "天赋",
   galleryLocked: "未解锁",

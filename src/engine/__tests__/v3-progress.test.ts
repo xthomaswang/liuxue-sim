@@ -1,14 +1,23 @@
-// 成就与天赋解锁（docs/22 §7、docs/23）：每条成就的判定、判定顺序、解锁概率与确定性。
-// 成就清单随时会加：这里不写死条数，但要求内容里的每一条在引擎里有规则、在下面的 CASES 里有构造用例。
+// 成就与天赋解锁（docs/22 §7、docs/23；第四版新增的 22 条见 docs/24 §10）：每条成就的判定、判定顺序、
+// 解锁概率与确定性。成就清单随时会加：这里不写死条数，但要求内容里的每一条在引擎里有规则、在下面的 CASES 里有构造用例。
+// 五年后结局的稀有度要用到 SR／SSR 的条目：内容还在写，所以在本文件的进程里临时加几条测试用的（不动内容文件）。
 
-import { describe, expect, it } from "vitest";
-import { ACHIEVEMENTS, EARLY_ENDINGS, TALENTS } from "../../content";
-import { ENDING_TIER_ORDER } from "../constants";
+import { afterAll, describe, expect, it } from "vitest";
+import { ACHIEVEMENTS, EARLY_ENDINGS, LIFE_TRACKS, TALENTS } from "../../content";
+import { BUSY_LIFE_HAPPENINGS_MIN, ENDING_TIER_ORDER } from "../constants";
 import { evaluateRun, setupView, simulate } from "../index";
-import type { ActiveRun, EndingTierId, HiddenEndingId, Points, ProgressSnapshot } from "../index";
+import type { ActiveRun, EndingTierId, HiddenEndingId, LifeOutcome, LifeTrack, Points, ProgressSnapshot, TalentRarity } from "../index";
 import { ACHIEVEMENT_IDS_WITH_RULES, unlockChancePercent } from "../progress";
 import { draw01, pickIndex } from "../rng";
-import { asActive, autoInput, clone, ctx, simulateObserved, start } from "./helpers";
+import { asActive, autoInput, classicPolicy, clone, ctx, play, simulateObserved, start, startClassic } from "./helpers";
+
+const TEST_OUTCOMES: LifeOutcome[] = (["N", "SR", "SSR"] as TalentRarity[]).map((grade) => ({
+  id: `LO_TEST_${grade}`, name: `测试${grade}`, roast: "测试用。", text: "测试用。", hint: "测试用。", grade, when: { tracks: ["DROPOUT"], yearMin: 9 }, weight: 1,
+}));
+LIFE_TRACKS.DROPOUT.outcomes.push(...TEST_OUTCOMES); // when 永远不满足：只给成就判定查名字与稀有度，不会被真的抽到
+afterAll(() => {
+  LIFE_TRACKS.DROPOUT.outcomes.splice(LIFE_TRACKS.DROPOUT.outcomes.length - TEST_OUTCOMES.length, TEST_OUTCOMES.length);
+});
 
 const TALENTS_ALL = "A_TALENTS_ALL";
 const ALL_IDS = ACHIEVEMENTS.map((achievement) => achievement.id);
@@ -39,6 +48,8 @@ const GRAD = findRun((run) =>
   Object.values(run.profile.points ?? {}).every((value) => value > 0 && value < 10) && new Set(Object.values(run.profile.points ?? {})).size > 1,
 );
 const EARLY = findRun((run) => run.ending?.kind === "EARLY" && run.ending.early !== "E_LOTTERY" && !hasSsrDraw(run));
+/** 经典模式走到结局的一局：没有毕业后的五年。 */
+const CLASSIC = asActive(play(startClassic(13, "MID"), classicPolicy({ focus: "STUDY", event: "A" })).state);
 
 type Edit = (run: ActiveRun) => void;
 const edit = (base: ActiveRun, ...edits: Edit[]): ActiveRun => {
@@ -52,6 +63,33 @@ const ending = (run: ActiveRun) => {
 };
 const route = (value: "PHD" | "LOCAL_JOB" | "HOME_JOB" | "TRANSITION"): Edit => (run) => void (ending(run).route = value);
 const stat = (key: "money" | "academics" | "career" | "wellbeing", value: number): Edit => (run) => void (run.stats[key] = value);
+/** 离校时的四属性（life.startStats）。 */
+const exitStat = (key: "money" | "academics" | "career" | "wellbeing", value: number): Edit => (run) => {
+  if (!run.life) throw new Error("没有毕业后的五年");
+  run.life.startStats[key] = value;
+};
+const lifeFlags = (...flags: string[]): Edit => (run) => {
+  if (!run.life) throw new Error("没有毕业后的五年");
+  run.life.flags = flags;
+};
+const lifeTracks = (...tracks: LifeTrack[]): Edit => (run) => {
+  if (!run.life) throw new Error("没有毕业后的五年");
+  run.life.tracks = tracks;
+  run.life.track = tracks[tracks.length - 1];
+};
+const outcome = (grade: TalentRarity): Edit => (run) => {
+  if (!run.life) throw new Error("没有毕业后的五年");
+  run.life.outcome = { id: `LO_TEST_${grade}`, track: "DROPOUT" };
+};
+/** 把每个结算完的学期期末的学业与身心改成给定值（期末 GPA 由它们决定，docs/24 §2.4）。 */
+const termEnds = (academics: number, wellbeing: number, stage?: "UG" | "MS"): Edit => (run) => {
+  for (const entry of run.history) {
+    if (entry.kind === "GROWTH" && (stage === undefined || entry.stage === stage)) entry.afterStats = { ...entry.afterStats, academics, wellbeing };
+  }
+};
+const GPA_TALENTS = TALENTS.filter((talent) => (talent.effects.gpa ?? 0) > 0).sort((a, b) => (b.effects.gpa ?? 0) - (a.effects.gpa ?? 0)).slice(0, 3).map((talent) => talent.id);
+const PLAIN_TALENTS = TALENTS.filter((talent) => talent.effects.gpa === undefined).slice(0, 3).map((talent) => talent.id);
+const outcomesSeen = (n: number): Record<string, number> => Object.fromEntries(Array.from({ length: n }, (_, i) => [`LO_SEEN_${i}`, 1]));
 const count = (key: "STUDY" | "WORK" | "CAREER" | "CAMPUS" | "REST", value: number): Edit => (run) => void (run.focusCounts[key] = value);
 const points = (value: Points): Edit => (run) => void (run.profile.points = value);
 const tier = (value: EndingTierId): Edit => (run) => void (ending(run).card.tier = value);
@@ -126,12 +164,31 @@ const CASES: Record<string, { yes: Case[]; no: Case[] }> = {
       { run: EARLY },
     ],
   },
-  A_ACADEMICS_100: { yes: [{ run: edit(GRAD, stat("academics", 100)) }, { run: edit(EARLY, stat("academics", 100)) }], no: [{ run: edit(GRAD, stat("academics", 99)) }] },
-  A_CAREER_100: { yes: [{ run: edit(GRAD, stat("career", 100)) }, { run: edit(EARLY, stat("career", 100)) }], no: [{ run: edit(GRAD, stat("career", 99)) }] },
-  A_RICH: { yes: [{ run: edit(GRAD, stat("money", 70)) }, { run: edit(GRAD, stat("money", 100)) }], no: [{ run: edit(GRAD, stat("money", 69)) }, { run: edit(EARLY, stat("money", 100)) }] },
-  A_BROKE_GRAD: { yes: [{ run: edit(GRAD, stat("money", 0)) }], no: [{ run: edit(GRAD, stat("money", 1)) }, { run: edit(EARLY, stat("money", 0)) }] },
-  A_FULL_BATTERY: { yes: [{ run: edit(GRAD, stat("wellbeing", 90)) }], no: [{ run: edit(GRAD, stat("wellbeing", 89)) }, { run: edit(EARLY, stat("wellbeing", 100)) }] },
-  A_EMPTY_BATTERY: { yes: [{ run: edit(GRAD, stat("wellbeing", 0)) }], no: [{ run: edit(GRAD, stat("wellbeing", 1)) }, { run: edit(EARLY, stat("wellbeing", 0)) }] },
+  // 属性类成就看离校时的四属性（life.startStats），不看五年后的
+  A_ACADEMICS_100: {
+    yes: [{ run: edit(GRAD, exitStat("academics", 100), stat("academics", 3)) }, { run: edit(EARLY, exitStat("academics", 100)) }, { run: edit(CLASSIC, stat("academics", 100)) }],
+    no: [{ run: edit(GRAD, exitStat("academics", 99), stat("academics", 100)) }],
+  },
+  A_CAREER_100: {
+    yes: [{ run: edit(GRAD, exitStat("career", 100), stat("career", 3)) }, { run: edit(EARLY, exitStat("career", 100)) }],
+    no: [{ run: edit(GRAD, exitStat("career", 99), stat("career", 100)) }],
+  },
+  A_RICH: {
+    yes: [{ run: edit(GRAD, exitStat("money", 70), stat("money", 0)) }, { run: edit(GRAD, exitStat("money", 100)) }],
+    no: [{ run: edit(GRAD, exitStat("money", 69), stat("money", 100)) }, { run: edit(EARLY, exitStat("money", 100)) }],
+  },
+  A_BROKE_GRAD: {
+    yes: [{ run: edit(GRAD, exitStat("money", 0), stat("money", 50)) }],
+    no: [{ run: edit(GRAD, exitStat("money", 1), stat("money", 0)) }, { run: edit(EARLY, exitStat("money", 0)) }],
+  },
+  A_FULL_BATTERY: {
+    yes: [{ run: edit(GRAD, exitStat("wellbeing", 90), stat("wellbeing", 10)) }],
+    no: [{ run: edit(GRAD, exitStat("wellbeing", 89), stat("wellbeing", 100)) }, { run: edit(EARLY, exitStat("wellbeing", 100)) }],
+  },
+  A_EMPTY_BATTERY: {
+    yes: [{ run: edit(GRAD, exitStat("wellbeing", 0), stat("wellbeing", 50)) }],
+    no: [{ run: edit(GRAD, exitStat("wellbeing", 1), stat("wellbeing", 0)) }, { run: edit(EARLY, exitStat("wellbeing", 0)) }],
+  },
   A_NO_WORK: { yes: [{ run: edit(GRAD, count("WORK", 0)) }], no: [{ run: edit(GRAD, count("WORK", 1)) }, { run: edit(EARLY, count("WORK", 0)) }] },
   A_WORKER: { yes: [{ run: edit(GRAD, count("WORK", 4)) }, { run: edit(EARLY, count("WORK", 6)) }], no: [{ run: edit(GRAD, count("WORK", 3)) }] },
   A_GRINDER: { yes: [{ run: edit(GRAD, count("STUDY", 5)) }, { run: edit(EARLY, count("STUDY", 7)) }], no: [{ run: edit(GRAD, count("STUDY", 4)) }] },
@@ -149,7 +206,10 @@ const CASES: Record<string, { yes: Case[]; no: Case[] }> = {
   A_ALL_IN: { yes: [{ run: edit(GRAD, points(P(2, 10, 4, 4))) }, { run: edit(EARLY, points(P(10, 4, 3, 3))) }], no: [{ run: edit(GRAD, points(P(9, 9, 1, 1))) }] },
   A_DUMP_STAT: { yes: [{ run: edit(GRAD, points(P(6, 7, 7, 0))) }], no: [{ run: edit(GRAD, points(P(6, 7, 6, 1))) }, { run: edit(EARLY, points(P(0, 8, 6, 6))) }] },
   A_EVEN: { yes: [{ run: edit(GRAD, points(P(5, 5, 5, 5))) }, { run: edit(EARLY, points(P(5, 5, 5, 5))) }], no: [{ run: edit(GRAD, points(P(5, 5, 6, 4))) }] },
-  A_BUSY_LIFE: { yes: [{ run: edit(GRAD, happenings(7)) }, { run: edit(EARLY, happenings(8)) }], no: [{ run: edit(GRAD, happenings(6)) }] },
+  A_BUSY_LIFE: {
+    yes: [{ run: edit(GRAD, happenings(BUSY_LIFE_HAPPENINGS_MIN)) }, { run: edit(EARLY, happenings(BUSY_LIFE_HAPPENINGS_MIN + 1)) }],
+    no: [{ run: edit(GRAD, happenings(BUSY_LIFE_HAPPENINGS_MIN - 1)) }],
+  },
   A_TOP_TIER: {
     yes: [{ run: edit(GRAD, tier("SSR")) }, { run: edit(GRAD, tier("UR")) }, { run: edit(EARLY, tier("EX")) }],
     no: [{ run: edit(GRAD, tier("SR_PLUS")) }, { run: edit(GRAD, tier("BE")) }],
@@ -193,6 +253,62 @@ const CASES: Record<string, { yes: Case[]; no: Case[] }> = {
     yes: [{ run: edit(GRAD, seeded(UNLOCK_SEED)), progress: empty({ unlockedTalents: LOCKED.slice(1) }) }, { run: GRAD, progress: empty({ unlockedTalents: [...LOCKED] }) }],
     no: [{ run: edit(GRAD, seeded(UNLOCK_SEED)), progress: empty({ unlockedTalents: LOCKED.slice(2) }) }, { run: edit(GRAD, seeded(UNLOCK_SEED)) }],
   },
+  // ---- 第四版（docs/24 §10） ----
+  // 期末 GPA：学业 100、身心 80、三张 gpa 天赋 → 每学期都到顶 4.00；学业 0、身心 0、没有 gpa 天赋 → 每学期都低于 2.00
+  A_GPA_4: {
+    yes: [{ run: edit(GRAD, talents(GPA_TALENTS), termEnds(100, 80)) }, { run: edit(EARLY, talents(GPA_TALENTS), termEnds(100, 80)) }],
+    no: [{ run: edit(GRAD, talents(PLAIN_TALENTS), termEnds(50, 60)) }, { run: edit(CLASSIC, termEnds(100, 80)) }],
+  },
+  A_GPA_WARNING: {
+    yes: [{ run: edit(GRAD, talents(PLAIN_TALENTS), termEnds(0, 0)) }],
+    no: [{ run: edit(GRAD, talents(PLAIN_TALENTS), termEnds(60, 60)) }, { run: edit(CLASSIC, termEnds(0, 0)) }],
+  },
+  A_DEANS_LIST: {
+    yes: [{ run: edit(GRAD, talents(GPA_TALENTS), termEnds(100, 80, "UG")) }],
+    no: [
+      { run: edit(GRAD, talents(PLAIN_TALENTS), termEnds(50, 60, "UG")) },
+      { run: edit(EARLY, talents(GPA_TALENTS), termEnds(100, 80)) }, // 没读到本科毕业
+    ],
+  },
+  A_FIVE_YEARS: { yes: [{ run: GRAD }, { run: EARLY }], no: [{ run: CLASSIC }] },
+  A_GREEN_CARD: { yes: [{ run: edit(GRAD, lifeFlags("H1B", "GREEN_CARD")) }], no: [{ run: edit(GRAD, lifeFlags("H1B")) }, { run: CLASSIC }] },
+  A_H1B_OUT: { yes: [{ run: edit(GRAD, lifeFlags("H1B_OUT")) }], no: [{ run: edit(GRAD, lifeFlags("H1B")) }] },
+  A_CANADA: { yes: [{ run: edit(GRAD, lifeFlags("H1B_OUT", "CANADA")) }], no: [{ run: edit(GRAD, lifeFlags("H1B_OUT")) }] },
+  A_LAID_OFF: { yes: [{ run: edit(EARLY, lifeFlags("LAID_OFF")) }], no: [{ run: edit(GRAD, lifeFlags()) }] },
+  A_HOUSE: { yes: [{ run: edit(GRAD, lifeFlags("MARRIED", "HOUSE")) }], no: [{ run: edit(GRAD, lifeFlags("MARRIED")) }] },
+  A_MARRIED: { yes: [{ run: edit(GRAD, lifeFlags("DATING", "MARRIED")) }], no: [{ run: edit(GRAD, lifeFlags("DATING")) }] },
+  A_DR: { yes: [{ run: edit(GRAD, lifeFlags("PHD_QUAL", "PHD_DONE")) }], no: [{ run: edit(GRAD, lifeFlags("PHD_QUAL")) }] },
+  A_PHD_QUIT: { yes: [{ run: edit(GRAD, lifeFlags("PHD_QUIT")) }], no: [{ run: edit(GRAD, lifeFlags("PHD_QUAL")) }] },
+  A_CIVIL: { yes: [{ run: edit(EARLY, lifeFlags("CIVIL_SERVANT")) }], no: [{ run: edit(EARLY, lifeFlags()) }] },
+  A_EXIT: {
+    yes: [{ run: edit(GRAD, lifeFlags("STARTUP", "STARTUP_EXIT")) }, { run: edit(GRAD, lifeFlags("FIRE")) }],
+    no: [{ run: edit(GRAD, lifeFlags("STARTUP")) }],
+  },
+  A_RETURNEE: { yes: [{ run: edit(GRAD, lifeFlags("RETURNED")) }], no: [{ run: edit(GRAD, lifeFlags("LAID_OFF")) }] },
+  A_SWITCH: {
+    yes: [{ run: edit(GRAD, lifeTracks("LOCAL_JOB", "HOME_JOB")) }],
+    no: [{ run: edit(GRAD, lifeTracks("LOCAL_JOB")) }, { run: CLASSIC }],
+  },
+  A_ZIGZAG: {
+    yes: [{ run: edit(GRAD, lifeTracks("PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION")) }],
+    no: [{ run: edit(GRAD, lifeTracks("PHD", "LOCAL_JOB", "HOME_JOB")) }],
+  },
+  A_COMEBACK: {
+    yes: [{ run: edit(EARLY, outcome("SR")) }, { run: edit(EARLY, outcome("SSR")) }],
+    no: [{ run: edit(EARLY, outcome("N")) }, { run: edit(GRAD, outcome("SSR")) }],
+  },
+  A_LIFE_SSR: { yes: [{ run: edit(GRAD, outcome("SSR")) }, { run: edit(EARLY, outcome("SSR")) }], no: [{ run: edit(GRAD, outcome("SR")) }, { run: CLASSIC }] },
+  A_OUTCOMES_10: {
+    yes: [{ run: edit(GRAD, outcome("N")), progress: empty({ outcomes: outcomesSeen(9) }) }],
+    no: [
+      { run: edit(GRAD, outcome("N")), progress: empty({ outcomes: outcomesSeen(8) }) },
+      { run: edit(GRAD, outcome("N")), progress: empty({ outcomes: { ...outcomesSeen(8), LO_TEST_N: 2 } }) }, // 见过的不多算
+      { run: CLASSIC, progress: empty({ outcomes: outcomesSeen(9) }) },
+      { run: edit(GRAD, outcome("N")), progress: empty() }, // 旧进度没有 outcomes 这一项
+    ],
+  },
+  A_LIFE_BROKE: { yes: [{ run: edit(GRAD, stat("money", 0)) }], no: [{ run: edit(GRAD, stat("money", 1), exitStat("money", 0)) }, { run: edit(CLASSIC, stat("money", 0)) }] },
+  A_LIFE_ZEN: { yes: [{ run: edit(EARLY, stat("wellbeing", 90)) }], no: [{ run: edit(GRAD, stat("wellbeing", 89), exitStat("wellbeing", 100)) }, { run: edit(CLASSIC, stat("wellbeing", 100)) }] },
 };
 
 describe("成就清单与引擎规则一致（23）", () => {

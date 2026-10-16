@@ -82,7 +82,9 @@ APP="$DERIVED/Build/Products/Debug-iphonesimulator/LiuxueSim.app"
 echo "==> 启动模拟器并安装"
 xcrun simctl bootstatus "$UDID" -b >/dev/null
 if [[ "$HEADLESS" -eq 0 ]]; then
-  open -a Simulator --args -CurrentDeviceUDID "$UDID"
+  # 有的 Xcode 安装里没有 Simulator.app：打不开窗口就照常在后台装好并启动，不中断。
+  open -a Simulator --args -CurrentDeviceUDID "$UDID" 2>/dev/null ||
+    echo "    （找不到 Simulator.app，设备在后台运行；可用下面的日志命令确认页面加载）"
 fi
 xcrun simctl install "$UDID" "$APP"
 xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true

@@ -2,8 +2,11 @@
 // 这三样都只由 seed、学段、学期（以及“本局已经出现过哪些随机事件／突发小事”）推出，与玩家的选择无关；
 // 不存进状态，需要时现算。内容池一律作为参数传入，便于单独测试。
 
+import { conditionMet } from "./conditions";
+import type { ConditionContext } from "./conditions";
 import {
-  FOCUS_ORDER, HAPPENING_PROBABILITY, RANDOM_EVENT_FIRST_TERM, RANDOM_EVENT_LAST_TERM, RANDOM_EVENT_PROBABILITY,
+  FOCUS_ORDER, HAPPENING_PROBABILITY, MID_HAPPENING_PROBABILITY, RANDOM_EVENT_FIRST_TERM, RANDOM_EVENT_LAST_TERM,
+  RANDOM_EVENT_PROBABILITY,
 } from "./constants";
 import { draw01, pickIndex } from "./rng";
 import type { Degree, Focus, Happening, PlanCard, StoryEvent } from "./types";
@@ -74,16 +77,29 @@ export function mainSlotEvent(
 
 // ---------- 突发小事 ----------
 
-/** 每学期开头、资助到账之后：60% 的概率从适用于当前学段且本局没出现过的突发小事里取一条；否则 null。 */
+/**
+ * 突发小事（docs/16 §4、docs/24 §2.1）：开学（资助到账之后，70%）与期中（主线槽事件之后，45%）各看一次。
+ * 先按概率看这一次有没有；有的话，从适用于当前学段、本局没出现过、条件满足的里等概率取一条；没有候选就不发生。
+ * 条件按发生那一刻的状态判断（context）；没给 context 时，带条件的条目一律不算候选。
+ */
 export function rollHappening(
   seed: number,
   stage: Degree,
   term: number,
   pool: readonly Happening[],
   usedIds: readonly string[],
+  options: { mid?: boolean; context?: ConditionContext } = {},
 ): Happening | null {
-  if (!(draw01(seed, `happening:roll:${stage}:${term}`) < HAPPENING_PROBABILITY)) return null;
-  const available = pool.filter((item) => (item.scope === "ANY" || item.scope === stage) && !usedIds.includes(item.id));
+  const prefix = options.mid ? "happening:mid" : "happening";
+  const probability = options.mid ? MID_HAPPENING_PROBABILITY : HAPPENING_PROBABILITY;
+  if (!(draw01(seed, `${prefix}:roll:${stage}:${term}`) < probability)) return null;
+  const context = options.context;
+  const available = pool.filter(
+    (item) =>
+      (item.scope === "ANY" || item.scope === stage) &&
+      !usedIds.includes(item.id) &&
+      (item.when === undefined || Object.keys(item.when).length === 0 || (context !== undefined && conditionMet(item.when, context))),
+  );
   if (available.length === 0) return null;
-  return available[pickIndex(seed, `happening:pick:${stage}:${term}`, available.length)];
+  return available[pickIndex(seed, `${prefix}:pick:${stage}:${term}`, available.length)];
 }

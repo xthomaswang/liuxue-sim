@@ -1,10 +1,18 @@
-// 图册（docs/22 第 7.3 节）：一页看全部跨局进度——结局、成就、天赋。只是收藏册，不提供重抽、不联网。
+// 图册（docs/22 第 7.3 节、docs/24 第 9 节）：一页看全部跨局进度——结局（含五年后）、成就、天赋。只是收藏册，不提供重抽、不联网。
 
 import { useGame } from "../../app/store";
 import { ACHIEVEMENTS, EARLY_ENDINGS, ENDING_CARDS, ENDING_FLAVORS, TALENTS } from "../../content";
 import type { ProgressEntry } from "../../app/progress";
 import { RarityTag } from "../components";
+import { LIFE_TRACK_LIST } from "../lifeTracks";
 import { RARITY_ORDER, S } from "../strings";
+
+const JUMPS: ReadonlyArray<readonly [string, string]> = [
+  ["gallery-endings", S.galleryEndings],
+  ["gallery-outcomes", S.galleryOutcomes],
+  ["gallery-achievements", S.galleryAchievements],
+  ["gallery-talents", S.galleryTalents],
+];
 
 export function GalleryScreen(props: { onClose: () => void }) {
   const { progress } = useGame();
@@ -18,12 +26,15 @@ export function GalleryScreen(props: { onClose: () => void }) {
   const hiddenGot = count(ENDING_CARDS.hidden.map((item) => item.id), progress.hidden);
   const earlyGot = count(EARLY_ENDINGS.map((item) => item.id), progress.early);
   const flavorGot = count(ENDING_FLAVORS.map((item) => item.id), progress.flavors);
-  const endingGot = tierGot + hiddenGot + earlyGot + flavorGot;
-  const endingTotal = ENDING_CARDS.tiers.length + ENDING_CARDS.hidden.length + EARLY_ENDINGS.length + ENDING_FLAVORS.length;
+  const outcomeIds = LIFE_TRACK_LIST.flatMap((track) => track.outcomes.map((item) => item.id));
+  const outcomeGot = count(outcomeIds, progress.outcomes);
+  const endingGot = tierGot + hiddenGot + earlyGot + flavorGot + outcomeGot;
+  const endingTotal =
+    ENDING_CARDS.tiers.length + ENDING_CARDS.hidden.length + EARLY_ENDINGS.length + ENDING_FLAVORS.length + outcomeIds.length;
   const achievementGot = ACHIEVEMENTS.filter((item) => progress.achievements[item.id]).length;
   const talentGot = TALENTS.filter((talent) => talentOpen(talent.id, talent.locked)).length;
 
-  // 图册很长：顶部给三块各一个跳转。
+  // 图册很长：顶部给几块各一个跳转。
   const jump = (id: string) => {
     const target = document.getElementById(id);
     if (target && typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "start" });
@@ -45,9 +56,9 @@ export function GalleryScreen(props: { onClose: () => void }) {
       </p>
 
       <nav className="secondary" aria-label={S.galleryJump}>
-        {(["gallery-endings", "gallery-achievements", "gallery-talents"] as const).map((id) => (
+        {JUMPS.map(([id, label]) => (
           <button key={id} type="button" className="link-button" data-testid={`jump-${id}`} onClick={() => jump(id)}>
-            {id === "gallery-endings" ? S.galleryEndings : id === "gallery-achievements" ? S.galleryAchievements : S.galleryTalents}
+            {label}
           </button>
         ))}
       </nav>
@@ -136,6 +147,41 @@ export function GalleryScreen(props: { onClose: () => void }) {
             );
           })}
         </ul>
+
+        <h3 className="section-heading" id="gallery-outcomes">
+          {S.galleryOutcomes}
+          <span className="muted small">{S.fraction(outcomeGot, outcomeIds.length)}</span>
+        </h3>
+        {LIFE_TRACK_LIST.map((track) => {
+          const got = count(track.outcomes.map((item) => item.id), progress.outcomes);
+          return (
+            <div key={track.track} className="gallery-group" data-testid={`gallery-track-${track.track}`}>
+              <h4 className="group-heading">
+                {track.name}
+                <span className="muted small">{S.fraction(got, track.outcomes.length)}</span>
+              </h4>
+              <ul className="gallery-list">
+                {track.outcomes.map((item) => {
+                  const entry = progress.outcomes[item.id];
+                  return (
+                    <li
+                      key={item.id}
+                      className={`gallery-item compact${entry ? ` rarity-row-${item.grade}` : " locked"}`}
+                      data-testid={`gallery-outcome-${item.id}`}
+                      data-unlocked={entry ? "true" : "false"}
+                    >
+                      <p className="gallery-head">
+                        <RarityTag rarity={item.grade} />
+                        <span className="gallery-name">{entry ? item.name : S.galleryUnknown}</span>
+                      </p>
+                      <p className="muted small">{entry ? `${item.roast} · ${S.galleryCount(entry.count, entry.firstSeed)}` : item.hint}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </section>
 
       <section id="gallery-achievements" data-testid="gallery-achievements">

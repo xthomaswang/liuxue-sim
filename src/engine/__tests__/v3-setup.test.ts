@@ -2,7 +2,7 @@
 // 以及天赋效果在整局里的各个作用点。内容池用真实数据，不写死条数。
 
 import { describe, expect, it } from "vitest";
-import { TALENTS } from "../../content";
+import { LIFE_TRACKS, TALENTS } from "../../content";
 import { CLASSIC_TALENT_IDS, TALENT_WEIGHTS, TERM_GROWTH, UPKEEP_DEFAULT } from "../constants";
 import { probabilities } from "../graduation";
 import {
@@ -477,6 +477,13 @@ function verifyWholeRun(from: RunState, label: string): ActiveRun {
         for (const key of ["money", "academics", "career", "wellbeing"] as const) {
           expect(entry.requestedDelta[key], `${label} 基础成长 ${key}`).toBe(TERM_GROWTH[key] + totals.growth[key]);
         }
+      } else if (entry.kind === "LIFE_BASE") {
+        // 毕业后每年的基础变化加上天赋的 lifeGrowth（docs/24 §4.2）
+        const base = entry.track ? LIFE_TRACKS[entry.track].base.delta : null;
+        if (!base) throw new Error(`${label} 毕业后缺少轨道`);
+        for (const key of ["money", "academics", "career", "wellbeing"] as const) {
+          expect(entry.requestedDelta[key], `${label} 毕业后基础 ${key}`).toBe(base[key] + totals.lifeGrowth[key]);
+        }
       } else if (entry.kind === "FOCUS") {
         const plan = findPlan(entry.planId ?? "");
         if (!plan) throw new Error(`${label} 未知安排 ${String(entry.planId)}`);
@@ -517,7 +524,7 @@ describe("天赋效果在整局里的作用点（16 §1.3、22 §7.2）", () => 
     }
     // 真实内容覆盖了文档列出的全部效果键
     expect([...seenKeys].sort()).toEqual(
-      ["arcWeight", "chance", "efficiencyFloor", "focus", "focusWellbeingRelief", "growth", "initial", "points", "readiness", "stipend", "upkeep"].sort(),
+      ["arcWeight", "chance", "efficiencyFloor", "focus", "focusWellbeingRelief", "gpa", "growth", "initial", "lifeGrowth", "points", "readiness", "stipend", "upkeep"].sort(),
     );
   });
 

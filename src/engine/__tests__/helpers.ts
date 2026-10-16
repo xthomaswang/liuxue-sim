@@ -1,12 +1,14 @@
 // 引擎测试共用的驱动工具：全部通过公开的 applyAction 与选择器推进，不绕过状态机。
 
+import { EVENT_BY_ID } from "../../content";
 import { makeSampleCatalog } from "../../../tests/helpers/sampleCatalog";
+import { autoLifeFocus } from "../auto";
 import type { ConditionContext } from "../conditions";
 import {
   applyAction, autoAction, createRun, currentEvent, focusView, mastersOptions, routeOptions, setupView, startPreview,
 } from "../index";
 import type {
-  Action, ActionResult, ActiveRun, ChoiceId, Economy, EngineContext, EventView, Focus, FocusView, MastersOption,
+  Action, ActionResult, ActiveRun, ChoiceId, Degree, Economy, EngineContext, EventView, Focus, FocusView, MastersOption,
   Points, RouteOption, RunState, SetupRun, SetupView,
 } from "../index";
 import { hash32 } from "../rng";
@@ -165,6 +167,8 @@ export interface Policy {
   /** 毕业结果出来后做什么；缺省：有机会就按 PHD > LOCAL_JOB > HOME_JOB 接受，否则过渡期。 */
   graduate?(state: ActiveRun, routes: RouteOption[], masters: MastersOption[]): Action;
   school?(state: ActiveRun): string;
+  /** 毕业（或离校）后每一年的重心；缺省用引擎自己的自动决定。 */
+  life?(state: ActiveRun): Focus;
 }
 
 export function defaultGraduate(_state: ActiveRun, routes: RouteOption[]): Action {
@@ -206,6 +210,8 @@ export function nextAction(state: RunState, policy: Policy): Action | null {
       return { type: "REVEAL_GRADUATION" };
     case "GRAD_RESULTS":
       return (policy.graduate ?? defaultGraduate)(state, routeOptions(state), mastersOptions(state));
+    case "LIFE":
+      return { type: "LIVE_YEAR", focus: policy.life ? policy.life(state) : autoLifeFocus(state) };
     case "ENDING":
       return null;
   }
@@ -219,7 +225,7 @@ export interface Played {
 /** 从给定状态一直推进到 stop 返回 true（在执行下一步之前检查）或到达 ENDING。 */
 export function play(from: RunState, policy: Policy, stop?: (state: RunState) => boolean, log: Action[] = []): Played {
   let state = from;
-  for (let guard = 0; guard < 200; guard++) {
+  for (let guard = 0; guard < 300; guard++) {
     if (stop?.(state)) return { state, log };
     const action = nextAction(state, policy);
     if (!action) return { state, log };
@@ -243,7 +249,7 @@ export function simulateObserved(
   let state: RunState = setup;
   let action: Action | null = { type: "CONFIRM_SETUP", talents: [...input.talents], points: { ...input.points } };
   for (let guard = 0; action !== null; guard++) {
-    if (guard >= 200) throw new Error("推进步数超出上限，状态机可能卡住");
+    if (guard >= 300) throw new Error("推进步数超出上限，状态机可能卡住");
     const after = asActive(act(state, action, context));
     log.push(action);
     onStep?.(state, action, after);
@@ -275,9 +281,41 @@ export function termEndContext(before: RunState, after: ActiveRun): ConditionCon
       history: after.history.slice(0, i + 1),
       school: after.school,
       aspiration: after.profile.aspiration,
+      economy: after.profile.economy,
+      focus: after.history.find((item) => item.kind === "FOCUS" && item.stage === entry.stage && item.termIndex === entry.termIndex)?.focus ?? null,
     };
   }
   return null;
+}
+
+/**
+ * 历史第 index 条刚记完的那一刻的条件上下文：四属性取这一条之后的，安排次数、事件标记、历史都截到这一条为止；
+ * stage／term／本学期的安排由调用方给。用来独立重算开学与期中的突发小事、暑假。
+ */
+export function contextAt(run: ActiveRun, index: number, stage: Degree, term: number, focus: Focus | null): ConditionContext {
+  const counts = { STUDY: 0, CAREER: 0, CAMPUS: 0, WORK: 0, REST: 0 };
+  const flags: string[] = [];
+  for (const entry of run.history.slice(0, index + 1)) {
+    if (entry.kind === "FOCUS" && entry.focus) counts[entry.focus] += 1;
+    if (entry.kind === "EVENT" && entry.eventId) {
+      const choice = EVENT_BY_ID[entry.eventId]?.choices.find((item) => item.id === entry.choiceId);
+      for (const flag of choice?.setFlags ?? []) if (!flags.includes(flag)) flags.push(flag);
+    }
+  }
+  return {
+    stage,
+    term,
+    stats: run.history[index].afterStats,
+    counts,
+    points: run.profile.points,
+    flags,
+    talents: run.profile.talents,
+    history: run.history.slice(0, index + 1),
+    school: run.school,
+    aspiration: run.profile.aspiration,
+    economy: run.profile.economy,
+    focus,
+  };
 }
 
 /** 停在某个阶段（可再限定学期）的判定，用来写 play 的 stop。 */

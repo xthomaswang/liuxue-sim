@@ -164,6 +164,117 @@
     }
   },
   {
+    "id": "T_LAOGANMA",
+    "name": "老干妈护体",
+    "rarity": "N",
+    "text": "开局身心 +3，休息类安排身心额外 +1。",
+    "effects": {
+      "initial": {
+        "wellbeing": 3
+      },
+      "focus": {
+        "REST": {
+          "wellbeing": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "T_RICE_COOKER",
+    "name": "带了电饭煲",
+    "rarity": "N",
+    "text": "开局资金 +3、身心 +2。",
+    "effects": {
+      "initial": {
+        "money": 3,
+        "wellbeing": 2
+      }
+    }
+  },
+  {
+    "id": "T_LIBRARY",
+    "name": "图书馆钉子户",
+    "rarity": "N",
+    "text": "期末 GPA +0.10，学习类安排身心多扣 1。",
+    "effects": {
+      "gpa": 10,
+      "focus": {
+        "STUDY": {
+          "wellbeing": -1
+        }
+      }
+    }
+  },
+  {
+    "id": "T_DEADLINE",
+    "name": "死线战士",
+    "rarity": "N",
+    "text": "学习类安排身心少扣 2，期末 GPA -0.10。",
+    "effects": {
+      "focus": {
+        "STUDY": {
+          "wellbeing": 2
+        }
+      },
+      "gpa": -10
+    }
+  },
+  {
+    "id": "T_DRIVER",
+    "name": "驾照一次过",
+    "rarity": "N",
+    "text": "打工类安排资金、身心各额外 +1。",
+    "effects": {
+      "focus": {
+        "WORK": {
+          "money": 1,
+          "wellbeing": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "T_ROOMMATE",
+    "name": "神仙室友",
+    "rarity": "N",
+    "text": "开局身心 +4，校园类安排身心额外 +1。",
+    "effects": {
+      "initial": {
+        "wellbeing": 4
+      },
+      "focus": {
+        "CAMPUS": {
+          "wellbeing": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "T_HOTPOT",
+    "name": "火锅局组局人",
+    "rarity": "N",
+    "text": "校园类安排职业额外 +1、资金 -1。",
+    "effects": {
+      "focus": {
+        "CAMPUS": {
+          "career": 1,
+          "money": -1
+        }
+      }
+    }
+  },
+  {
+    "id": "T_COUPON",
+    "name": "薅羊毛专家",
+    "rarity": "N",
+    "text": "毕业后每年资金 +2。",
+    "effects": {
+      "lifeGrowth": {
+        "money": 2
+      }
+    }
+  },
+  {
     "id": "T_FOCUSED",
     "name": "专注",
     "rarity": "R",
@@ -304,6 +415,86 @@
       },
       "arcWeight": {
         "RESEARCH": 3
+      }
+    }
+  },
+  {
+    "id": "T_GPA_HUNTER",
+    "name": "绩点猎人",
+    "rarity": "R",
+    "text": "期末 GPA +0.25，学习类安排学业额外 +1。",
+    "effects": {
+      "gpa": 25,
+      "focus": {
+        "STUDY": {
+          "academics": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "T_LEETCODE",
+    "name": "刷题机器",
+    "rarity": "R",
+    "text": "留美工作机会的概率 +3 个百分点，求职类安排职业额外 +1。",
+    "effects": {
+      "chance": {
+        "LOCAL_JOB": 3
+      },
+      "focus": {
+        "CAREER": {
+          "career": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "T_CIVIL_GENE",
+    "name": "考公基因",
+    "rarity": "R",
+    "text": "回国工作机会的概率 +3 个百分点；毕业后考公上岸率 ×4。",
+    "effects": {
+      "chance": {
+        "HOME_JOB": 3
+      }
+    }
+  },
+  {
+    "id": "T_GOOD_LOOKING",
+    "name": "长得好看",
+    "rarity": "R",
+    "text": "校园类安排身心额外 +2；毕业后脱单概率翻倍。",
+    "effects": {
+      "focus": {
+        "CAMPUS": {
+          "wellbeing": 2
+        }
+      }
+    }
+  },
+  {
+    "id": "T_NET_SENSE",
+    "name": "网感",
+    "rarity": "R",
+    "text": "校园类安排职业额外 +1；毕业后当博主概率翻倍。",
+    "effects": {
+      "focus": {
+        "CAMPUS": {
+          "career": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "T_THICK_SKIN",
+    "name": "脸皮厚",
+    "rarity": "R",
+    "text": "求职类安排身心少扣 2。",
+    "effects": {
+      "focus": {
+        "CAREER": {
+          "wellbeing": 2
+        }
       }
     }
   },
@@ -459,6 +650,58 @@
     "locked": true
   },
   {
+    "id": "T_VISA_KOI",
+    "name": "签证锦鲤",
+    "rarity": "SR",
+    "text": "留美工作机会的概率 +3 个百分点；H1B 中签率 70%。",
+    "effects": {
+      "chance": {
+        "LOCAL_JOB": 3
+      }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_PROF_KID",
+    "name": "教授家的孩子",
+    "rarity": "SR",
+    "text": "申请准备度 +5，博士机会的概率 +4 个百分点；教职概率翻倍。",
+    "effects": {
+      "readiness": 5,
+      "chance": {
+        "PHD": 4
+      }
+    }
+  },
+  {
+    "id": "T_LANDLORD",
+    "name": "拆二代",
+    "rarity": "SR",
+    "text": "开局资金 +12，毕业后每年资金 +3，还能回家收租。",
+    "effects": {
+      "initial": {
+        "money": 12
+      },
+      "lifeGrowth": {
+        "money": 3
+      }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_HACKATHON",
+    "name": "黑客松常客",
+    "rarity": "SR",
+    "text": "求职类安排职业额外 +2；毕业后创业概率翻倍。",
+    "effects": {
+      "focus": {
+        "CAREER": {
+          "career": 2
+        }
+      }
+    }
+  },
+  {
     "id": "T_GOLD_MINE",
     "name": "家里有矿",
     "rarity": "SSR",
@@ -559,6 +802,49 @@
     "effects": {
       "efficiencyFloor": 10,
       "focusWellbeingRelief": 2
+    },
+    "locked": true
+  },
+  {
+    "id": "T_REBORN",
+    "name": "重生之我在留学",
+    "rarity": "SSR",
+    "text": "可分配点数 +3，期末 GPA +0.20；毕业后想起一支会涨的股票。",
+    "effects": {
+      "points": 3,
+      "gpa": 20
+    },
+    "locked": true
+  },
+  {
+    "id": "T_SYSTEM",
+    "name": "叮！系统绑定",
+    "rarity": "SSR",
+    "text": "每学期学业、职业、身心基础变化各 +1；毕业后接到系统任务。",
+    "effects": {
+      "growth": {
+        "academics": 1,
+        "career": 1,
+        "wellbeing": 1
+      }
+    },
+    "locked": true
+  },
+  {
+    "id": "T_MAIN_CHARACTER",
+    "name": "主角光环",
+    "rarity": "SSR",
+    "text": "三路毕业机会的概率各 +4 个百分点；毕业后每年职业、身心各 +2。",
+    "effects": {
+      "chance": {
+        "PHD": 4,
+        "LOCAL_JOB": 4,
+        "HOME_JOB": 4
+      },
+      "lifeGrowth": {
+        "career": 2,
+        "wellbeing": 2
+      }
     },
     "locked": true
   }

@@ -8,6 +8,7 @@
 //   picks   选十连抽里的第几张（从 0 起），缺省 [0, 1, 2]
 //   runs    连续玩几局（用来检查成就、解锁天赋与继承在多局之间的累计），缺省 1
 //   stopAt  停在哪一屏：HOME / TALENTS / ALLOCATE / TIMELINE / SUMMARY（缺省）
+//   reveal  stopAt 为 TIMELINE 时先点开几段，缺省 4（点到毕业后几年可以给大一点的数）
 //   mode    轨迹怎么看："step" 一段一段点（缺省），"skip" 直接看结局
 //   resume  不开新局，只检查页面加载后恢复出来的界面停在 stopAt
 
@@ -24,6 +25,11 @@ const settle = async () => {
 const q = (id) => document.querySelector(`[data-testid="${id}"]`);
 const all = (prefix) => [...document.querySelectorAll(`[data-testid^="${prefix}"]`)];
 const screen = () => q("app")?.getAttribute("data-phase") ?? null;
+
+// 截图要稳定：关掉逐行淡入之类的动画（只影响观感，不影响要检查的内容）。
+const calm = document.createElement("style");
+calm.textContent = "*, *::before, *::after { animation: none !important; transition: none !important; }";
+document.head.appendChild(calm);
 
 const problems = [];
 let clicks = 0;
@@ -102,7 +108,8 @@ async function watchTimeline() {
   if ((CONFIG.mode ?? "step") === "skip") {
     await click("skip-to-end");
   } else {
-    for (let guard = 0; guard < 60 && !q("to-summary"); guard++) {
+    // 第四版一局有二三十段（暑假、毕业后五年）；上限只防止卡死。
+    for (let guard = 0; guard < 200 && !q("to-summary"); guard++) {
       measureScreen();
       await click("reveal-next");
     }
@@ -119,6 +126,9 @@ function readSummary() {
     tier: card?.getAttribute("data-tier") ?? null,
     early: card?.getAttribute("data-early") || null,
     combo: q("card-combo")?.innerText ?? null,
+    // 第四版：毕业（或离校）后五年的结局与年龄。
+    life: q("life-outcome")?.innerText.replace(/\s+/g, " ") ?? null,
+    lifeAge: q("life-age")?.innerText ?? null,
     newAchievements: all("reward-achievement-").length,
     unlockedTalent: q("reward-talent")?.innerText.replace(/\s+/g, " ") ?? null,
   };
@@ -148,7 +158,7 @@ if (CONFIG.resume) {
     await click("begin-life");
     if (stopAt === "TIMELINE") {
       // 停在轨迹中途：先点几段，留下一个“看到一半”的进度。
-      for (let i = 0; i < 4 && q("reveal-next"); i++) await click("reveal-next");
+      for (let i = 0; i < (CONFIG.reveal ?? 4) && q("reveal-next"); i++) await click("reveal-next");
       break;
     }
     const entries = await watchTimeline();

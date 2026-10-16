@@ -65,6 +65,8 @@ run home-390-light     '{"seed":1,"stopAt":"HOME"}' 390 light full HOME
 run talents-390-light  '{"seed":20261012,"stopAt":"TALENTS"}' 390 light full TALENTS
 run allocate-390-light '{"seed":20261012,"stopAt":"ALLOCATE","points":{"family":3,"academics":8,"career":5,"wellbeing":4}}' 390 light full ALLOCATE
 run timeline-390-dark  '{"seed":20261012,"stopAt":"TIMELINE"}' 390 dark full TIMELINE
+# 第四版：一直点到毕业后的几年，截一张长图看暑假、GPA、毕业后每一年的样子。
+run years-390-light    '{"seed":20261012,"stopAt":"TIMELINE","reveal":40}' 390 light full TIMELINE
 run life-390-light     '{"seed":20261012}' 390 light full SUMMARY
 run life-560-dark      '{"seed":7,"points":{"family":9,"academics":3,"career":4,"wellbeing":4},"after":"card"}' 560 dark "" SUMMARY
 run wide-1200-light    '{"seed":42,"mode":"skip","after":"rewards"}' 1200 light "" SUMMARY
@@ -74,13 +76,13 @@ if [[ -f "$OUT/marathon-390-light.json" ]] && python3 - "$OUT/marathon-390-light
 import json, sys
 d = json.load(open(sys.argv[1]))
 runs = d["runs"]
-ok = len(runs) == 12 and all(r["tier"] and r["combo"] for r in runs) and sum(r["newAchievements"] for r in runs) >= 3
+ok = len(runs) == 12 and all(r["tier"] and r["combo"] and r["life"] for r in runs) and sum(r["newAchievements"] for r in runs) >= 3
 sys.exit(0 if ok else 1)
 PY
 then
-  echo "✓ 连续十二局：每局都有结局卡，成就在累计"
+  echo "✓ 连续十二局：每局都有结局卡和五年后的结局，成就在累计"
 else
-  echo "✗ 连续十二局：结局卡或成就累计不对"
+  echo "✗ 连续十二局：结局卡、五年后的结局或成就累计不对"
   FAILED=1
 fi
 

@@ -1,0 +1,509 @@
+{
+  "track": "COMMON",
+  "milestones": [
+    {
+      "id": "LM_COMMON_REBORN_STOCK",
+      "text": "你突然想起一支后来会涨很多的股票，这次你记得买了。",
+      "delta": { "money": 12, "academics": 0, "career": 0, "wellbeing": 0 },
+      "when": { "talentsAny": ["T_REBORN"] },
+      "chancePermille": 400
+    },
+    {
+      "id": "LM_COMMON_KID",
+      "text": "家里多了一个小朋友，你的睡眠少了一半。",
+      "delta": { "money": -6, "academics": 0, "career": -1, "wellbeing": 2 },
+      "when": { "lifeFlagsAll": ["MARRIED"], "lifeFlagsNone": ["KID"] },
+      "chancePermille": 150,
+      "setFlags": ["KID"]
+    },
+    {
+      "id": "LM_COMMON_MARRIED",
+      "text": "你们领了证，婚礼上你只记得敬酒和那双磨脚的新鞋。",
+      "delta": { "money": -6, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": { "lifeFlagsAll": ["DATING"], "lifeFlagsNone": ["BREAKUP", "MARRIED"] },
+      "chancePermille": 220,
+      "setFlags": ["MARRIED"]
+    },
+    {
+      "id": "LM_COMMON_MARRIED_AGAIN",
+      "text": "兜兜转转，你们决定结婚，请柬上的照片拍了两百张才选好。",
+      "delta": { "money": -6, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": { "lifeFlagsAll": ["CM_DATING_AGAIN"], "lifeFlagsNone": ["MARRIED"] },
+      "chancePermille": 220,
+      "setFlags": ["MARRIED"]
+    },
+    {
+      "id": "LM_COMMON_DATE_AGAIN_LOOKS",
+      "text": "分手没多久，就有人鼓起勇气约你看电影，你答应了。",
+      "delta": { "money": -1, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": { "talentsAny": ["T_GOOD_LOOKING"], "lifeFlagsAll": ["BREAKUP"], "lifeFlagsNone": ["MARRIED", "CM_DATING_AGAIN"] },
+      "chancePermille": 300,
+      "setFlags": ["CM_DATING_AGAIN"]
+    },
+    {
+      "id": "LM_COMMON_DATE_AGAIN",
+      "text": "朋友介绍了一个人，你们聊得来，你又有了对象。",
+      "delta": { "money": -1, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": { "talentsNone": ["T_GOOD_LOOKING"], "lifeFlagsAll": ["BREAKUP"], "lifeFlagsNone": ["MARRIED", "CM_DATING_AGAIN"] },
+      "chancePermille": 150,
+      "setFlags": ["CM_DATING_AGAIN"]
+    },
+    {
+      "id": "LM_COMMON_BREAKUP",
+      "text": "你们和平分手了，共同好友的群里安静了好几天。",
+      "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": -8 },
+      "when": { "lifeFlagsAll": ["DATING"], "lifeFlagsNone": ["MARRIED", "BREAKUP"] },
+      "chancePermille": 170,
+      "setFlags": ["BREAKUP"]
+    },
+    {
+      "id": "LM_COMMON_DATING_LOOKS",
+      "text": "你在朋友圈发了张自拍，评论区有人开始认真追你，三个月后成了你的对象。",
+      "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": { "talentsAny": ["T_GOOD_LOOKING"], "lifeFlagsNone": ["DATING", "MARRIED"] },
+      "chancePermille": 300,
+      "setFlags": ["DATING"]
+    },
+    {
+      "id": "LM_COMMON_DATING",
+      "text": "朋友组局时坐你旁边的那个人，后来成了你的对象。",
+      "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": { "talentsNone": ["T_GOOD_LOOKING"], "lifeFlagsNone": ["DATING", "MARRIED"] },
+      "chancePermille": 150,
+      "setFlags": ["DATING"]
+    },
+    {
+      "id": "LM_COMMON_FIRE",
+      "text": "你算了算余额，发现这辈子可以不上班了，但还是每天七点醒。",
+      "delta": { "money": 0, "academics": 0, "career": -2, "wellbeing": 6 },
+      "when": { "lifeFlagsAll": ["STARTUP_EXIT"], "lifeFlagsNone": ["FIRE"], "statMin": { "money": 70 }, "yearMin": 3 },
+      "chancePermille": 400,
+      "setFlags": ["FIRE"]
+    },
+    {
+      "id": "LM_COMMON_STARTUP_EXIT",
+      "text": "公司被一家大厂收购了，你签完字，在楼下坐了很久。",
+      "delta": { "money": 12, "academics": 0, "career": 6, "wellbeing": 4 },
+      "when": { "lifeFlagsAll": ["STARTUP"], "lifeFlagsNone": ["STARTUP_EXIT", "CM_STARTUP_DEAD"] },
+      "chancePermille": 100,
+      "setFlags": ["STARTUP_EXIT"]
+    },
+    {
+      "id": "LM_COMMON_STARTUP_FAIL",
+      "text": "钱烧完了，公司解散，最后一台显示器被员工折价买走了。",
+      "delta": { "money": -8, "academics": 0, "career": 2, "wellbeing": -6 },
+      "when": { "lifeFlagsAll": ["STARTUP"], "lifeFlagsNone": ["STARTUP_EXIT", "CM_STARTUP_DEAD"] },
+      "chancePermille": 300,
+      "setFlags": ["CM_STARTUP_DEAD"],
+      "setTrack": "TRANSITION"
+    },
+    {
+      "id": "LM_COMMON_STARTUP_HACK",
+      "text": "黑客松上随手做的项目有人要投钱，你注册了一家公司。",
+      "delta": { "money": -4, "academics": 0, "career": 4, "wellbeing": -2 },
+      "when": { "talentsAny": ["T_HACKATHON"], "tracks": ["LOCAL_JOB", "HOME_JOB", "TRANSITION", "DROPOUT"], "lifeFlagsNone": ["STARTUP", "CIVIL_SERVANT"], "statMin": { "career": 55 } },
+      "chancePermille": 60,
+      "setFlags": ["STARTUP"]
+    },
+    {
+      "id": "LM_COMMON_STARTUP",
+      "text": "你和朋友注册了一家公司，你是 CEO，也是客服和保洁。",
+      "delta": { "money": -4, "academics": 0, "career": 4, "wellbeing": -2 },
+      "when": { "talentsNone": ["T_HACKATHON"], "tracks": ["LOCAL_JOB", "HOME_JOB", "TRANSITION", "DROPOUT"], "lifeFlagsNone": ["STARTUP", "CIVIL_SERVANT"], "statMin": { "career": 55 } },
+      "chancePermille": 30,
+      "setFlags": ["STARTUP"]
+    },
+    {
+      "id": "LM_COMMON_INFLUENCER_NET",
+      "text": "你随手发的一条视频火了，一夜之间多了好几万粉丝。",
+      "delta": { "money": 2, "academics": 0, "career": 3, "wellbeing": 3 },
+      "when": { "talentsAny": ["T_NET_SENSE"], "lifeFlagsNone": ["INFLUENCER"] },
+      "chancePermille": 60,
+      "setFlags": ["INFLUENCER"]
+    },
+    {
+      "id": "LM_COMMON_INFLUENCER",
+      "text": "你坚持更新了一年视频，粉丝终于过了一万。",
+      "delta": { "money": 2, "academics": 0, "career": 3, "wellbeing": 3 },
+      "when": { "talentsNone": ["T_NET_SENSE"], "lifeFlagsNone": ["INFLUENCER"] },
+      "chancePermille": 30,
+      "setFlags": ["INFLUENCER"]
+    },
+    {
+      "id": "LM_COMMON_SIDE_HUSTLE",
+      "text": "你开始在周末帮学弟学妹改申请文书，口碑全靠录取结果。",
+      "delta": { "money": 5, "academics": 0, "career": 0, "wellbeing": -3 },
+      "when": { "tracks": ["LOCAL_JOB", "PHD", "DROPOUT"], "lifeFlagsNone": ["SIDE_HUSTLE"] },
+      "chancePermille": 40,
+      "setFlags": ["SIDE_HUSTLE"]
+    },
+    {
+      "id": "LM_COMMON_CAT",
+      "text": "楼下的流浪猫跟你回了家，从此家里它说了算。",
+      "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": { "lifeFlagsNone": ["PET"] },
+      "chancePermille": 50,
+      "setFlags": ["PET", "CM_CAT"]
+    },
+    {
+      "id": "LM_COMMON_DOG",
+      "text": "你领养了一只狗，从此每天早上六点被准时叫醒。",
+      "delta": { "money": -3, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": { "lifeFlagsNone": ["PET"] },
+      "chancePermille": 25,
+      "setFlags": ["PET", "CM_DOG"]
+    }
+  ],
+  "events": [
+    {
+      "id": "LE_COMMON_REUNION_WECHAT",
+      "text": "同学会上大家互加了微信，然后再也没说过话。",
+      "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": 1 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_REUNION_FLEX",
+      "text": "同学会上，有人开着新车来，有人带着孩子来，你带着一张嘴。",
+      "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": -3 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_CHECKUP",
+      "text": "体检报告上多了两个向上的箭头，医生让你少熬夜。",
+      "delta": { "money": -1, "academics": 0, "career": 0, "wellbeing": -2 },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_MOVE",
+      "text": "你搬了一次家，扔掉的东西比带走的还多。",
+      "delta": { "money": -3, "academics": 0, "career": 0, "wellbeing": 2 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_LANDLORD_SELLS",
+      "text": "房东要卖房，你一个月看了二十套出租屋。",
+      "delta": { "money": -3, "academics": 0, "career": 0, "wellbeing": -3 },
+      "when": { "tracks": ["HOME_JOB", "PHD"], "lifeFlagsNone": ["HOUSE"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_HOLIDAY_TRAFFIC",
+      "text": "国庆你开车出门，在高速上堵了六个小时，服务区比景点还挤。",
+      "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": -2 },
+      "when": { "tracks": ["HOME_JOB", "TRANSITION"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_HOTPOT_ABROAD",
+      "text": "你请外国朋友吃了一顿火锅，TA 被辣哭了，还是吃完了。",
+      "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": 3 },
+      "when": { "tracks": ["LOCAL_JOB", "PHD"] },
+      "weight": 3
+    },
+    {
+      "id": "LE_COMMON_WEDDING_GIFTS",
+      "text": "这一年你随了五份份子钱，收回来的只有喜糖。",
+      "delta": { "money": -4, "academics": 0, "career": 0, "wellbeing": 1 },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_PARENTS_VISIT_US",
+      "text": "爸妈来美国看你，你当了一个月的导游兼司机。",
+      "delta": { "money": -3, "academics": 0, "career": 0, "wellbeing": 4 },
+      "when": { "tracks": ["PHD"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_PARENTS_VISIT_CN",
+      "text": "爸妈来你住的城市待了一周，走之前把你的衣柜重新叠了一遍。",
+      "delta": { "money": 1, "academics": 0, "career": 0, "wellbeing": 3 },
+      "when": { "tracks": ["HOME_JOB"], "lifeFlagsNone": ["HJ_HOMETOWN"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_INSOMNIA",
+      "text": "你连着一个月凌晨三点醒，醒了就刷手机。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": -4 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_USED_CAR",
+      "text": "你买了一辆二手车，第一个月就进了两次修理厂。",
+      "delta": { "money": -4, "academics": 0, "career": 0, "wellbeing": 1 },
+      "when": { "tracks": ["LOCAL_JOB", "PHD", "DROPOUT"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_CONCERT",
+      "text": "你抢到了演唱会的票，在内场跟着唱哑了嗓子。",
+      "delta": { "money": -3, "academics": 0, "career": 0, "wellbeing": 5 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_CONCERT_SOLD_OUT",
+      "text": "演唱会门票秒空，黄牛的价格够你吃一个月。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": -2 },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_COMMON_NEW_PHONE",
+      "text": "旧手机终于撑不住了，你咬咬牙换了新款。",
+      "delta": { "money": -3, "academics": 0, "career": 0, "wellbeing": 2 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_ONLINE_COURSE",
+      "text": "你报了一门网课，学到第三节就再没打开过。",
+      "delta": { "money": -2, "academics": 1, "career": 0, "wellbeing": 0 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_FITNESS_APP",
+      "text": "你下载了一个健身 App，打卡最长的一次连续了五天。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 1 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_HALF_MARATHON",
+      "text": "你坚持跑了一年步，终于跑完了一个半程马拉松。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 6 },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_COMMON_SPRING_FESTIVAL",
+      "text": "春节回家，饭桌上三个亲戚问工资，两个问对象。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": -3 },
+      "when": { "tracks": ["HOME_JOB", "TRANSITION", "DROPOUT"], "lifeFlagsNone": ["MARRIED"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_SPRING_FESTIVAL_KID",
+      "text": "春节回家，亲戚们的问题从“对象呢”升级成了“孩子呢”。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": -3 },
+      "when": { "tracks": ["HOME_JOB", "TRANSITION", "DROPOUT"], "lifeFlagsAll": ["MARRIED"], "lifeFlagsNone": ["KID"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_FLY_HOME",
+      "text": "你请假回国十天，时差倒完，刚好该回去了。",
+      "delta": { "money": -4, "academics": 0, "career": 0, "wellbeing": 4 },
+      "when": { "tracks": ["LOCAL_JOB", "PHD"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_CAT_KEYBOARD",
+      "text": "猫在你的键盘上睡了一觉，顺手替你发出了一封邮件。",
+      "delta": { "money": 0, "academics": 0, "career": -1, "wellbeing": 3 },
+      "when": { "lifeFlagsAll": ["CM_CAT"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_DOG_WALK",
+      "text": "你每天早晚遛狗，邻居们只记得狗的名字。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 4 },
+      "when": { "lifeFlagsAll": ["CM_DOG"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_PET_SOFA",
+      "text": "毛孩子拆了家里的沙发，你蹲在一地棉花里给它拍了张照。",
+      "delta": { "money": -4, "academics": 0, "career": 0, "wellbeing": 1 },
+      "when": { "lifeFlagsAll": ["PET"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_COUPLE_TRIP",
+      "text": "你们第一次一起旅行，吵了一架，又在夜市和好了。",
+      "delta": { "money": -3, "academics": 0, "career": 0, "wellbeing": 3 },
+      "when": { "lifeFlagsAll": ["DATING"], "lifeFlagsNone": ["BREAKUP", "MARRIED"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_MEET_PARENTS",
+      "text": "第一次去见对象的家长，你提前三天背好了自我介绍。",
+      "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": -1 },
+      "when": { "lifeFlagsAll": ["DATING"], "lifeFlagsNone": ["BREAKUP", "MARRIED"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_DISHES",
+      "text": "婚后第一次吵架是为了洗碗，第二天你们买了洗碗机。",
+      "delta": { "money": -3, "academics": 0, "career": 0, "wellbeing": 2 },
+      "when": { "lifeFlagsAll": ["MARRIED"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_KID_FIRST_WORD",
+      "text": "孩子学会的第一个词是“手机”，全家人沉默了。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 3 },
+      "when": { "lifeFlagsAll": ["KID"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_KID_COST",
+      "text": "奶粉、尿不湿、早教班，你的钱找到了新的去处。",
+      "delta": { "money": -6, "academics": 0, "career": 0, "wellbeing": -1 },
+      "when": { "lifeFlagsAll": ["KID"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_SINGLE_LEGO",
+      "text": "朋友们都在晒对象，你在晒刚拼好的乐高。",
+      "delta": { "money": -1, "academics": 0, "career": 0, "wellbeing": 1 },
+      "when": { "lifeFlagsNone": ["DATING", "MARRIED"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_BREAKUP_HAIRCUT",
+      "text": "分手后你剪了个新发型，理发师比你还紧张。",
+      "delta": { "money": -1, "academics": 0, "career": 0, "wellbeing": 3 },
+      "when": { "lifeFlagsAll": ["BREAKUP"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_STARTUP_ANGEL",
+      "text": "公司拿到了第一笔天使投资，投资人是你室友的爸爸。",
+      "delta": { "money": 5, "academics": 0, "career": 0, "wellbeing": -1 },
+      "when": { "lifeFlagsAll": ["STARTUP"], "lifeFlagsNone": ["STARTUP_EXIT", "CM_STARTUP_DEAD"] },
+      "weight": 6
+    },
+    {
+      "id": "LE_COMMON_STARTUP_LAUNCH",
+      "text": "产品上线第一天，注册用户十二个，其中十个是你同学。",
+      "delta": { "money": 0, "academics": 0, "career": 2, "wellbeing": -2 },
+      "when": { "lifeFlagsAll": ["STARTUP"], "lifeFlagsNone": ["STARTUP_EXIT", "CM_STARTUP_DEAD"] },
+      "weight": 6
+    },
+    {
+      "id": "LE_COMMON_STARTUP_PITCH",
+      "text": "路演结束，投资人问你有没有考虑过去大厂上班。",
+      "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": -3 },
+      "when": { "lifeFlagsAll": ["STARTUP"], "lifeFlagsNone": ["STARTUP_EXIT", "CM_STARTUP_DEAD"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_INFLUENCER_AD",
+      "text": "第一个品牌找你打广告，报酬是三箱螺蛳粉。",
+      "delta": { "money": 2, "academics": 0, "career": 0, "wellbeing": 2 },
+      "when": { "lifeFlagsAll": ["INFLUENCER"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_INFLUENCER_ALGO",
+      "text": "平台改了算法，你的播放量一夜之间少了一个零。",
+      "delta": { "money": -2, "academics": 0, "career": 0, "wellbeing": -3 },
+      "when": { "lifeFlagsAll": ["INFLUENCER"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_INFLUENCER_HATER",
+      "text": "评论区有人骂你，你点开主页，发现是你表弟。",
+      "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": -2 },
+      "when": { "lifeFlagsAll": ["INFLUENCER"] },
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_SIDE_INCOME",
+      "text": "副业的收入第一次超过了一个月的房租。",
+      "delta": { "money": 5, "academics": 0, "career": 0, "wellbeing": 1 },
+      "when": { "lifeFlagsAll": ["SIDE_HUSTLE"] },
+      "weight": 5
+    },
+    {
+      "id": "LE_COMMON_SYSTEM_SLEEP",
+      "text": "叮！系统任务：连续早睡七天。完成，奖励黑眼圈淡一号。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 3 },
+      "when": { "talentsAny": ["T_SYSTEM"] },
+      "weight": 10
+    },
+    {
+      "id": "LE_COMMON_SYSTEM_CALL",
+      "text": "叮！系统任务：给爸妈打一个十分钟以上的电话。已完成。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 3 },
+      "when": { "talentsAny": ["T_SYSTEM"] },
+      "weight": 10
+    },
+    {
+      "id": "LE_COMMON_SYSTEM_BOOK",
+      "text": "叮！系统任务：读完一本纸质书。奖励：脑子清醒了一点。",
+      "delta": { "money": 0, "academics": 2, "career": 0, "wellbeing": 0 },
+      "when": { "talentsAny": ["T_SYSTEM"] },
+      "weight": 10
+    },
+    {
+      "id": "LE_COMMON_SYSTEM_SAVE",
+      "text": "叮！系统任务：这个月存下一半收入。完成，系统表示欣慰。",
+      "delta": { "money": 3, "academics": 0, "career": 0, "wellbeing": 0 },
+      "when": { "talentsAny": ["T_SYSTEM"] },
+      "weight": 10
+    },
+    {
+      "id": "LE_COMMON_SYSTEM_SAY_NO",
+      "text": "叮！系统任务：拒绝一次不合理的要求。任务失败，下次一定。",
+      "delta": { "money": 0, "academics": 0, "career": 1, "wellbeing": -1 },
+      "when": { "talentsAny": ["T_SYSTEM"] },
+      "weight": 10
+    },
+    {
+      "id": "LE_COMMON_FUND",
+      "text": "你跟风买了一只基金，它和你的心情一起绿了。",
+      "delta": { "money": -4, "academics": 0, "career": 0, "wellbeing": -1 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_SELL_INSTRUMENT",
+      "text": "你把吃灰的乐器卖了，买家看起来比你更爱它。",
+      "delta": { "money": 3, "academics": 0, "career": 0, "wellbeing": -1 },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_COMMON_CLASS_GROUP",
+      "text": "高中同学群突然热闹起来，原来是班长开始卖保险了。",
+      "delta": { "money": -1, "academics": 0, "career": 0, "wellbeing": -1 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_TRAVEL",
+      "text": "你出门旅行了一趟，照片拍了八百张，朋友圈发了九张。",
+      "delta": { "money": -4, "academics": 0, "career": 0, "wellbeing": 5 },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_COMMON_HAIRLINE",
+      "text": "你在镜子前研究了很久，确认发际线又后退了一点。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": -2 },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_COMMON_BIRTHDAY_VOICE",
+      "text": "生日那天，爸妈准时在零点发来了六十秒语音。",
+      "delta": { "money": 0, "academics": 0, "career": 0, "wellbeing": 3 },
+      "when": {},
+      "weight": 3
+    },
+    {
+      "id": "LE_COMMON_PLANT",
+      "text": "你养死了第三盆多肉，决定改养塑料花。",
+      "delta": { "money": -1, "academics": 0, "career": 0, "wellbeing": -1 },
+      "when": {},
+      "weight": 3
+    }
+  ]
+}

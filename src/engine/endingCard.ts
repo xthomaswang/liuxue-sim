@@ -209,6 +209,7 @@ export function computeEndingCard(input: EndingCardInput): EndingCard {
     history: input.history,
     school: input.school ?? null,
     aspiration: profile.aspiration,
+    economy: profile.economy,
     transitionMode,
     tier,
   };

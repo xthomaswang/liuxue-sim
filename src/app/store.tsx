@@ -139,6 +139,7 @@ export function GameProvider(props: { catalog?: RuntimeCatalog; storage?: SaveSt
       runId: state.runId,
       seed: state.seed,
       card: state.ending.card,
+      outcomeId: state.life?.outcome?.id ?? null,
       rewards,
       at: new Date().toISOString(),
     });

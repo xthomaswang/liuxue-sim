@@ -3,8 +3,8 @@
 import { EVENT_BY_ID, TEXTS } from "../content";
 import { baseReadinessFor, finalReadiness, tierOdds, tierWeights } from "./admission";
 import {
-  MASTERS_ACADEMICS_MIN, MASTERS_PLANS, MASTERS_PROGRAM_ORDER, OPPORTUNITY_ORDER, PROBABILITY_MIN, READINESS_BONUS,
-  STRATEGY_BY_FLAG,
+  LIFE_YEARS, MASTERS_ACADEMICS_MIN, MASTERS_PLANS, MASTERS_PROGRAM_ORDER, OPPORTUNITY_ORDER, PROBABILITY_MIN,
+  READINESS_BONUS, STRATEGY_BY_FLAG,
 } from "./constants";
 import {
   eligibility, formulaTerms, gradVariables, mastersBlockers, mastersBudget, offeredList, probabilityCap,
@@ -15,7 +15,7 @@ import {
   DEGREE_NAMES, FOCUS_OUTCOME_SENTENCES, OPPORTUNITY_NAMES, ROUTE_NAMES, eventKindLabel, renderTemplate, termTitle,
   tidyCjkSpacing,
 } from "./labels";
-import { findHappening, findPlan } from "./pools";
+import { findHappening, findLifeEvent, findPlan, findSummer, lifeTrackContent } from "./pools";
 import { expectedEventId, planVectorFor, slateOf, talentTotalsOf, termCountOf } from "./reducer";
 import { applyDelta, clamp, efficiencyFactor } from "./rules";
 import { effectiveStipend, effectiveUpkeep } from "./talents";
@@ -41,6 +41,12 @@ export function stageInfo(state: RunState): StageInfo {
     return { stage: "HS", title: "高中最后一年", step: `事件 ${run.highSchoolNode ?? 1} / 2`, termIndex: 0, termCount: 0 };
   }
   if (run.phase === "SCHOOL_OFFERS") return { stage: "HS", title: "申请结果", step: null, termIndex: 0, termCount: 0 };
+  if (run.phase === "LIFE") {
+    // 毕业（或离校）之后：标题是接下来要过的那一年
+    const year = (run.life?.year ?? 0) + 1;
+    const left = run.ending?.kind === "EARLY" ? "离校" : "毕业";
+    return { stage: "LIFE", title: `${left}第 ${year} 年`, step: `第 ${year} / ${LIFE_YEARS} 年`, termIndex: run.life?.year ?? 0, termCount: LIFE_YEARS };
+  }
   const termCount = termCountOf(run);
   if (run.phase === "GRAD_PREVIEW" || run.phase === "GRAD_RESULTS") {
     const degree: Degree = run.stage === "MS" ? "MS" : "UG";
@@ -139,8 +145,9 @@ export function currentEvent(state: RunState): EventView | null {
 
 // ---------- 学期安排 ----------
 
+/** 某学期的全部记录；学期之后的暑假（记在刚结束的学期上）不算在学期账目里。 */
 function entriesOf(run: ActiveRun, termIndex: number): HistoryEntry[] {
-  return run.history.filter((entry) => entry.stage === run.stage && entry.termIndex === termIndex);
+  return run.history.filter((entry) => entry.stage === run.stage && entry.termIndex === termIndex && entry.kind !== "SUMMER");
 }
 
 /** FOCUS 阶段：本学期的资助、突发小事与可选的安排；其它阶段为 null。 */
@@ -258,6 +265,23 @@ function ledgerLine(entry: HistoryEntry): LedgerLine {
       return { kind: entry.kind, label: "学期基础变化", detail: null, delta };
     case "MASTERS_FEE":
       return { kind: entry.kind, label: "硕士入学费", detail: null, delta };
+    case "SUMMER":
+      return { kind: entry.kind, label: "暑假", detail: entry.summerId ? (findSummer(entry.summerId)?.text ?? null) : null, delta };
+    case "LIFE_BASE": {
+      const texts = entry.track ? lifeTrackContent(entry.track).base.texts : [];
+      return { kind: entry.kind, label: "这一年", detail: entry.textIndex !== undefined ? (texts[entry.textIndex] ?? null) : null, delta };
+    }
+    case "LIFE_PLAN": {
+      const plan = entry.track ? lifeTrackContent(entry.track).plans.find((item) => item.focus === entry.focus) : undefined;
+      return { kind: entry.kind, label: "这一年的重心", detail: plan?.name ?? null, delta };
+    }
+    case "LIFE_EVENT":
+      return {
+        kind: entry.kind,
+        label: entry.milestone ? "里程碑" : "生活小事",
+        detail: entry.lifeEventId ? (findLifeEvent(entry.lifeEventId)?.text ?? null) : null,
+        delta,
+      };
   }
 }
 

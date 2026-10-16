@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { LEGACY_GALLERY_KEY, PROGRESS_KEY, SAVE_KEY } from "../../app/storage";
 import type { SaveStorage } from "../../app/storage";
 import { ACHIEVEMENTS, TALENTS } from "../../content";
-import { loadSave, serializeSave } from "../../engine";
+import { loadSave, serializeSave, summaryView } from "../../engine";
 import {
   allocateEvenly,
   app,
@@ -43,6 +43,10 @@ describe("一局只结算一次", () => {
     expect(first.runs).toBe(1);
     expect(first.rewardedRuns).toEqual([ending.runId]);
     expect(first.tiers[ending.ending?.card.tier ?? ""]?.count).toBe(1);
+    // 第四版：五年后的结局也记进进度。
+    const life = summaryView(ending).life;
+    if (life) expect(first.outcomes[life.outcome.id]?.count).toBe(1);
+    else expect(first.outcomes).toEqual({});
     expect(first.lastRewards?.runId).toBe(ending.runId);
     // 结算结果与直接用引擎判定的一致。
     const expected = headless(5).rewards;

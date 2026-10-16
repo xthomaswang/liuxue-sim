@@ -4,11 +4,12 @@
 
 import { ALL_EVENTS } from "../content";
 import {
-  ALL_TIERS, ARC_ORDER, ASPIRATION_ORDER, CONTENT_VERSION, ECONOMY_ORDER, EXPECTATION_ORDER, FOCUS_ORDER, OFFER_COUNT,
-  RULES_VERSION, SAVE_FORMAT, STAT_KEYS, STAT_MAX, STAT_MIN, TALENT_PICK_CLASSIC, TALENT_PICK_STANDARD, UG_TERMS,
+  ALL_TIERS, ARC_ORDER, ASPIRATION_ORDER, CONTENT_VERSION, ECONOMY_ORDER, EXPECTATION_ORDER, FOCUS_ORDER,
+  LIFE_TRACK_ORDER, LIFE_YEARS, OFFER_COUNT, RULES_VERSION, SAVE_FORMAT, STAT_KEYS, STAT_MAX, STAT_MIN,
+  TALENT_PICK_CLASSIC, TALENT_PICK_STANDARD, UG_TERMS,
 } from "./constants";
 import { findEarlyEnding } from "./early";
-import { findTalent, talentPool } from "./pools";
+import { findLifeOutcome, findTalent, talentPool } from "./pools";
 import { applyAction, createRun } from "./reducer";
 import { totalFocus } from "./rules";
 import { drawPool, economyFromFamily, normalizeUnlocked, pointsWellFormed } from "./talents";
@@ -18,7 +19,7 @@ import type {
 
 const PHASES: readonly Phase[] = [
   "SETUP", "HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS",
-  "ENDING",
+  "LIFE", "ENDING",
 ];
 const MODES: readonly RunMode[] = ["standard", "classic"];
 const KNOWN_FLAGS: ReadonlySet<string> = new Set(ALL_EVENTS.flatMap((event) => event.choices.flatMap((choice) => choice.setFlags)));
@@ -94,6 +95,47 @@ function schoolProblem(value: unknown, where: string): string | null {
   return null;
 }
 
+/** 毕业（或离校）之后五年的记录（docs/24 §4）：只在正式玩法、离校之后才有。 */
+function lifeProblem(run: ActiveRun): string | null {
+  const life = run.life as unknown;
+  if (!isRecord(life)) return "毕业后的记录缺失";
+  if (run.mode !== "standard") return "classic 模式没有毕业后的五年";
+  const ending = run.ending as unknown;
+  if (!isRecord(ending)) return "毕业后的阶段缺少结局记录";
+  if (!LIFE_TRACK_ORDER.includes(life.track as never)) return "life.track 无效";
+  const tracks = life.tracks;
+  if (!Array.isArray(tracks) || tracks.length === 0 || !tracks.every((track) => LIFE_TRACK_ORDER.includes(track as never))) return "life.tracks 无效";
+  if (tracks[tracks.length - 1] !== life.track) return "life.tracks 的最后一项不是当前轨道";
+  const first = ending.kind === "EARLY" ? (findEarlyEnding(ending.early as string)?.lifeTrack ?? "DROPOUT") : ending.route;
+  if (tracks[0] !== first) return "毕业后的起点轨道与结局不符";
+  if (!isInt(life.year) || life.year < 0 || life.year > LIFE_YEARS) return "life.year 无效";
+  if (run.termIndex !== life.year) return "毕业后的 termIndex 与年份不符";
+  if (!isInt(life.startAge)) return "life.startAge 无效";
+  const start = statsProblem(life.startStats, "life.startStats");
+  if (start) return start;
+  if (!Array.isArray(life.flags) || !life.flags.every((flag) => typeof flag === "string")) return "life.flags 无效";
+  if (new Set(life.flags).size !== life.flags.length) return "life.flags 有重复";
+  const counts = life.focusCounts;
+  if (!isRecord(counts)) return "life.focusCounts 缺失";
+  let years = 0;
+  for (const focus of FOCUS_ORDER) {
+    if (!isInt(counts[focus]) || (counts[focus] as number) < 0) return `life.focusCounts.${focus} 无效`;
+    years += counts[focus] as number;
+  }
+  if (years !== life.year) return "毕业后的重心次数与年份不符";
+  const finished = life.year === LIFE_YEARS;
+  if (finished !== (run.phase === "ENDING")) return "毕业后的年份与阶段不符";
+  if (!finished && run.phase !== "LIFE") return "毕业后的阶段无效";
+  if (finished) {
+    const outcome = life.outcome;
+    if (!isRecord(outcome) || findLifeOutcome(outcome.id as string)?.track !== outcome.track) return "五年后的结局无效";
+    if (outcome.track !== life.track) return "五年后的结局不在最后的轨道上";
+  } else if (life.outcome !== null) {
+    return "还没过完五年却已有五年后的结局";
+  }
+  return null;
+}
+
 /** 返回第一条发现的问题；没有问题返回 null。 */
 export function invariantProblem(state: unknown): string | null {
   if (!isRecord(state)) return "state 不是对象";
@@ -157,7 +199,7 @@ export function invariantProblem(state: unknown): string | null {
   }
   if (arcs.A !== null && arcs.A === arcs.B) return "两条支线相同";
 
-  if (!["HS", "UG", "MS"].includes(state.stage as string)) return "stage 无效";
+  if (!["HS", "UG", "MS", "LIFE"].includes(state.stage as string)) return "stage 无效";
   if (!isInt(state.termIndex)) return "termIndex 无效";
   if (!(state.mastersYears === null || state.mastersYears === 1 || state.mastersYears === 2)) return "mastersYears 无效";
   if (!Array.isArray(state.history)) return "history 无效";
@@ -175,7 +217,16 @@ export function invariantProblem(state: unknown): string | null {
   const phase = run.phase;
   const stage = run.stage;
   const total = totalFocus(run.focusCounts);
-  if (stage === "HS") {
+  if (state.life !== undefined && state.life !== null && stage !== "LIFE") return "还没离校却已有毕业后的记录";
+  if (state.mode === "standard" && phase === "ENDING" && stage !== "LIFE") return "正式玩法的结局应在毕业后的五年之后";
+  if (stage === "LIFE") {
+    // 离校之后：结局卡已经定了，在校期间的安排次数不再变化
+    if (phase !== "LIFE" && phase !== "ENDING") return "毕业后的 phase 无效";
+    const school = schoolProblem(state.school, "school");
+    if (school) return school;
+    const problem = lifeProblem(run);
+    if (problem) return problem;
+  } else if (stage === "HS") {
     if (phase !== "HIGH_SCHOOL_EVENT" && phase !== "SCHOOL_OFFERS") return "高中阶段的 phase 无效";
     if (total !== 0 || run.termIndex !== 0) return "高中阶段不应有学期安排或学期";
     if (run.school !== null) return "高中阶段不应已有学校";
@@ -209,7 +260,7 @@ export function invariantProblem(state: unknown): string | null {
     if (new Set((state.offers as Array<Record<string, unknown>>).map((offer) => offer.tier)).size !== 1) return "offers 不同档";
     if (run.school && !ids.has(run.school.unitid)) return "所选学校不在 offers 中";
   }
-  if (phase !== "ENDING") return state.ending !== null ? "尚未终局却已有结局记录" : null;
+  if (phase !== "ENDING" && phase !== "LIFE") return state.ending !== null ? "尚未终局却已有结局记录" : null;
   const ending = state.ending;
   if (!isRecord(ending) || !isRecord(ending.card)) return "结局记录缺失";
   if (ending.kind === "EARLY") {
@@ -220,7 +271,8 @@ export function invariantProblem(state: unknown): string | null {
   } else if (ending.kind === "GRADUATION") {
     if (ending.early !== null || ending.card.early !== null) return "毕业结局不应带中途结局";
     if (!["PHD", "LOCAL_JOB", "HOME_JOB", "TRANSITION"].includes(ending.route as string)) return "毕业结局的去向无效";
-    if (!run.graduations[run.stage === "MS" ? "MS" : "UG"]) return "毕业结局缺少毕业快照";
+    if (ending.degree !== "UG" && ending.degree !== "MS") return "毕业结局的学段无效";
+    if (!run.graduations[ending.degree]) return "毕业结局缺少毕业快照";
   } else {
     return "结局类型无效";
   }

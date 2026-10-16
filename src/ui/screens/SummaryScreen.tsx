@@ -1,11 +1,11 @@
-// 人生总结：结局、结局卡、五年后、最终属性、本局收获（新成就与新解锁的天赋）、继承天赋、再次重开。
+// 人生总结（docs/24 §8）：五年后 → 当年（去向结局或中途结局）→ 结局标题与结局卡 → 事实 → 本局收获、继承天赋、再次重开。
 
 import { useState } from "react";
 import { copyText } from "../../app/clipboard";
 import { useGame } from "../../app/store";
 import { ACHIEVEMENTS, ENDING_CARDS, TALENTS } from "../../content";
 import { summaryView } from "../../engine";
-import type { ActiveRun, EndingCard } from "../../engine";
+import type { ActiveRun, EndingCard, RunRewards, SummaryView as SummaryViewData } from "../../engine";
 import { RarityTag } from "../components";
 import { rollText, schoolText } from "../format";
 import { OUTCOME_LABEL, POINT_NAME, POINT_ORDER, S } from "../strings";
@@ -13,23 +13,63 @@ import { OUTCOME_LABEL, POINT_NAME, POINT_ORDER, S } from "../strings";
 export function SummaryScreen(props: { state: ActiveRun; onOpenGallery: () => void }) {
   const store = useGame();
   const view = summaryView(props.state);
-  const [copyState, setCopyState] = useState<"idle" | "ok" | "failed">("idle");
   if (!view) return null;
+  return (
+    <SummaryContent
+      view={view}
+      rewards={store.rewards}
+      inherit={store.progress.inherit}
+      onInherit={store.setInherit}
+      onPlayAgain={() => store.startRun()}
+      onOpenGallery={props.onOpenGallery}
+    />
+  );
+}
+
+/** 纯展示：总结页的全部内容。收获、继承与按钮的动作由外面传入。 */
+export function SummaryContent(props: {
+  view: SummaryViewData;
+  rewards: RunRewards | null;
+  inherit: string | null;
+  onInherit: (id: string | null) => void;
+  onPlayAgain: () => void;
+  onOpenGallery: () => void;
+}) {
+  const { view, rewards, inherit } = props;
+  const [copyState, setCopyState] = useState<"idle" | "ok" | "failed">("idle");
 
   const copySeed = () => {
     void copyText(String(view.seed)).then((ok) => setCopyState(ok ? "ok" : "failed"));
   };
 
-  const rewards = store.rewards;
   const newAchievements = rewards ? ACHIEVEMENTS.filter((item) => rewards.achievements.includes(item.id)) : [];
   const newTalent = rewards?.unlockedTalent ? TALENTS.find((talent) => talent.id === rewards.unlockedTalent) : undefined;
-  const inherit = store.progress.inherit;
+  // life 与 gpa 是第四版加的；缺省（或经典模式为 null）时按第三版的样子显示。
+  const life = view.life ?? null;
+  const gpa = typeof view.gpa === "number" ? view.gpa : null;
 
   return (
     <div className="screen" data-testid="screen-summary">
+      {life ? (
+        <section className="life" data-testid="life-block" data-outcome={life.outcome.id} data-grade={life.outcome.grade}>
+          <p className="eyebrow">
+            {S.lifeHeading} · <span data-testid="life-age">{S.ageLabel(life.age)}</span>
+          </p>
+          <h2 className="life-name">
+            <RarityTag rarity={life.outcome.grade} />
+            <span data-testid="life-outcome">{life.outcome.name}</span>
+          </h2>
+          <p className="roast">{life.outcome.roast}</p>
+          <p className="prose">{life.outcome.text}</p>
+          <p className="muted small" data-testid="life-path">
+            {S.lifePath(life.trackNames)}
+          </p>
+        </section>
+      ) : null}
+
       {view.card.flavor ? (
-        <section className="flavor" data-flavor={view.card.flavor.id}>
-          <p className="eyebrow">{S.flavorLead}</p>
+        <section className={`flavor${life ? " then" : ""}`} data-flavor={view.card.flavor.id}>
+          <p className="eyebrow">{life ? S.flavorLeadThen : S.flavorLead}</p>
           <h2 className="flavor-name" data-testid="ending-flavor">
             {view.card.flavor.name}
           </h2>
@@ -37,7 +77,8 @@ export function SummaryScreen(props: { state: ActiveRun; onOpenGallery: () => vo
           <p className="prose">{view.card.flavor.text}</p>
         </section>
       ) : view.card.early ? (
-        <section className="flavor" data-early={view.card.early}>
+        <section className={`flavor${life ? " then" : ""}`} data-early={view.card.early}>
+          {life ? <p className="eyebrow">{S.earlyLeadThen}</p> : null}
           <h2 className="flavor-name" data-testid="ending-early">
             {view.card.name}
           </h2>
@@ -62,16 +103,19 @@ export function SummaryScreen(props: { state: ActiveRun; onOpenGallery: () => vo
 
       <EndingCardPanel card={view.card} />
 
-      <section className="describe">
-        <h3 className="section-heading">{S.epilogueHeading}</h3>
-        <p className="prose" data-testid="ending-epilogue">
-          {view.epilogue}
-        </p>
-      </section>
+      {/* 有毕业后的五年时，原来那段“五年后”的文字由上面的五年后结局代替。 */}
+      {life ? null : (
+        <section className="describe">
+          <h3 className="section-heading">{S.epilogueHeading}</h3>
+          <p className="prose" data-testid="ending-epilogue">
+            {view.epilogue}
+          </p>
+        </section>
+      )}
 
       <section className="facts" data-testid="summary-facts">
         <p>
-          <span className="label">{S.finalStats}</span>
+          <span className="label">{life ? S.lifeHeading : S.finalStats}</span>
           <span className="inline-list">
             {view.stats.map((item) => (
               <span key={item.key} data-testid={`final-${item.key}`}>
@@ -80,6 +124,24 @@ export function SummaryScreen(props: { state: ActiveRun; onOpenGallery: () => vo
             ))}
           </span>
         </p>
+        {life ? (
+          <p data-testid="start-stats">
+            <span className="label">{S.startStats}</span>
+            <span className="inline-list">
+              {life.startStats.map((item) => (
+                <span key={item.key}>
+                  {item.name} {item.value} <span className="muted">{item.rating}</span>
+                </span>
+              ))}
+            </span>
+          </p>
+        ) : null}
+        {gpa !== null ? (
+          <p data-testid="summary-gpa">
+            <span className="label">{S.gpaLabel}</span>
+            {gpa.toFixed(2)}
+          </p>
+        ) : null}
         {view.school ? (
           <p>
             <span className="label">{S.schoolPrefix}</span>
@@ -152,7 +214,7 @@ export function SummaryScreen(props: { state: ActiveRun; onOpenGallery: () => vo
                 className={`talent-row compact rarity-row-${talent.rarity}${selected ? " selected" : ""}`}
                 aria-pressed={selected}
                 data-testid={`inherit-${talent.id}`}
-                onClick={() => store.setInherit(selected ? null : talent.id)}
+                onClick={() => props.onInherit(selected ? null : talent.id)}
               >
                 <span className="talent-head">
                   <RarityTag rarity={talent.rarity} />
@@ -165,7 +227,7 @@ export function SummaryScreen(props: { state: ActiveRun; onOpenGallery: () => vo
         </div>
       </section>
 
-      <button type="button" className="button primary big" data-testid="play-again" onClick={() => store.startRun()}>
+      <button type="button" className="button primary big" data-testid="play-again" onClick={props.onPlayAgain}>
         {S.playAgain}
       </button>
 

@@ -80,9 +80,9 @@ describe("序列化与读回", () => {
         expect(stableStringify(loaded.state)).toBe(stableStringify(state));
       }
     }
-    // 覆盖了开局、高中、选校、学期内各阶段、毕业与结局；第二版没有学期小结
+    // 覆盖了开局、高中、选校、学期内各阶段、毕业、毕业后的五年与结局；第二版没有学期小结
     expect([...phases].sort()).toEqual(
-      ["SETUP", "HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "ENDING"].sort(),
+      ["SETUP", "HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "LIFE", "ENDING"].sort(),
     );
   });
 
@@ -92,8 +92,8 @@ describe("序列化与读回", () => {
     expect(envelope.schemaVersion).toBe(1);
     expect(envelope.log).toHaveLength(sample.state.revision);
     expect(envelope.state).toMatchObject({ seed: SEED, mode: "standard", rulesVersion: RULES_VERSION, contentVersion: CONTENT_VERSION });
-    expect(RULES_VERSION).toBe("3.0.0");
-    expect(CONTENT_VERSION).toBe("3.0.0");
+    expect(RULES_VERSION).toBe("4.0.0");
+    expect(CONTENT_VERSION).toBe("4.0.0");
     // 开局的输入随存档保存：分点、已解锁的天赋、继承的天赋
     expect(asActive(envelope.state).profile.points).toEqual(asActive(sample.state).profile.points);
     expect(envelope.state).toMatchObject({ unlockedTalents: [], inheritedTalent: null });

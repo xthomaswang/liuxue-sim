@@ -39,6 +39,7 @@ export function schoolDisplayName(school: RuntimeSchool): string {
 export function termTitle(stage: Stage, termIndex: number): string {
   if (stage === "HS") return "高中";
   if (stage === "UG") return `本科 · ${UG_TERM_NAMES[termIndex - 1] ?? `第 ${termIndex} 学期`}`;
+  if (stage === "LIFE") return `毕业后 · 第 ${termIndex} 年`;
   return `硕士 · 第 ${termIndex} 学期`;
 }
 

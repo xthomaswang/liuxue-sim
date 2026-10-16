@@ -1,0 +1,1589 @@
+{
+  "track": "HOME_JOB",
+  "name": "回国工作",
+  "base": {
+    "delta": {
+      "money": 4,
+      "academics": 0,
+      "career": 1,
+      "wellbeing": -3
+    },
+    "texts": [
+      "工作群从三个变成了十一个，消息永远是 99+。",
+      "爸妈每周问一次工作，问两次对象。",
+      "你学会了在群里秒回“收到”。",
+      "这一年你收藏了两百篇干货文章，一篇也没看完。",
+      "年终奖比预期少一点，比去年多一点。",
+      "房价没怎么涨，你的焦虑涨了。",
+      "你的口头禅从“OK”变成了“好的收到”。",
+      "你在外卖软件上的会员等级，比职级升得快。"
+    ]
+  },
+  "plans": [
+    {
+      "focus": "STUDY",
+      "name": "考证考公",
+      "delta": {
+        "money": -1,
+        "academics": 5,
+        "career": 0,
+        "wellbeing": -4
+      }
+    },
+    {
+      "focus": "CAREER",
+      "name": "卷绩效",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 5,
+        "wellbeing": -6
+      }
+    },
+    {
+      "focus": "CAMPUS",
+      "name": "约饭社交",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 5
+      }
+    },
+    {
+      "focus": "WORK",
+      "name": "加班搞钱",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -5
+      }
+    },
+    {
+      "focus": "REST",
+      "name": "躺平",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": 8
+      }
+    }
+  ],
+  "milestones": [
+    {
+      "id": "LM_HOME_JOB_CIVIL_GENE",
+      "text": "考公这件事你像是天生就会：申论一写就顺，面试一站就稳，上岸了。",
+      "delta": {
+        "money": -2,
+        "academics": 2,
+        "career": 2,
+        "wellbeing": 6
+      },
+      "when": {
+        "talentsAny": [
+          "T_CIVIL_GENE"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "academics": 65
+        }
+      },
+      "chancePermille": 320,
+      "setFlags": [
+        "CIVIL_SERVANT"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_CIVIL",
+      "text": "你一边上班一边考公考编，熬过两轮笔试，终于上岸了。",
+      "delta": {
+        "money": -2,
+        "academics": 2,
+        "career": 2,
+        "wellbeing": 6
+      },
+      "when": {
+        "talentsNone": [
+          "T_CIVIL_GENE"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "academics": 65
+        }
+      },
+      "chancePermille": 80,
+      "setFlags": [
+        "CIVIL_SERVANT"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_GOV_PROMOTE",
+      "text": "你被提拔了，办公室从走廊尽头搬到了朝南那间。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 6,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT",
+          "HJ_GOV_BASE"
+        ],
+        "statMin": {
+          "career": 45
+        }
+      },
+      "chancePermille": 250,
+      "setFlags": [
+        "PROMOTED"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_GOV_BASE",
+      "text": "上岸后你被派去基层锻炼，学会了用方言开会。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "chancePermille": 400,
+      "setFlags": [
+        "HJ_GOV_BASE"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_QUIT",
+      "text": "你裸辞了，交接文档写得比当年的申请文书还认真。",
+      "delta": {
+        "money": -4,
+        "academics": 0,
+        "career": -3,
+        "wellbeing": 10
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "BURNOUT"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "FIRE"
+        ],
+        "statMax": {
+          "wellbeing": 40
+        }
+      },
+      "chancePermille": 350,
+      "setTrack": "TRANSITION"
+    },
+    {
+      "id": "LM_HOME_JOB_BURNOUT",
+      "text": "你的电子木鱼已经敲出了十万功德，班还是不想上。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -2,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_ONBOARD"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "BURNOUT"
+        ],
+        "statMax": {
+          "wellbeing": 25
+        }
+      },
+      "chancePermille": 400,
+      "setFlags": [
+        "BURNOUT"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_BOTTOM",
+      "text": "绩效连续垫底，你被末位淘汰，工牌当天下午就刷不开门了。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": -6,
+        "wellbeing": -6
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_ONBOARD"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMax": {
+          "career": 45
+        }
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "LAID_OFF"
+      ],
+      "setTrack": "TRANSITION"
+    },
+    {
+      "id": "LM_HOME_JOB_LAYOFF",
+      "text": "公司宣布“降本增效”，你领了 N+1，两个月后在别家入职。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": -3,
+        "wellbeing": -5
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_ONBOARD"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "chancePermille": 60,
+      "setFlags": [
+        "LAID_OFF"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_PROMOTED",
+      "text": "你升职了，工资涨了一点，要背的锅涨了很多。",
+      "delta": {
+        "money": 4,
+        "academics": 0,
+        "career": 6,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_ONBOARD"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "career": 65
+        }
+      },
+      "chancePermille": 280,
+      "setFlags": [
+        "PROMOTED"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_JOB_HOP",
+      "text": "猎头打来电话，你跳槽了，涨了薪，也涨了工时。",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_ONBOARD"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "career": 50
+        }
+      },
+      "chancePermille": 180,
+      "setFlags": [
+        "JOB_HOP"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_FIRE",
+      "text": "你算了算存款，决定不上班了，去山里开一家没什么客人的民宿。",
+      "delta": {
+        "money": -6,
+        "academics": 0,
+        "career": -4,
+        "wellbeing": 10
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_IPO"
+        ],
+        "lifeFlagsNone": [
+          "FIRE"
+        ],
+        "statMin": {
+          "money": 75
+        },
+        "yearMin": 4
+      },
+      "chancePermille": 500,
+      "setFlags": [
+        "FIRE"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_IPO",
+      "text": "公司上市了，敲钟那天你在工位上，把期权换算成了几平米的房子。",
+      "delta": {
+        "money": 12,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_ONBOARD"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "career": 70
+        }
+      },
+      "chancePermille": 50,
+      "setFlags": [
+        "HJ_IPO"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_SIDE_HUSTLE",
+      "text": "下班后你开始接私活，周末比工作日还忙。",
+      "delta": {
+        "money": 6,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "SIDE_HUSTLE"
+        ]
+      },
+      "chancePermille": 60,
+      "setFlags": [
+        "SIDE_HUSTLE"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_HOUSE_MARRIED",
+      "text": "婚后两家凑齐了首付，房产证上加名字的事讨论了一整晚。",
+      "delta": {
+        "money": -12,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "MARRIED"
+        ],
+        "lifeFlagsNone": [
+          "HOUSE"
+        ],
+        "statMin": {
+          "money": 30
+        }
+      },
+      "chancePermille": 300,
+      "setFlags": [
+        "HOUSE"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_HOUSE",
+      "text": "你看了十遍售楼处的沙盘，最后签下了最小的那套和三十年房贷。",
+      "delta": {
+        "money": -12,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "HOUSE"
+        ],
+        "statMin": {
+          "money": 60
+        }
+      },
+      "chancePermille": 200,
+      "setFlags": [
+        "HOUSE"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_HOMETOWN",
+      "text": "你把工作换回了老家，通勤从一小时变成了十分钟。",
+      "delta": {
+        "money": -3,
+        "academics": 0,
+        "career": -4,
+        "wellbeing": 8
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_ONBOARD"
+        ],
+        "lifeFlagsNone": [
+          "HJ_HOMETOWN",
+          "CIVIL_SERVANT"
+        ],
+        "statMax": {
+          "wellbeing": 40
+        }
+      },
+      "chancePermille": 100,
+      "setFlags": [
+        "HJ_HOMETOWN"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_HALO_FADE",
+      "text": "新同事也是海归，还比你多一个硕士学位。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -3,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "RETURNED",
+          "HJ_ONBOARD"
+        ]
+      },
+      "chancePermille": 120,
+      "setFlags": [
+        "HJ_HALO_GONE"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_ONBOARD_HAIGUI",
+      "text": "入职那天，领导介绍你时特意加了一句：海归。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "RETURNED",
+          "HJ_ONBOARD"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "RETURNED",
+        "HJ_ONBOARD"
+      ]
+    },
+    {
+      "id": "LM_HOME_JOB_ONBOARD",
+      "text": "试用期结束，你转正了，工牌照片终于换成了睁眼的那张。",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": 0
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "RETURNED"
+        ],
+        "lifeFlagsNone": [
+          "HJ_ONBOARD"
+        ]
+      },
+      "chancePermille": 1000,
+      "setFlags": [
+        "HJ_ONBOARD"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "LE_HOME_JOB_BIG_SMALL_WEEK",
+      "text": "公司开始实行大小周，你的周末从两天变成了一天半。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "HJ_HOMETOWN"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_HOME_JOB_996",
+      "text": "这一年你见过的凌晨两点的写字楼，比日出还多。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -5
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "HJ_HOMETOWN"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_HOME_JOB_325",
+      "text": "年底绩效拿了 3.25，你第一次觉得小数点这么扎心。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": -3,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_BONUS_BIG",
+      "text": "年终奖发了五个月，你在工位上努力表现得很平静。",
+      "delta": {
+        "money": 7,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "career": 60
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_BONUS_CARD",
+      "text": "年终奖是一张超市购物卡，和一句“明年会更好”。",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_PIE",
+      "text": "老板在年会上画了一张饼：明年上市，人人有份。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_TEAM_HIKE",
+      "text": "单位团建去爬山，领导在山顶即兴讲了半小时话。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_TEAM_MURDER_MYSTERY",
+      "text": "团建的剧本杀里你演了凶手，从此同事都让你三分。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": 3
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_INVOLUTION",
+      "text": "组里有人每天十一点下班，大家只好十一点半走。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -5
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_LIE_FLAT",
+      "text": "你开始到点下班，发现地球没有因此停转。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -3,
+        "wellbeing": 5
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_NECK",
+      "text": "你的颈椎开始在每天下午三点准时报警。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_AGE_35",
+      "text": "招聘启事写着“35 岁以下”，你悄悄算了算自己还剩几年。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "yearMin": 2
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_HAIGUI_EMAIL",
+      "text": "同事听说你是海归，周会上请你教大家写英文邮件。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "RETURNED"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_HAIGUI_ENGLISH",
+      "text": "你说话夹的英文单词越来越少，只剩下“OK”和“deadline”。",
+      "delta": {
+        "money": 0,
+        "academics": -1,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "RETURNED"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_COMMUTE",
+      "text": "通勤单程一个半小时，你在地铁上学会了站着睡觉。",
+      "delta": {
+        "money": 0,
+        "academics": 1,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "HJ_HOMETOWN"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_ROOMMATE",
+      "text": "合租的新室友每天凌晨两点在客厅打游戏，你买了第三副耳塞。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "HOUSE"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_MORTGAGE",
+      "text": "房贷扣款日，工资在卡里待了不到一个小时。",
+      "delta": {
+        "money": -5,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HOUSE"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_HOME_JOB_MATCHMAKING_CORNER",
+      "text": "爸妈把你的资料挂上了公园相亲角，“海归”两个字写得特别大。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "DATING",
+          "MARRIED"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_BLIND_DATE",
+      "text": "相亲时对方拿出一张表格，你的每一栏都被打了分。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "DATING",
+          "MARRIED"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_BRIDE_PRICE",
+      "text": "两家人谈彩礼谈了一晚上，最后定了一个吉利的数字。",
+      "delta": {
+        "money": -5,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "DATING"
+        ],
+        "lifeFlagsNone": [
+          "BREAKUP",
+          "MARRIED"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_SCHOOL_DISTRICT",
+      "text": "孩子还不会走路，你已经把附近学校的划片背熟了。",
+      "delta": {
+        "money": -2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "KID"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_HOME_JOB_BOSS_TALK",
+      "text": "领导说“年轻人多做点没坏处”，然后把自己的活给了你。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -4
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_MIDNIGHT_QUESTION",
+      "text": "凌晨十二点，老板在群里发了一个问号，全组都醒了。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_LUCKY_DRAW",
+      "text": "年会抽奖你中了一台扫地机器人，它每天只工作一小时。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_NEW_PROJECT",
+      "text": "你被拉进一个新项目，名字很宏大，人只有三个。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_MENTOR_LEFT",
+      "text": "带你的师傅离职了，走前把所有的锅都留给了你。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -3
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_RAISE",
+      "text": "调薪通知来了，你数了两遍，确认不是系统出错。",
+      "delta": {
+        "money": 3,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {},
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_HOUSING_FUND",
+      "text": "你第一次查了公积金余额，突然觉得买房有了一点盼头。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 2
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "HOUSE"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_BUSINESS_TRIP",
+      "text": "你出差去了一座没听说过的城市，只记住了它的高铁站。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -2
+      },
+      "when": {},
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_OVERTIME_PAY",
+      "text": "这个月的加班费比工资还多，你不知道该笑还是该哭。",
+      "delta": {
+        "money": 5,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": -4
+      },
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_EV_PLATE",
+      "text": "你摇号一直没中，最后买了一辆绿牌电车。",
+      "delta": {
+        "money": -5,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "statMin": {
+          "money": 35
+        }
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_GOV_REPORT",
+      "text": "你写的材料第一次被领导表扬，评语是“很有高度”。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 3,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_HOME_JOB_GOV_THERMOS",
+      "text": "单位发了保温杯，你泡下了人生第一杯枸杞。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": -1,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_HOME_JOB_GOV_MEETINGS",
+      "text": "这一年你开了两百个会，笔记本上画满了小人。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_HOME_JOB_GOV_PENSION",
+      "text": "你对着工资条，算出了自己退休那年能拿多少。",
+      "delta": {
+        "money": 1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_GOV_RELATIVES",
+      "text": "亲戚们开始叫你“领导”，你连科室的钥匙都还没配齐。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 3
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_GOV_CANTEEN",
+      "text": "单位食堂一顿饭几块钱，你一年胖了十斤。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_HOMETOWN_DINNER",
+      "text": "在老家上班，你妈每天中午准时打电话问你回不回家吃饭。",
+      "delta": {
+        "money": -1,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 4
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_HOMETOWN"
+        ]
+      },
+      "weight": 6
+    },
+    {
+      "id": "LE_HOME_JOB_HOMETOWN_REUNION",
+      "text": "老家的同学聚会上，大家都在比谁家孩子先上幼儿园。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_HOMETOWN"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_NEW_JARGON",
+      "text": "跳槽后的第一周，你把新公司的缩写词表背了三遍。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "JOB_HOP"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_SEVERANCE",
+      "text": "你把赔偿金存了定期，假装那是今年的年终奖。",
+      "delta": {
+        "money": 2,
+        "academics": 0,
+        "career": 0,
+        "wellbeing": 1
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "LAID_OFF"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LE_HOME_JOB_FIRST_REPORT",
+      "text": "升职后你有了第一个下属，TA 摸鱼的技术比你还好。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -2
+      },
+      "when": {
+        "lifeFlagsAll": [
+          "PROMOTED"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LE_HOME_JOB_HEIR_MEETING",
+      "text": "厂里开会，老员工都叫你“小老板”，然后继续按老规矩办事。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 2,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_HEIR"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LE_HOME_JOB_HEIR_REFORM",
+      "text": "你想在厂里推行英文邮件，第二天被你爸叫去喝了一下午茶。",
+      "delta": {
+        "money": 0,
+        "academics": 0,
+        "career": 1,
+        "wellbeing": -2
+      },
+      "when": {
+        "earlies": [
+          "E_HEIR"
+        ]
+      },
+      "weight": 6
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "LO_HOME_JOB_DEFAULT",
+      "name": "普通打工人",
+      "roast": "工牌换了三次颜色，人还是那个人。",
+      "text": "五年过去，你从新人熬成了老人。工资涨了一点，头发少了一点，周末补觉的时间越来越长。",
+      "hint": "在工位上平稳度过的五年。",
+      "grade": "N",
+      "when": {},
+      "weight": 2,
+      "fallback": true
+    },
+    {
+      "id": "LO_HOME_JOB_CIVIL",
+      "name": "考公上岸",
+      "roast": "绕地球一圈，终点是编制。",
+      "text": "你成了一名公务员，工作日按时上下班，周末按时陪家人。留学那几年，现在是你在单位里最有谈资的一段经历。",
+      "hint": "有编制的五年。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ]
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_HOME_JOB_SALTED_FISH",
+      "name": "体制内咸鱼",
+      "roast": "上进心退休了，人还在岗。",
+      "text": "你在单位找到了最舒服的节奏：开会坐后排，材料按时交，从不争先也从不落后。下班后的生活，才是你的主业。",
+      "hint": "编制在手，心态很稳。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "wellbeing": 50
+        }
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_HOME_JOB_GOV_STAR",
+      "name": "体制内新星",
+      "roast": "从小科员到小领导，比预想的快。",
+      "text": "你写的材料越来越有高度，开会的座位越来越靠前。单位里的年轻人开始叫你一声“老师”，你一时没反应过来。",
+      "hint": "上岸之后还在往上走。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT",
+          "PROMOTED"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_HOME_JOB_BIGTECH",
+      "name": "大厂高级打工人",
+      "roast": "职级升了，班车的末班也晚了。",
+      "text": "你在大厂升到了带团队的级别，周报从写自己的变成了改别人的。工资翻了一番，体检报告也翻了一页。",
+      "hint": "职级和发际线，此消彼长。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "PROMOTED"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "career": 75
+        }
+      },
+      "weight": 7
+    },
+    {
+      "id": "LO_HOME_JOB_MORTGAGE",
+      "name": "房奴",
+      "roast": "房子是你的，你是银行的。",
+      "text": "你有了自己的房子，也有了三十年的房贷。你不敢生病，不敢辞职，连换手机都要先算一算。",
+      "hint": "上车之后才知道车很贵。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "HOUSE"
+        ],
+        "statMax": {
+          "money": 60
+        }
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_HOME_JOB_MIDDLE_ANXIETY",
+      "name": "中产焦虑",
+      "roast": "什么都有了，除了安全感。",
+      "text": "房贷、车贷、各种会员费，你的每一分钱都有了去处。朋友说你是中产，你算了算，觉得自己离返贫只差一次裁员。",
+      "hint": "有房有车，睡不着觉。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAny": [
+          "HOUSE",
+          "KID"
+        ],
+        "statMin": {
+          "money": 35
+        },
+        "statMax": {
+          "wellbeing": 40
+        }
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_HOME_JOB_HOMETOWN",
+      "name": "回老家躺平",
+      "roast": "一线城市的梦醒了，老家的饭真香。",
+      "text": "你在老家找了份不忙的工作，下班骑电动车十分钟到家，晚饭有人做好。偶尔刷到大城市的房价，你会心一笑。",
+      "hint": "离开大城市，回到饭桌边。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_HOMETOWN"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_HOME_JOB_OPTIMIZED",
+      "name": "被优化的打工人",
+      "roast": "公司说这不是裁员，是优化。",
+      "text": "你被“优化”过一次，赔偿金花得比工资还仔细。新公司入职那天，你第一件事是确认试用期有多长。",
+      "hint": "公司降了本，你增了效。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "LAID_OFF"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_HOME_JOB_LANDLORD",
+      "name": "回家收租",
+      "roast": "上班是体验生活，收租是生活。",
+      "text": "你辞掉了工作，回家接管了那一串钥匙。每月一号收租，其余时间研究哪家早茶好吃。打了几年工，最大的收获是知道了上班有多累。",
+      "hint": "家里有几串钥匙的人。",
+      "grade": "SR",
+      "when": {
+        "talentsAny": [
+          "T_LANDLORD"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_HOME_JOB_FIRE",
+      "name": "提前退休",
+      "roast": "三十岁之前，提前退休。",
+      "text": "你攒够了这辈子要花的钱，不再需要上班。现在你的日程只有三件事：睡觉、旅行、拒绝前同事的内推。",
+      "hint": "钱够花了，班就不上了。",
+      "grade": "SSR",
+      "when": {
+        "lifeFlagsAny": [
+          "FIRE",
+          "STARTUP_EXIT"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_HOME_JOB_SLASH",
+      "name": "斜杠青年",
+      "roast": "主业养活自己，副业养活梦想。",
+      "text": "白天你是普通职员，下班后是另一个身份。副业的收入慢慢追上了工资，名片上的头衔多了好几条斜杠。",
+      "hint": "一份工资不够，那就两份。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAny": [
+          "SIDE_HUSTLE",
+          "INFLUENCER"
+        ],
+        "statMin": {
+          "money": 45
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_HOME_JOB_GOLDEN_CHILD",
+      "name": "别人家的孩子",
+      "roast": "编制、房子、对象，三件套集齐。",
+      "text": "有编制，有房子，有对象，你成了亲戚口中“别人家的孩子”。过年饭桌上没人再问你问题，大家开始问你意见。",
+      "hint": "亲戚们心中的标准答案。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsAll": [
+          "CIVIL_SERVANT",
+          "HOUSE",
+          "MARRIED"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_HOME_JOB_GRINDER",
+      "name": "卷王本王",
+      "roast": "你卷赢了所有人，包括自己。",
+      "text": "你是组里最早到、最晚走的人，绩效年年拿最高。同事说你是卷王，你回了一句“收到”，然后继续改方案。",
+      "hint": "最早到，最晚走。",
+      "grade": "SR",
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "career": 90
+        },
+        "statMax": {
+          "wellbeing": 30
+        }
+      },
+      "weight": 6
+    },
+    {
+      "id": "LO_HOME_JOB_JOB_HOPPER",
+      "name": "跳槽达人",
+      "roast": "工牌收集了一抽屉，每张都没戴满两年。",
+      "text": "你跳过槽，也学会了跳槽：简历每季度更新一次，猎头的电话从不拒接。每换一家公司，工资涨一截，通勤也换一条线。",
+      "hint": "涨薪靠跳，不靠熬。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "JOB_HOP"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT"
+        ],
+        "statMin": {
+          "money": 50
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_HOME_JOB_ON_TIME",
+      "name": "准点下班侠",
+      "roast": "六点零一分，工位已经空了。",
+      "text": "你在一家不太卷的公司找到了平衡：六点下班，周末不回消息，年假一天不剩地休完。同事说你心态好，你说只是想得开。",
+      "hint": "工作只是工作。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "BURNOUT"
+        ],
+        "statMin": {
+          "wellbeing": 50
+        }
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_HOME_JOB_HALO_GONE",
+      "name": "海归滤镜碎了",
+      "roast": "当年的光环，现在是简历上的一行字。",
+      "text": "你发现海归已经不稀奇了：新同事有两个硕士，实习生英文比你还溜。你把简历第一行的留学经历，挪到了项目经验后面。",
+      "hint": "海归不再是加分项。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "HJ_HALO_GONE"
+        ],
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "PROMOTED"
+        ]
+      },
+      "weight": 5
+    },
+    {
+      "id": "LO_HOME_JOB_AGE_35",
+      "name": "三十五岁预备役",
+      "roast": "简历上的年龄，越看越像倒计时。",
+      "text": "你还不到三十，已经开始研究三十五岁以后怎么办：考证、理财、看副业教程，收藏夹里全是“中年转型”。",
+      "hint": "提前十年开始焦虑。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsNone": [
+          "CIVIL_SERVANT",
+          "PROMOTED"
+        ],
+        "statMin": {
+          "career": 60
+        },
+        "statMax": {
+          "wellbeing": 35
+        }
+      },
+      "weight": 4
+    },
+    {
+      "id": "LO_HOME_JOB_QINGJIAO",
+      "name": "海归青椒",
+      "roast": "考核周期六年，头发周期更短。",
+      "text": "你回国进了高校当青椒，合同上写着“非升即走”。白天上课，晚上写本子，周末改学生的论文，头发省着用。",
+      "hint": "博士回国，去了高校。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "PHD_DONE",
+          "RETURNED"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_HOME_JOB_EX_PHD",
+      "name": "前博士生",
+      "roast": "博士没读完，人生先毕业了。",
+      "text": "退学回国后，你找了一份普通的工作。同事知道你读过博，遇到看不懂的文件都来问你，你也看不懂。",
+      "hint": "实验室的门，从外面关上了。",
+      "grade": "N",
+      "when": {
+        "lifeFlagsAll": [
+          "PHD_QUIT",
+          "RETURNED"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_HOME_JOB_LOTTERY_LOSER",
+      "name": "回国真香",
+      "roast": "抽签三连空，回国一身轻。",
+      "text": "三次没抽中签，你回国了。半年后你发现外卖更快、地铁更快、升职也不慢。刷到湾区房价时，你庆幸当年没中。",
+      "hint": "签运不好，胃口很好。",
+      "grade": "R",
+      "when": {
+        "lifeFlagsAll": [
+          "H1B_OUT",
+          "RETURNED"
+        ]
+      },
+      "weight": 8
+    },
+    {
+      "id": "LO_HOME_JOB_HEIR",
+      "name": "少东家",
+      "roast": "别人熬资历，你熬辈分。",
+      "text": "你在自家公司从副总做起，开会坐在你爸旁边。老员工叫你小老板，你还在学怎么让他们听你的。",
+      "hint": "家里有个位子留给你。",
+      "grade": "SR",
+      "when": {
+        "earlies": [
+          "E_HEIR"
+        ]
+      },
+      "weight": 10
+    },
+    {
+      "id": "LO_HOME_JOB_BROKE",
+      "name": "月光海归",
+      "roast": "工资不低，余额很低。",
+      "text": "你的工资不算低，但每到月底，余额总是精准归零。外卖、房租、各种会员，钱来得很准时，走得也很准时。",
+      "hint": "钱包是个漏斗。",
+      "grade": "N",
+      "when": {
+        "statMax": {
+          "money": 20
+        }
+      },
+      "weight": 5
+    }
+  ]
+}

@@ -430,6 +430,9 @@ function extractTalents(root: string): RawTalent[] {
       else if (key === "focusWellbeingRelief") { if (!isInt(value) || value < 1 || value > 3) throw new Error(`${at} 应为 1–3`); }
       else if (key === "readiness") { if (!isInt(value) || value < -10 || value > 12) throw new Error(`${at} 应为 -10–12`); }
       else if (key === "efficiencyFloor") { if (value !== 8 && value !== 10) throw new Error(`${at} 只能是 8 或 10`); }
+      // 第四版（docs/24 §11）：期末 GPA 加成（单位 0.01）与毕业后每年基础变化的加成。
+      else if (key === "gpa") { if (!isInt(value) || value === 0 || Math.abs(value) > 30) throw new Error(`${at} 应为 ±1–30`); }
+      else if (key === "lifeGrowth") checkStatMap(value, 3, at, true);
       else if (key === "focus") {
         for (const [focus, map] of Object.entries(value as Record<string, unknown>)) {
           if (!(FOCUSES as readonly string[]).includes(focus)) throw new Error(`${at} 出现未知类别 ${focus}`);
@@ -568,6 +571,8 @@ interface RawHappening {
   scope: string;
   text: string;
   effects: Record<string, number>;
+  /** 第四版：出现条件（键由引擎的 conditions.ts 校验）。 */
+  when?: Record<string, unknown>;
 }
 
 function extractHappenings(root: string): RawHappening[] {
@@ -576,19 +581,23 @@ function extractHappenings(root: string): RawHappening[] {
   const seen = new Set<string>();
   for (const item of happenings) {
     const what = `突发小事 ${item.id}`;
-    if (!/^HAP_\d{2}$/.test(item.id) || seen.has(item.id)) throw new Error(`${what}：id 不合规或重复`);
+    if (!/^HAP_\d{2,3}$/.test(item.id) || seen.has(item.id)) throw new Error(`${what}：id 不合规或重复`);
     seen.add(item.id);
     if (!["ANY", "UG", "MS"].includes(item.scope)) throw new Error(`${what}：scope 无效`);
     if (!item.text || [...item.text].length > 40) throw new Error(`${what}：文字为空或超过 40 个字`);
     checkStatMap(item.effects, 5, `${what}.effects`, false);
     const total = Object.values(item.effects).reduce((sum, v) => sum + Math.abs(v), 0);
     if (total === 0 || total > 8) throw new Error(`${what}：四项绝对值之和应在 1–8`);
+    if (item.when !== undefined && (typeof item.when !== "object" || item.when === null || Array.isArray(item.when))) {
+      throw new Error(`${what}：when 必须是对象`);
+    }
   }
   return happenings.map((item) => ({
     id: item.id,
     scope: item.scope,
     text: item.text,
     effects: Object.fromEntries(STAT_KEYS.map((key) => [key, item.effects[key]])),
+    ...(item.when && Object.keys(item.when).length > 0 ? { when: item.when } : {}),
   }));
 }
 

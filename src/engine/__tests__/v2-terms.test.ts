@@ -10,7 +10,7 @@ import type { ActiveRun, Action, Focus, Happening, PlanCard, RunState, StoryEven
 import { basePlans, findPlan, nodeCandidates } from "../pools";
 import { draw01 } from "../rng";
 import { mainSlotEvent, rollHappening, termSlate } from "../terms";
-import { act, asActive, at, classicPolicy, clone, play, start, startClassic, tryAct } from "./helpers";
+import { act, asActive, at, classicPolicy, clone, contextAt, play, start, startClassic, tryAct } from "./helpers";
 import type { Policy } from "./helpers";
 
 const FOCUSES: Focus[] = ["STUDY", "CAREER", "CAMPUS", "WORK", "REST"];
@@ -379,7 +379,7 @@ describe("突发小事（16 §4）", () => {
     }
   });
 
-  it("合成池：60% 的概率出现；按学段过滤；一局内不重复；池空了就没有", () => {
+  it("合成池：开学 70% 的概率出现（第四版，docs/24 §2.1）；按学段过滤；一局内不重复；池空了就没有", () => {
     const pool = [item("A1", "ANY"), item("U1", "UG"), item("M1", "MS"), item("A2", "ANY")];
     let hits = 0;
     const total = 5000;
@@ -387,19 +387,18 @@ describe("突发小事（16 §4）", () => {
       const roll = draw01(seed, "happening:roll:UG:3");
       const got = rollHappening(seed, "UG", 3, pool, []);
       const ug = pool.filter((entry) => entry.scope !== "MS");
-      expect(got?.id ?? null).toBe(roll < 0.6 ? ug[Math.floor(draw01(seed, "happening:pick:UG:3") * ug.length)].id : null);
+      expect(got?.id ?? null).toBe(roll < 0.7 ? ug[Math.floor(draw01(seed, "happening:pick:UG:3") * ug.length)].id : null);
       if (got) hits++;
       expect(rollHappening(seed, "MS", 1, pool, [])?.scope ?? "ANY").not.toBe("UG");
       expect(rollHappening(seed, "UG", 3, pool, ["A1", "U1"])?.id ?? "A2").toBe("A2");
       expect(rollHappening(seed, "UG", 3, pool, ["A1", "U1", "A2"])).toBeNull();
       expect(rollHappening(seed, "UG", 3, [], [])).toBeNull();
     }
-    expect(Math.abs(hits / total - 0.6)).toBeLessThan(0.025);
+    expect(Math.abs(hits / total - 0.7)).toBeLessThan(0.025);
   });
 
-  it("整局：出现在学期开头、资助之后；一局内不重复；学段相符；安排界面显示本学期那一条", () => {
-    let count = 0;
-    let terms = 0;
+  it("整局：开学（资助之后）与期中（主线槽事件之后）各可能一条；一局内不重复；学段相符；与按当时状态重算的一致", () => {
+    const counts = { open: 0, mid: 0, terms: 0, mids: 0 };
     const runs = 200;
     const masters: Policy = {
       ...first,
@@ -417,22 +416,32 @@ describe("突发小事（16 §4）", () => {
       const ids = happenings.map((entry) => entry.happeningId);
       expect(new Set(ids).size).toBe(ids.length);
       const used: string[] = [];
+      const check = (index: number, mid: boolean) => {
+        const entry = end.history[index];
+        const stage = entry.stage === "MS" ? "MS" : "UG";
+        const focus = mid ? (end.history.find((item) => item.kind === "FOCUS" && item.stage === stage && item.termIndex === entry.termIndex)?.focus ?? null) : null;
+        const expected = rollHappening(seed, stage, entry.termIndex, HAPPENINGS, used, { mid, context: contextAt(end, index, stage, entry.termIndex, focus) });
+        const next = end.history[index + 1];
+        if (expected) {
+          expect(next, `seed ${seed} ${stage}:${entry.termIndex} ${mid ? "期中" : "开学"}`).toMatchObject({
+            kind: "HAPPENING", happeningId: expected.id, stage: entry.stage, termIndex: entry.termIndex, revision: entry.revision,
+          });
+          expect(next.requestedDelta).toEqual(expected.effects);
+          expect(["ANY", stage]).toContain(expected.scope);
+          used.push(expected.id);
+          if (mid) counts.mid++;
+          else counts.open++;
+        } else {
+          expect(next?.kind === "HAPPENING" && next.termIndex === entry.termIndex && next.stage === entry.stage).toBe(false);
+        }
+      };
       for (const [index, entry] of end.history.entries()) {
         if (entry.kind === "STIPEND") {
-          terms++;
-          const stage = entry.stage === "MS" ? "MS" : "UG";
-          // 资助之后紧跟着的那一条要么是这学期的突发小事，要么没有；与抽取规则一致
-          const expected = rollHappening(seed, stage, entry.termIndex, HAPPENINGS, used);
-          const next = end.history[index + 1];
-          if (expected) {
-            expect(next).toMatchObject({ kind: "HAPPENING", happeningId: expected.id, stage: entry.stage, termIndex: entry.termIndex, revision: entry.revision });
-            expect(next.requestedDelta).toEqual(expected.effects);
-            expect(["ANY", stage]).toContain(expected.scope);
-            used.push(expected.id);
-            count++;
-          } else {
-            expect(next?.kind === "HAPPENING" && next.termIndex === entry.termIndex && next.stage === entry.stage).toBe(false);
-          }
+          counts.terms++;
+          check(index, false);
+        } else if (entry.kind === "EVENT" && (entry.stage === "UG" || entry.stage === "MS") && EVENT_BY_ID[entry.eventId ?? ""]?.kind !== "arc") {
+          counts.mids++;
+          check(index, true);
         }
       }
       for (const state of states.filter((item2) => item2.phase === "FOCUS")) {
@@ -446,7 +455,11 @@ describe("突发小事（16 §4）", () => {
         }
       }
     }
-    expect(Math.abs(count / terms - 0.6)).toBeLessThan(0.05);
+    // 候选可能因为条件或用完而为空，所以实际频率略低于 70%／45%
+    expect(counts.open / counts.terms).toBeGreaterThan(0.55);
+    expect(counts.open / counts.terms).toBeLessThan(0.72);
+    expect(counts.mid / counts.mids).toBeGreaterThan(0.33);
+    expect(counts.mid / counts.mids).toBeLessThan(0.47);
   });
 
   it("资金不够扣时扣到 0，不产生债务；不设置标记，不影响资格", () => {
@@ -498,7 +511,7 @@ describe("突发小事（16 §4）", () => {
 
 describe("学期流程：没有学期小结（16 §5）", () => {
   it("每一步之后的阶段都在阶段表里；最后一张事件之后直接到下一学期、毕业预览，或在这里中途结束", () => {
-    const allowed = ["HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "ENDING"];
+    const allowed = ["HIGH_SCHOOL_EVENT", "SCHOOL_OFFERS", "FOCUS", "CORE_EVENT", "ARC_EVENT", "GRAD_PREVIEW", "GRAD_RESULTS", "LIFE", "ENDING"];
     let graduated = 0;
     let endedEarly = 0;
     for (let seed = 1; seed <= 60; seed++) {
@@ -512,20 +525,28 @@ describe("学期流程：没有学期小结（16 §5）", () => {
         expect(allowed).toContain(state.phase);
         if (previous && (previous.phase === "CORE_EVENT" || previous.phase === "ARC_EVENT") && previous.stage === "UG") {
           const hasArc = previous.termIndex >= 2 && previous.termIndex <= 7;
-          const kinds = state.history.filter((entry) => entry.revision === previous?.revision).map((entry) => entry.kind);
+          // 期中的突发小事跟在主线槽事件后面（docs/24 §2.1）；去掉它再看学期的结算顺序
+          const raw = state.history.filter((entry) => entry.revision === previous?.revision).map((entry) => entry.kind);
+          const kinds = previous.phase === "CORE_EVENT" && raw[1] === "HAPPENING" ? [raw[0], ...raw.slice(2)] : raw;
           if (previous.phase === "CORE_EVENT" && hasArc) {
             expect(state).toMatchObject({ phase: "ARC_EVENT", termIndex: previous.termIndex });
-          } else if (state.phase === "ENDING") {
-            // 期末结算之后、进入下一学期或毕业之前触发了中途结局：没有资助，没有毕业快照
+          } else if (state.phase === "LIFE" && state.ending?.kind === "EARLY") {
+            // 期末结算之后、进入下一学期或毕业之前触发了中途结局：没有资助，没有毕业快照，直接进入离校后的五年
             expect(state.ending).toMatchObject({ kind: "EARLY", route: null, degree: "UG" });
-            expect(state.termIndex).toBe(previous.termIndex);
+            expect(state).toMatchObject({ stage: "LIFE", termIndex: 0 });
+            expect(state.life?.startStats).toEqual(state.stats);
             expect(kinds).toEqual(["EVENT", "UPKEEP", "GROWTH"]);
             expect(state.graduations.UG).toBeNull();
           } else if (previous.termIndex < 8) {
             expect(state).toMatchObject({ phase: "FOCUS", termIndex: previous.termIndex + 1 });
-            // 同一次操作里：事件 → 必要开销 → 基础成长 → 资助 →（突发小事）
-            expect(kinds.slice(0, 4)).toEqual(["EVENT", "UPKEEP", "GROWTH", "STIPEND"]);
-            expect(kinds.slice(4)).toEqual(kinds.length === 5 ? ["HAPPENING"] : []);
+            // 同一次操作里：事件 → 必要开销 → 基础成长 →（暑假）→ 资助 →（突发小事）
+            expect(kinds.slice(0, 3)).toEqual(["EVENT", "UPKEEP", "GROWTH"]);
+            const summers = kinds.slice(3).filter((kind) => kind === "SUMMER").length;
+            // 暑假只在大一下、大二下、大三下之后（候选用完了也可能一件都没有）
+            if (summers > 0) expect([2, 4, 6]).toContain(previous.termIndex);
+            expect(summers).toBeLessThanOrEqual(2);
+            expect(kinds.slice(3 + summers, 4 + summers)).toEqual(["STIPEND"]);
+            expect(kinds.slice(4 + summers)).toEqual(kinds.length === 5 + summers ? ["HAPPENING"] : []);
           } else {
             expect(state).toMatchObject({ phase: "GRAD_PREVIEW", termIndex: 8 });
             expect(kinds).toEqual(["EVENT", "UPKEEP", "GROWTH"]);
@@ -534,17 +555,19 @@ describe("学期流程：没有学期小结（16 §5）", () => {
         }
         previous = state;
       }
+      const years = log.filter((action) => action.type === "LIVE_YEAR");
+      expect(years).toHaveLength(5); // 离校之后都过五年
       if (end.ending?.kind === "GRADUATION") {
         graduated++;
         // 走到毕业的局：24 次生活决策，没有额外的“继续”
         expect(log.filter((action) => action.type === "CHOOSE_PLAN" || action.type === "CHOOSE_EVENT")).toHaveLength(24);
-        expect(log.filter((action) => action.type !== "CHOOSE_PLAN" && action.type !== "CHOOSE_EVENT").map((action) => action.type)).toEqual([
+        expect(log.filter((action) => action.type !== "CHOOSE_PLAN" && action.type !== "CHOOSE_EVENT" && action.type !== "LIVE_YEAR").map((action) => action.type)).toEqual([
           "CONFIRM_SETUP", "CHOOSE_SCHOOL", "REVEAL_GRADUATION", "CHOOSE_ROUTE",
         ]);
       } else {
         endedEarly++;
-        // 中途结束的局：最后一步是某个学期的最后一张事件，之后没有毕业相关的操作
-        expect(log[log.length - 1].type).toBe("CHOOSE_EVENT");
+        // 中途结束的局：离校前最后一步是某个学期的最后一张事件，之后没有毕业相关的操作，只有毕业后的五年
+        expect(log[log.length - 6].type).toBe("CHOOSE_EVENT");
         expect(log.some((action) => action.type === "REVEAL_GRADUATION" || action.type === "CHOOSE_ROUTE")).toBe(false);
       }
     }
@@ -563,7 +586,8 @@ describe("学期流程：没有学期小结（16 §5）", () => {
           expect(kinds[0]).toBe("STIPEND");
           expect(kinds.slice(-2)).toEqual(["UPKEEP", "GROWTH"]);
           expect(kinds.filter((kind) => kind === "FOCUS")).toHaveLength(1);
-          expect(kinds.filter((kind) => kind === "HAPPENING").length).toBeLessThanOrEqual(1);
+          expect(kinds.filter((kind) => kind === "HAPPENING").length).toBeLessThanOrEqual(2); // 开学与期中各最多一条
+          expect(kinds).not.toContain("SUMMER"); // 暑假不算在学期账目里
           // 账目的终值是上学期基础成长之后的四属性，不含本学期的资助与突发小事
           const growth = state.history.find((entry) => entry.kind === "GROWTH" && entry.stage === state.stage && entry.termIndex === state.termIndex - 1);
           expect(ledger?.endStats).toEqual(growth?.afterStats);
